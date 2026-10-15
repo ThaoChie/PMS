@@ -28,7 +28,13 @@ public class JwtTokenProvider {
     private long jwtExpirationInMs; // 30 min default
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-512");
+            byte[] keyBytes = md.digest(jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            return Keys.hmacShaKeyFor(jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
     }
 
     public String generateToken(Long userId) {
