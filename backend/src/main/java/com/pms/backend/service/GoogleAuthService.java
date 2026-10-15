@@ -81,7 +81,7 @@ public class GoogleAuthService {
                 user.setFullName(name != null ? name : email);
                 user.setAvatarUrl(pictureUrl);
                 user.setProvider(AuthProvider.GOOGLE);
-                user.setSystemRole(RoleSystem.MEMBER);
+                user.setSystemRole(RoleSystem.PM);
                 user.setGoogleSub(sub);
                 user.setStatus(UserStatus.ACTIVE);
                 user = userRepository.save(user);
