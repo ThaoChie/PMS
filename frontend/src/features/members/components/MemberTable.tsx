@@ -4,12 +4,12 @@ import UserAvatar from '../../../components/common/UserAvatar';
 
 const ROLE_OPTIONS: Role[] = ['pm', 'developer', 'qa', 'member'];
 const ROLE_LABELS: Record<Role, string> = {
-  pm: 'Project Manager',
-  developer: 'Developer',
-  qa: 'QA Engineer',
-  member: 'Member',
-  admin: 'Admin',
-  viewer: 'Viewer',
+  pm: 'Quản lý dự án (PM)',
+  developer: 'Lập trình viên (Developer)',
+  qa: 'Kiểm thử viên (QA)',
+  member: 'Thành viên',
+  admin: 'Quản trị viên',
+  viewer: 'Người xem',
 };
 const STATUS_BADGE: Record<MemberStatus, string> = {
   Active: 'text-[#1A1A1A] bg-[#F7F7F8] border-[#E5E5E7]',
@@ -35,16 +35,16 @@ export default function MemberTable({
         <thead className="bg-[#F7F7F8] border-b border-[#E5E5E7]">
           <tr>
             <th className="px-5 py-3 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-              Member
+              Thành viên
             </th>
             <th className="px-5 py-3 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
               Email
             </th>
             <th className="px-5 py-3 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-              Role
+              Vai trò
             </th>
             <th className="px-5 py-3 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-              Status
+              Trạng thái
             </th>
             {canManage && <th className="px-5 py-3" />}
           </tr>
@@ -75,8 +75,8 @@ export default function MemberTable({
                     ))}
                   </select>
                 ) : (
-                  <span className="text-xs text-[#6B6B70] capitalize">
-                    {ROLE_LABELS[member.role]}
+                  <span className="text-xs text-[#6B6B70]">
+                    {ROLE_LABELS[member.role] || member.role}
                   </span>
                 )}
               </td>
@@ -87,7 +87,7 @@ export default function MemberTable({
                       STATUS_BADGE[member.status]
                     }`}
                   >
-                    {member.status}
+                    {member.status === 'Active' ? 'Hoạt động' : 'Đang chờ'}
                   </span>
                 </div>
               </td>
@@ -99,7 +99,7 @@ export default function MemberTable({
                       onClick={() => onRemoveMember(member)}
                       className="text-xs text-[#9B9B9F] hover:text-[#E53E3E] transition-colors"
                     >
-                      Remove
+                      Xóa
                     </button>
                   )}
                 </td>

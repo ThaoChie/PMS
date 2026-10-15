@@ -16,19 +16,19 @@ export const AssignedIssuesWidget: React.FC<AssignedIssuesWidgetProps> = ({
   return (
     <div className="border border-[#E5E5E7] rounded-xl overflow-hidden">
       <div className="px-5 py-3 border-b border-[#E5E5E7] flex items-center justify-between">
-        <h2 className="text-xs font-semibold text-[#1A1A1A]">My open issues</h2>
+        <h2 className="text-xs font-semibold text-[#1A1A1A]">Công việc của tôi đang mở</h2>
         {onNavigate && (
           <button
             onClick={() => onNavigate('issues')}
             className="text-[10px] text-[#6B6B70] hover:text-[#E53E3E] flex items-center gap-1 transition-colors"
           >
-            View all <ArrowRight className="w-3 h-3" />
+            Xem tất cả <ArrowRight className="w-3 h-3" />
           </button>
         )}
       </div>
       {issues.length === 0 ? (
         <div className="py-12 text-center">
-          <p className="text-xs text-[#9B9B9F]">No open issues assigned to you</p>
+          <p className="text-xs text-[#9B9B9F]">Không có công việc nào đang mở được phân công cho bạn</p>
         </div>
       ) : (
         <div className="divide-y divide-[#F0F0F1]">

@@ -4,10 +4,10 @@ import type { IssueStatus, Role } from '../../../types';
 import KanbanColumn from '../components/KanbanColumn';
 
 const COLUMNS: { status: IssueStatus; label: string }[] = [
-  { status: 'To Do', label: 'To Do' },
-  { status: 'In Progress', label: 'In Progress' },
-  { status: 'Pending Approval', label: 'Pending Approval' },
-  { status: 'Done', label: 'Done' },
+  { status: 'To Do', label: 'Cần làm' },
+  { status: 'In Progress', label: 'Đang thực hiện' },
+  { status: 'Pending Approval', label: 'Chờ phê duyệt' },
+  { status: 'Done', label: 'Đã hoàn thành' },
 ];
 
 interface BoardProps {
@@ -23,10 +23,10 @@ export default function Board({ role, onSelectIssue }: BoardProps) {
     <div className="h-full flex flex-col bg-white">
       {/* Board header */}
       <div className="px-6 py-4 border-b border-[#E5E5E7] flex items-center gap-3 shrink-0">
-        <h2 className="text-sm font-semibold text-[#1A1A1A]">Board</h2>
-        <span className="text-xs text-[#6B6B70]">EPMS Platform</span>
+        <h2 className="text-sm font-semibold text-[#1A1A1A]">Bảng công việc</h2>
+        <span className="text-xs text-[#6B6B70]">Dự án hiện tại</span>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-[#6B6B70]">{projectIssues.length} issues</span>
+          <span className="text-xs text-[#6B6B70]">{projectIssues.length} công việc</span>
         </div>
       </div>
 

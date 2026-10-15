@@ -62,13 +62,13 @@ export default function IssueTable({
         <thead className="sticky top-0 bg-[#F7F7F8] border-b border-[#E5E5E7] z-10">
           <tr>
             {[
-              { field: 'key' as SortField, label: 'Key', w: 'w-24' },
-              { field: 'summary' as SortField, label: 'Summary', w: 'w-auto' },
-              { field: null, label: 'Type', w: 'w-24' },
-              { field: 'status' as SortField, label: 'Status', w: 'w-36' },
-              { field: null, label: 'Assignee', w: 'w-32' },
-              { field: 'priority' as SortField, label: 'Priority', w: 'w-24' },
-              { field: 'dueDate' as SortField, label: 'Due date', w: 'w-28' },
+              { field: 'key' as SortField, label: 'Mã', w: 'w-24' },
+              { field: 'summary' as SortField, label: 'Tóm tắt nội dung', w: 'w-auto' },
+              { field: null, label: 'Loại', w: 'w-24' },
+              { field: 'status' as SortField, label: 'Trạng thái', w: 'w-36' },
+              { field: null, label: 'Người thực hiện', w: 'w-32' },
+              { field: 'priority' as SortField, label: 'Ưu tiên', w: 'w-24' },
+              { field: 'dueDate' as SortField, label: 'Hạn chót', w: 'w-28' },
             ].map((col) => (
               <th
                 key={col.label}
@@ -89,14 +89,14 @@ export default function IssueTable({
           {issues.length === 0 ? (
             <tr>
               <td colSpan={7} className="py-16 text-center">
-                <p className="text-sm text-[#6B6B70]">No issues match your filters</p>
+                <p className="text-sm text-[#6B6B70]">Không có công việc nào khớp với bộ lọc</p>
                 {hasFilters && onClearFilters && (
                   <button
                     type="button"
                     onClick={onClearFilters}
                     className="mt-2 text-xs text-[#E53E3E] hover:text-[#C53030]"
                   >
-                    Clear filters
+                    Xóa bộ lọc
                   </button>
                 )}
               </td>

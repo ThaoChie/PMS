@@ -25,14 +25,14 @@ export const ProductivityTab: React.FC<ProductivityTabProps> = ({ role }) => {
     <div>
       {isMemberRole ? (
         <div className="border border-[#E5E5E7] rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">Project-level summary</h3>
+          <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">Tóm tắt cấp độ dự án</h3>
           <p className="text-xs text-[#6B6B70] mb-5">
-            Detailed per-member breakdown is available to Project Managers and Admins.
+            Chi tiết năng suất từng thành viên hiển thị cho Quản lý dự án (PM) và Admin.
           </p>
           <div className="grid grid-cols-2 gap-4">
             <div className="border border-[#E5E5E7] rounded-xl p-5">
               <p className="text-[10px] font-medium text-[#9B9B9F] uppercase tracking-wider mb-1">
-                Issues completed this sprint
+                Công việc hoàn thành trong sprint
               </p>
               <p className="text-3xl font-bold text-[#1A1A1A]">
                 {productivityData.reduce((a, b) => a + b.completed, 0)}
@@ -40,7 +40,7 @@ export const ProductivityTab: React.FC<ProductivityTabProps> = ({ role }) => {
             </div>
             <div className="border border-[#E5E5E7] rounded-xl p-5">
               <p className="text-[10px] font-medium text-[#9B9B9F] uppercase tracking-wider mb-1">
-                In progress
+                Đang thực hiện
               </p>
               <p className="text-3xl font-bold text-[#1A1A1A]">
                 {productivityData.reduce((a, b) => a + b.inProgress, 0)}
@@ -50,7 +50,7 @@ export const ProductivityTab: React.FC<ProductivityTabProps> = ({ role }) => {
         </div>
       ) : (
         <div className="border border-[#E5E5E7] rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-[#1A1A1A] mb-5">Issues completed per member</h3>
+          <h3 className="text-sm font-semibold text-[#1A1A1A] mb-5">Công việc hoàn thành theo từng thành viên</h3>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={productivityData} margin={{ top: 5, right: 20, bottom: 20, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F1" vertical={false} />
@@ -58,8 +58,8 @@ export const ProductivityTab: React.FC<ProductivityTabProps> = ({ role }) => {
               <YAxis tick={{ fontSize: 10, fill: '#9B9B9F' }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ fontSize: 11, color: '#6B6B70' }} />
-              <Bar dataKey="completed" name="Completed" fill="#1A1A1A" radius={[4, 4, 0, 0]} maxBarSize={40} />
-              <Bar dataKey="inProgress" name="In Progress" fill="#E5E5E7" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              <Bar dataKey="completed" name="Đã hoàn thành" fill="#1A1A1A" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              <Bar dataKey="inProgress" name="Đang thực hiện" fill="#E5E5E7" radius={[4, 4, 0, 0]} maxBarSize={40} />
             </BarChart>
           </ResponsiveContainer>
         </div>

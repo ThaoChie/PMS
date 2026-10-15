@@ -6,10 +6,10 @@ import IssueTable, { type SortField, type SortDir } from '../components/IssueTab
 import ExportButton from '../components/ExportButton';
 
 const QUICK_FILTERS = [
-  { id: 'my-open', label: 'My open issues' },
-  { id: 'reported-by-me', label: 'Reported by me' },
-  { id: 'done', label: 'Done' },
-  { id: 'recently-updated', label: 'Recently updated' },
+  { id: 'my-open', label: 'Việc của tôi đang mở' },
+  { id: 'reported-by-me', label: 'Tôi đã báo cáo' },
+  { id: 'done', label: 'Đã hoàn thành' },
+  { id: 'recently-updated', label: 'Cập nhật gần đây' },
 ];
 
 interface IssueListProps {
@@ -86,48 +86,64 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
       {filterPanelOpen && (
         <aside className="w-56 shrink-0 border-r border-[#E5E5E7] flex flex-col overflow-y-auto">
           <div className="px-4 py-3 border-b border-[#E5E5E7] flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#1A1A1A]">Filters</span>
+            <span className="text-xs font-semibold text-[#1A1A1A]">Bộ lọc</span>
             {hasFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
                 className="text-[10px] text-[#E53E3E] hover:text-[#C53030]"
               >
-                Clear all
+                Xóa tất cả
               </button>
             )}
           </div>
           <div className="p-4 space-y-5 flex-1">
             <div>
               <label className="block text-[10px] font-medium text-[#9B9B9F] uppercase tracking-wider mb-2">
-                Keyword search
+                Tìm kiếm từ khóa
               </label>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search issues…"
+                placeholder="Tìm kiếm công việc…"
                 className="w-full px-2.5 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none focus:border-[#1A1A1A] transition-colors"
               />
             </div>
 
             {[
               {
-                label: 'Type',
+                label: 'Loại công việc',
                 value: filterType,
                 onChange: (v: string) => setFilterType(v as IssueType | ''),
-                options: ['Story', 'Bug', 'Task', 'Epic', 'Sub-task'],
+                options: [
+                  { label: 'Story', val: 'Story' },
+                  { label: 'Task', val: 'Task' },
+                  { label: 'Bug', val: 'Bug' },
+                  { label: 'Epic', val: 'Epic' },
+                  { label: 'Sub-task', val: 'Sub-task' },
+                ],
               },
               {
-                label: 'Status',
+                label: 'Trạng thái',
                 value: filterStatus,
                 onChange: (v: string) => setFilterStatus(v as IssueStatus | ''),
-                options: ['To Do', 'In Progress', 'Pending Approval', 'Done'],
+                options: [
+                  { label: 'Cần làm (To Do)', val: 'To Do' },
+                  { label: 'Đang thực hiện (In Progress)', val: 'In Progress' },
+                  { label: 'Chờ duyệt (Pending Approval)', val: 'Pending Approval' },
+                  { label: 'Hoàn thành (Done)', val: 'Done' },
+                ],
               },
               {
-                label: 'Priority',
+                label: 'Mức độ ưu tiên',
                 value: filterPriority,
                 onChange: (v: string) => setFilterPriority(v as Priority | ''),
-                options: ['Critical', 'High', 'Medium', 'Low'],
+                options: [
+                  { label: 'Khẩn cấp (Critical)', val: 'Critical' },
+                  { label: 'Cao (High)', val: 'High' },
+                  { label: 'Trung bình (Medium)', val: 'Medium' },
+                  { label: 'Thấp (Low)', val: 'Low' },
+                ],
               },
             ].map((f) => (
               <div key={f.label}>
@@ -139,10 +155,10 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
                   onChange={(e) => f.onChange(e.target.value)}
                   className="w-full px-2.5 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] bg-white appearance-none transition-colors"
                 >
-                  <option value="">All</option>
+                  <option value="">Tất cả</option>
                   {f.options.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
+                    <option key={o.val} value={o.val}>
+                      {o.label}
                     </option>
                   ))}
                 </select>
@@ -151,14 +167,14 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
 
             <div>
               <label className="block text-[10px] font-medium text-[#9B9B9F] uppercase tracking-wider mb-2">
-                Assignee
+                Người thực hiện
               </label>
               <select
                 value={filterAssignee}
                 onChange={(e) => setFilterAssignee(e.target.value)}
                 className="w-full px-2.5 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] bg-white appearance-none transition-colors"
               >
-                <option value="">All</option>
+                <option value="">Tất cả</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.name}
@@ -184,7 +200,7 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            Filters
+            Bộ lọc
           </button>
 
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -206,7 +222,7 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
 
           <div className="ml-auto flex items-center gap-3">
             <ExportButton criteria={{ keyword: search, type: filterType, status: filterStatus }} />
-            <span className="text-xs text-[#9B9B9F]">{filtered.length} issues</span>
+            <span className="text-xs text-[#9B9B9F]">{filtered.length} công việc</span>
           </div>
         </div>
 

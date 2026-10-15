@@ -33,7 +33,7 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
               : 'bg-[#F7F7F8] text-[#9B9B9F] border-[#E5E5E7]'
           }`}
         >
-          {project.status}
+          {project.status === 'Active' ? 'Đang hoạt động' : 'Đã đóng'}
         </span>
       </div>
 
@@ -45,7 +45,7 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
         <div className="flex items-center gap-1.5">
           <FolderOpen className="w-3.5 h-3.5 text-[#9B9B9F]" />
           <span className="text-xs text-[#6B6B70]">
-            {(project.openIssues || 0) > 0 ? `${project.openIssues} open` : 'No open issues'}
+            {(project.openIssues || 0) > 0 ? `${project.openIssues} việc mở` : 'Không có việc mở'}
           </span>
         </div>
         <div className="flex items-center -space-x-1.5">

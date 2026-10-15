@@ -54,7 +54,7 @@ export default function ProjectSettings({ role }: ProjectSettingsProps) {
     <div className="h-full overflow-y-auto bg-white">
       <div className="max-w-2xl mx-auto px-8 py-10">
         <div className="mb-8">
-          <h1 className="text-xl font-bold text-[#1A1A1A]">Project Settings</h1>
+          <h1 className="text-xl font-bold text-[#1A1A1A]">Cài đặt dự án</h1>
           <p className="text-xs font-mono text-[#9B9B9F] mt-0.5">{currentProject.key}</p>
         </div>
 

@@ -72,8 +72,8 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
         </div>
 
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-[#1A1A1A] mb-1">Set new password</h2>
-          <p className="text-sm text-[#6B6B70]">Enter your new password below</p>
+          <h2 className="text-2xl font-bold text-[#1A1A1A] mb-1">Đặt lại mật khẩu mới</h2>
+          <p className="text-sm text-[#6B6B70]">Nhập mật khẩu mới của bạn bên dưới</p>
         </div>
 
         {error && (
@@ -90,7 +90,7 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">New password</label>
+            <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Mật khẩu mới</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -99,7 +99,7 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
                   setPassword(e.target.value);
                   setError('');
                 }}
-                placeholder="Min. 8 characters"
+                placeholder="Tối thiểu 8 ký tự"
                 className="w-full px-3 py-2.5 pr-10 border border-[#E5E5E7] rounded-lg text-sm text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none focus:border-[#1A1A1A] transition-colors"
                 required
               />
@@ -115,7 +115,7 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
 
           <div>
             <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
-              Confirm new password
+              Xác nhận mật khẩu mới
             </label>
             <input
               type={showPassword ? 'text' : 'password'}
@@ -124,7 +124,7 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
                 setConfirm(e.target.value);
                 setError('');
               }}
-              placeholder="Confirm new password"
+              placeholder="Nhập lại mật khẩu mới"
               className="w-full px-3 py-2.5 border border-[#E5E5E7] rounded-lg text-sm text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none focus:border-[#1A1A1A] transition-colors"
               required
             />
@@ -135,7 +135,7 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
             disabled={loading}
             className="w-full py-2.5 bg-[#E53E3E] text-white text-sm font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-60 transition-colors"
           >
-            {loading ? 'Updating…' : 'Update password'}
+            {loading ? 'Đang cập nhật…' : 'Cập nhật mật khẩu'}
           </button>
         </form>
       </div>

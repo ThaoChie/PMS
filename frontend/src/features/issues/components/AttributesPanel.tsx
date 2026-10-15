@@ -20,30 +20,30 @@ export default function AttributesPanel({ issue }: AttributesPanelProps) {
 
   return (
     <div className="border border-[#E5E5E7] rounded-lg overflow-hidden bg-white">
-      <AttrRow label="Assignee">
+      <AttrRow label="Người thực hiện">
         {issue.assignee ? (
           <div className="flex items-center gap-2">
             <UserAvatar initials={issue.assignee.initials} size="xs" />
             <span>{issue.assignee.name}</span>
           </div>
         ) : (
-          <span className="text-[#9B9B9F]">Unassigned</span>
+          <span className="text-[#9B9B9F]">Chưa phân công</span>
         )}
       </AttrRow>
 
-      <AttrRow label="Reporter">
+      <AttrRow label="Người báo cáo">
         <div className="flex items-center gap-2">
           <UserAvatar initials={issue.reporter.initials} size="xs" />
           <span>{issue.reporter.name}</span>
         </div>
       </AttrRow>
 
-      <AttrRow label="Priority">
+      <AttrRow label="Độ ưu tiên">
         <PriorityTag priority={issue.priority} />
       </AttrRow>
 
       {issue.labels && issue.labels.length > 0 && (
-        <AttrRow label="Labels">
+        <AttrRow label="Nhãn">
           <div className="flex flex-wrap gap-1">
             {issue.labels.map((l) => (
               <span
@@ -58,13 +58,13 @@ export default function AttributesPanel({ issue }: AttributesPanelProps) {
       )}
 
       {issue.estimates && (
-        <AttrRow label="Estimate">
+        <AttrRow label="Ước tính">
           <span>{issue.estimates}</span>
         </AttrRow>
       )}
 
       {issue.dueDate && (
-        <AttrRow label="Due date">
+        <AttrRow label="Hạn chót">
           <span
             className={
               new Date(issue.dueDate) < new Date() ? 'text-[#E53E3E] font-medium' : ''
@@ -76,19 +76,19 @@ export default function AttributesPanel({ issue }: AttributesPanelProps) {
       )}
 
       {issue.environment && (
-        <AttrRow label="Environment">
+        <AttrRow label="Môi trường">
           <span>{issue.environment}</span>
         </AttrRow>
       )}
 
       {issue.epicLink && (
-        <AttrRow label="Epic link">
+        <AttrRow label="Liên kết Epic">
           <span className="font-mono text-[11px] text-[#6B6B70]">{issue.epicLink}</span>
         </AttrRow>
       )}
 
       {issue.attachments && issue.attachments.length > 0 && (
-        <AttrRow label="Attachments">
+        <AttrRow label="Tệp đính kèm">
           <div className="space-y-1">
             {issue.attachments.map((a) => (
               <div
