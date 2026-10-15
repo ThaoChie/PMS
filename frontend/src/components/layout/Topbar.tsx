@@ -13,13 +13,11 @@ import type { Role, Screen, User, Notification } from '../../types';
 import UserAvatar from '../common/UserAvatar';
 import { formatRelativeTime } from '../../utils/date';
 
-const ROLE_LABELS: Record<Role, string> = { member: 'Member', pm: 'PM', admin: 'Admin' };
-
 interface TopbarProps {
-  role: Role;
+  role?: Role;
   user: User;
   notifications: Notification[];
-  onRoleChange: (role: Role) => void;
+  onRoleChange?: (role: Role) => void;
   onSearch: () => void;
   onCreateIssue: () => void;
   onNavigate: (screen: Screen) => void;
@@ -58,23 +56,6 @@ export default function Topbar({
         setUserDropdownOpen(false);
       }}
     >
-      {/* Role switcher (prototype) */}
-      <div className="flex items-center gap-1 border border-[#E5E5E7] rounded-lg p-0.5">
-        {(['member', 'pm', 'admin'] as Role[]).map((r) => (
-          <button
-            key={r}
-            type="button"
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-              role === r
-                ? 'bg-[#1A1A1A] text-white'
-                : 'text-[#6B6B70] hover:text-[#1A1A1A]'
-            }`}
-            onClick={() => onRoleChange(r)}
-          >
-            {ROLE_LABELS[r]}
-          </button>
-        ))}
-      </div>
 
       {/* Search trigger */}
       <button
