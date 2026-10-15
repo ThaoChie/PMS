@@ -36,7 +36,7 @@ public class InvitationController {
         throw new IllegalStateException("User not authenticated");
     }
 
-    @PostMapping("/api/projects/{projectId}/invitations")
+    @PostMapping({"/api/projects/{projectId}/invitations", "/projects/{projectId}/invitations"})
     @PreAuthorize("@projectSecurity.isPmOrAdmin(#projectId)")
     public ApiResponse<InvitationResponse> createInvitation(@PathVariable Long projectId,
                                                            @Valid @RequestBody InviteMemberRequest request) {
@@ -45,14 +45,14 @@ public class InvitationController {
         return ApiResponse.success(InvitationResponse.from(invitation));
     }
 
-    @GetMapping("/api/projects/{projectId}/invitations")
+    @GetMapping({"/api/projects/{projectId}/invitations", "/projects/{projectId}/invitations"})
     @PreAuthorize("@projectSecurity.isPmOrAdmin(#projectId)")
     public ApiResponse<List<InvitationResponse>> getProjectInvitations(@PathVariable Long projectId) {
         List<Invitation> invitations = invitationService.getProjectInvitations(projectId);
         return ApiResponse.success(invitations.stream().map(InvitationResponse::from).collect(Collectors.toList()));
     }
 
-    @GetMapping("/api/invitations/mine")
+    @GetMapping({"/api/invitations/mine", "/invitations/mine"})
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<InvitationResponse>> getMyInvitations() {
         User currentUser = getCurrentUser();
@@ -60,7 +60,7 @@ public class InvitationController {
         return ApiResponse.success(invitations.stream().map(InvitationResponse::from).collect(Collectors.toList()));
     }
 
-    @PostMapping("/api/invitations/{id}/accept")
+    @PostMapping({"/api/invitations/{id}/accept", "/invitations/{id}/accept"})
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<String> acceptInvitation(@PathVariable Long id) {
         User currentUser = getCurrentUser();
@@ -68,7 +68,7 @@ public class InvitationController {
         return ApiResponse.success("Đã chấp nhận lời mời tham gia dự án");
     }
 
-    @PostMapping("/api/invitations/{id}/decline")
+    @PostMapping({"/api/invitations/{id}/decline", "/invitations/{id}/decline"})
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<String> declineInvitation(@PathVariable Long id) {
         User currentUser = getCurrentUser();
