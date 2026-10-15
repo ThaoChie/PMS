@@ -44,6 +44,7 @@ public class IssueResponse {
     private List<LinkedIssueResponse> linkedIssues = new ArrayList<>();
     private List<AttachmentResponse> attachments = new ArrayList<>();
     private List<TransitionOptionResponse> availableTransitions = new ArrayList<>();
+    private Boolean isWatching;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -215,4 +216,7 @@ public class IssueResponse {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Boolean getIsWatching() { return isWatching; }
+    public void setIsWatching(Boolean isWatching) { this.isWatching = isWatching; }
 }
