@@ -39,7 +39,7 @@ export default function AppShell({
   const { user: authUser } = useAuthStore();
 
   const projects = propProjects || storeProjects;
-  const selectedProject = propSelectedProject !== undefined ? propSelectedProject : (currentProject || projects[0]);
+  const selectedProject = propSelectedProject || currentProject || projects[0] || null;
 
   const currentUser: User = propUser || authUser || {
     id: '',

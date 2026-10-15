@@ -61,6 +61,9 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => {
   const initialToken = typeof window !== 'undefined' ? localStorage.getItem('epms_access_token') : null;
+  if (initialToken) {
+    setAuthToken(initialToken);
+  }
   const initialUser = getStoredUser();
 
   return {
@@ -72,7 +75,12 @@ export const useAuthStore = create<AuthState>((set, get) => {
     isLoading: !!initialToken,
 
     login: (user, token) => {
-      if (token) setAuthToken(token);
+      if (token) {
+        setAuthToken(token);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('epms_access_token', token);
+        }
+      }
       if (typeof window !== 'undefined') {
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
       }
@@ -93,6 +101,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
       } finally {
         setAuthToken(null);
         if (typeof window !== 'undefined') {
+          localStorage.removeItem('epms_access_token');
           localStorage.removeItem(USER_STORAGE_KEY);
         }
         set({

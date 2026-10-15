@@ -33,7 +33,7 @@ export default function App() {
   const { projects, currentProject, setCurrentProject, fetchProjects } = useProjectStore();
 
   const [authView, setAuthView] = useState<AuthView>('login');
-  const [currentScreen, setCurrentScreen] = useState<Screen>('board');
+  const [currentScreen, setCurrentScreen] = useState<Screen>('projects');
   const [role, setRole] = useState<Role>('member');
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [showCreateIssue, setShowCreateIssue] = useState(false);
@@ -73,7 +73,7 @@ export default function App() {
 
   function handleLogin() {
     setAuthView('login');
-    setCurrentScreen('board');
+    setCurrentScreen('projects');
   }
 
   async function handleLogout() {
