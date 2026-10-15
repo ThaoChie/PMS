@@ -13,7 +13,7 @@ import com.pms.backend.model.User;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/issues")
+@RequestMapping({"/api/issues", "/issues"})
 public class IssueController {
 
     private final IssueService issueService;

@@ -6,7 +6,7 @@ import com.pms.backend.service.ReportService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/reports")
+@RequestMapping({"/api/reports", "/reports"})
 public class ReportController {
 
     private final ReportService reportService;

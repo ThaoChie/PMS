@@ -1,6 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-let accessToken: string | null = null;
+const TOKEN_KEY = 'epms_access_token';
+
+let accessToken: string | null = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
@@ -9,9 +11,21 @@ let failedQueue: Array<{
 
 export const setAuthToken = (token: string | null) => {
   accessToken = token;
+  if (typeof window !== 'undefined') {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  }
 };
 
-export const getAuthToken = () => accessToken;
+export const getAuthToken = () => {
+  if (!accessToken && typeof window !== 'undefined') {
+    accessToken = localStorage.getItem(TOKEN_KEY);
+  }
+  return accessToken;
+};
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((promise) => {
@@ -24,11 +38,18 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-const rawBaseUrl: string = import.meta.env.VITE_API_BASE_URL || '/api';
-export const API_BASE_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
+let rawBaseUrl: string = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
+if (rawBaseUrl.endsWith('/')) {
+  rawBaseUrl = rawBaseUrl.slice(0, -1);
+}
+if ((rawBaseUrl.startsWith('http://') || rawBaseUrl.startsWith('https://')) && !rawBaseUrl.endsWith('/api')) {
+  rawBaseUrl = `${rawBaseUrl}/api`;
+}
+export const API_BASE_URL = rawBaseUrl;
 
 export const axiosClient = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 15000, // 15s timeout prevents infinite hanging during cold starts or network errors
   headers: {
     'Content-Type': 'application/json',
   },
@@ -39,8 +60,9 @@ export const axiosClient = axios.create({
 // Request interceptor: attach bearer token
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    if (accessToken && config.headers) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    const token = getAuthToken();
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -51,12 +73,20 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
   (response) => response.data,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
 
-    // Don't intercept auth endpoints like login/refresh
+    // Safely check url
+    const requestUrl = originalRequest?.url || '';
+
+    // Don't intercept auth endpoints to avoid infinite retry loops
     if (
-      originalRequest.url?.includes('/auth/login') ||
-      originalRequest.url?.includes('/auth/refresh')
+      !originalRequest ||
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/refresh') ||
+      requestUrl.includes('/auth/logout') ||
+      requestUrl.includes('/auth/register') ||
+      requestUrl.includes('/auth/forgot-password') ||
+      requestUrl.includes('/auth/reset-password')
     ) {
       return Promise.reject(error.response?.data || error);
     }
@@ -82,17 +112,21 @@ axiosClient.interceptors.response.use(
         const response = await axios.post<{ data: { accessToken: string } }>(
           `${API_BASE_URL}/auth/refresh`,
           {},
-          { withCredentials: true },
+          { withCredentials: true, timeout: 8000 },
         );
 
         const newAccessToken = response.data?.data?.accessToken;
-        setAuthToken(newAccessToken);
-        processQueue(null, newAccessToken);
+        if (newAccessToken) {
+          setAuthToken(newAccessToken);
+          processQueue(null, newAccessToken);
 
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          }
+          return axiosClient(originalRequest);
+        } else {
+          throw new Error('No access token returned from refresh endpoint');
         }
-        return axiosClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
         setAuthToken(null);
