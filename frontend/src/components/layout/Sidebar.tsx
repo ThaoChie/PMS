@@ -57,11 +57,13 @@ export default function Sidebar({
     >
       {/* Logo */}
       <div className="h-14 flex items-center px-4 border-b border-[#E5E5E7]">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#E53E3E] flex items-center justify-center">
-            <KanbanSquare className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-semibold text-[#1A1A1A] text-sm tracking-tight">EPMS</span>
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/logoVJU.png"
+            alt="VJU Logo"
+            className="w-7 h-7 object-contain select-none"
+          />
+          <span className="font-bold text-[#1A1A1A] text-sm tracking-tight">EPMS</span>
         </div>
       </div>
 
