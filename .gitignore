@@ -1,0 +1,45 @@
+# OS & IDE
+.DS_Store
+.DS_Store?
+._*
+.vscode/
+.idea/
+
+# Sensitive Environment files
+.env
+.env.local
+.env.*.local
+*.env
+!*.env.example
+
+# Neon & Node CLI files
+.neon
+.agents/
+neon.ts
+package.json
+package-lock.json
+skills-lock.json
+node_modules/
+
+# Build artifacts
+target/
+backend/target/
+*.class
+*.jar
+*.orig
+*.patch
+
+# Temporarily ignored non-backend files
+frontend/
+casestudy/
+docs/
+docker-compose.yml
+init.sql
+patch_file.sh
+project_structure.md
+context.md
+task.md
+statusproject.md
+API_DOCUMENTATION.md
+logoVJU.png
+vercel.json
