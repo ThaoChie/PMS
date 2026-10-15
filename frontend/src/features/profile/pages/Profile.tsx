@@ -107,9 +107,16 @@ export default function Profile() {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Role</label>
-              <div className="px-3 py-2.5 border border-[#E5E5E7] rounded-lg text-sm text-[#6B6B70] bg-[#F7F7F8] capitalize">
-                {currentUser.role} (set by workspace admin)
+              <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Vai trò hệ thống (System Role)</label>
+              <div className="px-3 py-2.5 border border-[#E5E5E7] rounded-lg text-sm text-[#1A1A1A] bg-[#F7F7F8] font-medium flex items-center justify-between">
+                <span>{currentUser.role.toUpperCase()}</span>
+                <span className="text-xs text-[#6B6B70] font-normal">
+                  {currentUser.role === 'admin'
+                    ? 'Toàn quyền quản trị hệ thống'
+                    : currentUser.role === 'pm'
+                    ? 'Quản lý dự án (Tạo & Quản trị dự án)'
+                    : 'Thành viên dự án'}
+                </span>
               </div>
             </div>
             <div className="flex items-center gap-3 pt-1">

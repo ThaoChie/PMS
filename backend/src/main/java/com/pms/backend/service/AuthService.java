@@ -82,7 +82,7 @@ public class AuthService {
         }
         user.setFullName(rawName.trim());
         user.setProvider(AuthProvider.LOCAL);
-        user.setSystemRole(RoleSystem.MEMBER);
+        user.setSystemRole(RoleSystem.PM);
         user.setStatus(UserStatus.ACTIVE);
 
         user = userRepository.save(user);
