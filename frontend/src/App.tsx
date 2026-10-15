@@ -34,7 +34,7 @@ export default function App() {
 
   const [authView, setAuthView] = useState<AuthView>('login');
   const [currentScreen, setCurrentScreen] = useState<Screen>('projects');
-  const [role, setRole] = useState<Role>('member');
+  const [role, setRole] = useState<Role>('pm');
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [showCreateIssue, setShowCreateIssue] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
@@ -50,15 +50,21 @@ export default function App() {
     }
   }, [bootstrap]);
 
-  // Sync role and projects when authenticated
+  // Sync projects when authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      if (user?.role) {
-        setRole(user.role);
-      }
       fetchProjects();
     }
-  }, [isAuthenticated, user?.role, fetchProjects]);
+  }, [isAuthenticated, fetchProjects]);
+
+  // Sync active role with current project role
+  useEffect(() => {
+    if (currentProject?.myRole) {
+      setRole(currentProject.myRole);
+    } else {
+      setRole('pm');
+    }
+  }, [currentProject]);
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {

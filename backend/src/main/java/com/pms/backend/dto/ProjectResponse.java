@@ -16,6 +16,7 @@ public class ProjectResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Map<String, String> inviteResults;
+    private String myRole;
 
     public ProjectResponse() {}
 
@@ -52,4 +53,6 @@ public class ProjectResponse {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public Map<String, String> getInviteResults() { return inviteResults; }
     public void setInviteResults(Map<String, String> inviteResults) { this.inviteResults = inviteResults; }
+    public String getMyRole() { return myRole; }
+    public void setMyRole(String myRole) { this.myRole = myRole; }
 }

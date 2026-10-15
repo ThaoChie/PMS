@@ -22,7 +22,7 @@ export default function ProjectList({
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'recent'>('recent');
 
-  const canCreate = role === 'pm' || role === 'admin' || projects.length === 0;
+  const canCreate = true;
 
   useEffect(() => {
     fetchProjects({ q: searchTerm, sort: sortBy });

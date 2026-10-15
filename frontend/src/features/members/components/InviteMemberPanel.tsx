@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { X, Mail } from 'lucide-react';
 import type { Role } from '../../../types';
 
-const ROLE_OPTIONS: Role[] = ['member', 'pm', 'admin'];
+const ROLE_OPTIONS: Role[] = ['pm', 'developer', 'qa', 'member'];
 const ROLE_LABELS: Record<Role, string> = {
-  member: 'Member',
   pm: 'Project Manager',
+  developer: 'Developer',
+  qa: 'QA Engineer',
+  member: 'Member',
   admin: 'Admin',
+  viewer: 'Viewer',
 };
 
 interface InviteMemberPanelProps {

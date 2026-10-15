@@ -2,11 +2,14 @@ import React from 'react';
 import type { Role, User, MemberStatus } from '../../../types';
 import UserAvatar from '../../../components/common/UserAvatar';
 
-const ROLE_OPTIONS: Role[] = ['member', 'pm', 'admin'];
+const ROLE_OPTIONS: Role[] = ['pm', 'developer', 'qa', 'member'];
 const ROLE_LABELS: Record<Role, string> = {
-  member: 'Member',
   pm: 'Project Manager',
+  developer: 'Developer',
+  qa: 'QA Engineer',
+  member: 'Member',
   admin: 'Admin',
+  viewer: 'Viewer',
 };
 const STATUS_BADGE: Record<MemberStatus, string> = {
   Active: 'text-[#1A1A1A] bg-[#F7F7F8] border-[#E5E5E7]',

@@ -13,7 +13,7 @@ export const invitationService = {
   ): Promise<ApiResponse<ProjectInvitation>> {
     return axiosClient.post<any, ApiResponse<ProjectInvitation>>(
       `/projects/${projectId}/invitations`,
-      { email, role },
+      { email, role: role ? (role.toUpperCase() as any) : 'MEMBER' },
     );
   },
 

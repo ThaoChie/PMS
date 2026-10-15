@@ -32,4 +32,5 @@ export interface Project {
   openIssues: number;
   members: User[];
   createdAt: string;
+  myRole?: Role;
 }

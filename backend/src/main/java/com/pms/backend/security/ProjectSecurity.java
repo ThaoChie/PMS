@@ -28,7 +28,7 @@ public class ProjectSecurity {
         this.projectRepository = projectRepository;
     }
 
-    private AuthUserPrincipal getCurrentUser() {
+    public AuthUserPrincipal getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof AuthUserPrincipal principal) {
             return principal;
