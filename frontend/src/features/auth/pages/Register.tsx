@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, ArrowLeft, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, UserPlus, Loader2 } from 'lucide-react';
 import { authService } from '../../../services/authService';
 import { userService } from '../../../services/userService';
 import { useAuthStore, mapUserResponseToUser } from '../../../store/authStore';
@@ -13,7 +13,20 @@ export default function Register({ onLogin, onBack }: RegisterProps) {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [slowNotice, setSlowNotice] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    let timer: any;
+    if (loading) {
+      timer = setTimeout(() => {
+        setSlowNotice(true);
+      }, 3500);
+    } else {
+      setSlowNotice(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   function validate() {
     const e: Record<string, string> = {};
@@ -67,7 +80,15 @@ export default function Register({ onLogin, onBack }: RegisterProps) {
         }
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || 'Đăng ký không thành công. Vui lòng thử lại.';
+      const rawMsg = err?.response?.data?.message || err?.message || '';
+      let msg = 'Đăng ký không thành công. Vui lòng thử lại.';
+      if (err?.code === 'ECONNABORTED' || (typeof rawMsg === 'string' && rawMsg.toLowerCase().includes('timeout'))) {
+        msg = 'Máy chủ đang khởi động lại (Render Cold Start mất khoảng 30–45s). Hệ thống đã được đánh thức, bạn vui lòng nhấn "Đăng ký" lại một lần nữa nhé!';
+      } else if (rawMsg === 'Network Error' || (err?.isAxiosError && !err.response)) {
+        msg = 'Không thể kết nối đến máy chủ backend (máy chủ Render đang khởi động). Vui lòng thử lại sau giây lát.';
+      } else if (rawMsg) {
+        msg = rawMsg;
+      }
       setErrors({ form: msg });
     } finally {
       setLoading(false);
@@ -167,9 +188,18 @@ export default function Register({ onLogin, onBack }: RegisterProps) {
             disabled={loading}
             className="w-full py-2.5 sm:py-3 bg-[#C5221F] hover:bg-[#AA1D1B] active:bg-[#941917] text-white text-sm sm:text-base font-semibold rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 disabled:opacity-60 mt-4"
           >
-            <UserPlus className="w-4 h-4" />
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
             <span>{loading ? 'Đang tạo tài khoản…' : 'Đăng ký'}</span>
           </button>
+
+          {slowNotice && (
+            <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs sm:text-sm animate-pulse flex items-start gap-2 mt-3">
+              <Loader2 className="w-4 h-4 animate-spin text-amber-600 mt-0.5 flex-shrink-0" />
+              <span>
+                Máy chủ đang khởi động lần đầu (Render Free Tier có thể mất ~30–45 giây). Vui lòng kiên nhẫn đợi trong giây lát...
+              </span>
+            </div>
+          )}
         </form>
 
         <div className="mt-6 text-center">

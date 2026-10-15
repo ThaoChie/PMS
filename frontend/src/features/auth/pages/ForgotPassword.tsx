@@ -21,7 +21,14 @@ export default function ForgotPassword({ onBack }: ForgotPasswordProps) {
       await authService.forgotPassword(email);
       setSubmitted(true);
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra');
+      const rawMsg = err?.response?.data?.message || err?.message || '';
+      let msg = 'Có lỗi xảy ra, vui lòng thử lại';
+      if (err?.code === 'ECONNABORTED' || (typeof rawMsg === 'string' && rawMsg.toLowerCase().includes('timeout'))) {
+        msg = 'Máy chủ đang khởi động lại (Render Cold Start mất khoảng 30–45s). Hệ thống đã được đánh thức, bạn vui lòng nhấn gửi lại nhé!';
+      } else if (rawMsg) {
+        msg = rawMsg;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

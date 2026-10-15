@@ -152,10 +152,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
         return;
       }
 
+      let isExplicitlyUnauthorized = false;
       try {
-        // Enforce a 6-second timeout so Render cold start never hangs the page
+        // Allow up to 12s for bootstrap check during Render wake up
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Auth check timeout')), 6000),
+          setTimeout(() => reject(new Error('Auth check timeout')), 12000),
         );
 
         const meRes = (await Promise.race([userService.getMe(), timeoutPromise])) as any;
@@ -173,11 +174,37 @@ export const useAuthStore = create<AuthState>((set, get) => {
           });
           return;
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn('Bootstrap verification failed or timed out:', err);
+        if (err?.response?.status === 401 || err?.status === 401) {
+          isExplicitlyUnauthorized = true;
+        }
       }
 
-      // If token verification failed or timed out, clear session safely
+      // If token verification timed out or had a transient network error (NOT explicitly 401),
+      // keep the authenticated session alive using cached user from localStorage
+      if (!isExplicitlyUnauthorized && typeof window !== 'undefined') {
+        const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+        if (storedUser) {
+          try {
+            const mappedUser = JSON.parse(storedUser);
+            if (mappedUser && mappedUser.id) {
+              set({
+                user: mappedUser,
+                role: mappedUser.role || 'member',
+                accessToken: token,
+                isAuthenticated: true,
+                isLoading: false,
+              });
+              return;
+            }
+          } catch {
+            // ignore parse error
+          }
+        }
+      }
+
+      // Only clear session if explicitly 401 Unauthorized or no cached user is available
       setAuthToken(null);
       if (typeof window !== 'undefined') {
         localStorage.removeItem(USER_STORAGE_KEY);

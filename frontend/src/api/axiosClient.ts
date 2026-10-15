@@ -49,7 +49,7 @@ export const API_BASE_URL = rawBaseUrl;
 
 export const axiosClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000, // 15s timeout prevents infinite hanging during cold starts or network errors
+  timeout: 60000, // 60s timeout accommodates Render Free Tier cold starts (30-50s)
   headers: {
     'Content-Type': 'application/json',
   },
@@ -112,7 +112,7 @@ axiosClient.interceptors.response.use(
         const response = await axios.post<{ data: { accessToken: string } }>(
           `${API_BASE_URL}/auth/refresh`,
           {},
-          { withCredentials: true, timeout: 8000 },
+          { withCredentials: true, timeout: 20000 },
         );
 
         const newAccessToken = response.data?.data?.accessToken;
