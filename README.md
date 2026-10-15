@@ -37,7 +37,7 @@ Hệ thống Quản lý Dự án Doanh nghiệp (EPMS / PMS) là ứng dụng we
 
 ## 2. Hướng dẫn chạy dự án trên máy Local 
 
-Dự án đã được cấu hình toàn bộ môi trường chạy thông qua **Docker Compose** và **Multi-stage Dockerfile**. Bạn **KHÔNG CẦN** phải cài đặt Java/JDK, Maven, Node.js, npm hay PostgreSQL trên máy tính cá nhân.
+Dự án đã được cấu hình toàn bộ môi trường chạy thông qua **Docker Compose** và **Multi-stage Dockerfile**. 
 
 ### 2.1. Yêu cầu tiên quyết (Prerequisites)
 1. **Docker Desktop:** Đã cài đặt và đang chạy ([Tải Docker Desktop](https://www.docker.com/products/docker-desktop/)).
