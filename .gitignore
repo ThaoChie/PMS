@@ -11,8 +11,9 @@
 .env.*.local
 *.env
 !*.env.example
+!*.env.production.example
 
-# Neon & Node CLI files
+# Neon & Node CLI files (Root)
 .neon
 .agents/
 neon.ts
@@ -24,13 +25,14 @@ node_modules/
 # Build artifacts
 target/
 backend/target/
+frontend/dist/
+frontend/node_modules/
 *.class
 *.jar
 *.orig
 *.patch
 
-# Temporarily ignored non-backend files
-frontend/
+# Temporarily ignored project documentation & non-deploy files
 casestudy/
 docs/
 docker-compose.yml
@@ -42,4 +44,3 @@ task.md
 statusproject.md
 API_DOCUMENTATION.md
 logoVJU.png
-vercel.json
