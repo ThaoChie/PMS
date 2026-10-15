@@ -59,11 +59,6 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponse createProject(CreateProjectRequest request, User creator) {
-        // Only PM or ADMIN system_role can create project (BR-AUTH-04)
-        if (creator.getSystemRole() != RoleSystem.ADMIN && creator.getSystemRole() != RoleSystem.PM) {
-            throw new ForbiddenException("Chỉ người dùng có vai trò PM hoặc Admin mới có quyền tạo dự án");
-        }
-
         String key = request.getProjectKey() != null ? request.getProjectKey().toUpperCase().trim() : "";
         if (!Pattern.matches("^[A-Z0-9]{2,10}$", key)) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Mã dự án (key) phải gồm từ 2 đến 10 ký tự chữ hoa hoặc chữ số");
@@ -114,18 +109,30 @@ public class ProjectService {
         auditService.log("CREATE_PROJECT", "PROJECT", savedProject.getId(), savedProject.getId(), null, "Created project " + savedProject.getName());
 
         ProjectResponse response = ProjectResponse.from(savedProject);
+        response.setMyRole("PM");
         response.setInviteResults(inviteResults);
         return response;
     }
 
     public PageWrapper<ProjectResponse> getProjects(Long userId, RoleSystem systemRole, String q, String sort, int page, int size) {
-        return projectListHibernateDao.findProjects(userId, systemRole, q, sort, page, size);
+        PageWrapper<ProjectResponse> pageWrapper = projectListHibernateDao.findProjects(userId, systemRole, q, sort, page, size);
+        for (ProjectResponse pr : pageWrapper.getContent()) {
+            projectMemberRepository.findByProjectIdAndUserId(pr.getId(), userId)
+                    .ifPresent(pm -> pr.setMyRole(pm.getRole().name()));
+        }
+        return pageWrapper;
     }
 
     public ProjectResponse getProjectById(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + projectId));
-        return ProjectResponse.from(project);
+        ProjectResponse res = ProjectResponse.from(project);
+        AuthUserPrincipal principal = projectSecurity.getCurrentUser();
+        if (principal != null) {
+            projectMemberRepository.findByProjectIdAndUserId(projectId, principal.getId())
+                    .ifPresent(pm -> res.setMyRole(pm.getRole().name()));
+        }
+        return res;
     }
 
     @Transactional

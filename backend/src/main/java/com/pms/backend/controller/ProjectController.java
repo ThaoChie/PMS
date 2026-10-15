@@ -36,7 +36,7 @@ public class ProjectController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PM')")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<ProjectResponse> createProject(@Valid @RequestBody CreateProjectRequest request) {
         AuthUserPrincipal principal = getAuthPrincipal();
         User creator = userService.getUserById(principal.getId());
