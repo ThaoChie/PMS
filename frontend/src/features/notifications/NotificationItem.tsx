@@ -13,9 +13,9 @@ export function NotifIcon({ type }: { type: NotificationType }) {
 
 export function formatRelTime(iso: string) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+  return `${Math.floor(diff / 86400)} ngày trước`;
 }
 
 interface NotificationItemProps {
@@ -65,7 +65,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                 onAcceptInvite ? onAcceptInvite(n.id) : onRead?.(n.id);
               }}
             >
-              Accept
+              Chấp nhận
             </button>
             <button
               className="px-3 py-1 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
@@ -74,7 +74,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                 onDeclineInvite ? onDeclineInvite(n.id) : onRead?.(n.id);
               }}
             >
-              Decline
+              Từ chối
             </button>
           </div>
         )}

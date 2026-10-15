@@ -32,7 +32,7 @@ export default function TransitionEditor({
           </svg>
         </div>
         <p className="text-xs text-[#9B9B9F]">
-          Click an arrow in the workflow diagram to configure that transition
+          Nhấp vào mũi tên trong sơ đồ quy trình để cấu hình bước chuyển đó
         </p>
       </div>
     );
@@ -63,9 +63,9 @@ export default function TransitionEditor({
             {editIsApproval && <Check className="w-2.5 h-2.5 text-white" />}
           </button>
           <div>
-            <p className="text-xs font-medium text-[#1A1A1A]">Mark as approval step</p>
+            <p className="text-xs font-medium text-[#1A1A1A]">Đánh dấu là bước cần phê duyệt</p>
             <p className="text-[10px] text-[#9B9B9F] mt-0.5">
-              Only PMs and Admins can complete this transition
+              Chỉ Quản lý dự án (PM) và Admin mới có thể thực hiện bước chuyển này
             </p>
           </div>
         </div>
@@ -73,16 +73,16 @@ export default function TransitionEditor({
         {/* Required field */}
         <div>
           <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
-            Required field before transition
+            Trường dữ liệu bắt buộc trước khi chuyển
           </label>
           <input
             value={editRequiresField}
             onChange={(e) => setEditRequiresField(e.target.value)}
-            placeholder="e.g. Assignee, Rejection Reason"
+            placeholder="Ví dụ: Người thực hiện, Lý do từ chối"
             className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none focus:border-[#1A1A1A] transition-colors"
           />
           <p className="text-[10px] text-[#9B9B9F] mt-1">
-            Leave blank to require no specific field
+            Để trống nếu không yêu cầu trường bắt buộc cụ thể
           </p>
         </div>
 
@@ -90,8 +90,7 @@ export default function TransitionEditor({
           <div className="flex items-start gap-2 bg-[#FDECEC] rounded-lg p-2.5">
             <AlertCircle className="w-3.5 h-3.5 text-[#E53E3E] shrink-0 mt-0.5" />
             <p className="text-[10px] text-[#E53E3E]">
-              This transition requires PM or Admin approval. Team members cannot complete it
-              directly.
+              Bước chuyển này cần sự phê duyệt của PM hoặc Admin. Thành viên dự án không thể trực tiếp hoàn tất.
             </p>
           </div>
         )}
@@ -103,14 +102,14 @@ export default function TransitionEditor({
           onClick={() => onSave(editRequiresField || undefined, editIsApproval)}
           className="flex-1 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
         >
-          Save
+          Lưu
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="px-3 py-2 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
         >
-          Cancel
+          Hủy
         </button>
       </div>
     </div>

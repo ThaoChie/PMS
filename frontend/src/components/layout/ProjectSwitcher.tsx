@@ -59,7 +59,7 @@ export default function ProjectSwitcher({
                 </div>
                 <span className="truncate text-[#1A1A1A]">{p.name}</span>
                 {p.status === 'Closed' && (
-                  <span className="ml-auto text-[10px] text-[#6B6B70]">Closed</span>
+                  <span className="ml-auto text-[10px] text-[#6B6B70]">Đã đóng</span>
                 )}
               </button>
             ))}
@@ -75,7 +75,7 @@ export default function ProjectSwitcher({
                   }}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  New Project
+                  Tạo dự án mới
                 </button>
               </div>
             )}

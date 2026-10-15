@@ -8,11 +8,23 @@ interface InvitationCardProps {
   onDecline: (id: string) => void;
 }
 
+const ROLE_NAMES: Record<string, string> = {
+  pm: 'Quản lý dự án (PM)',
+  developer: 'Lập trình viên (Developer)',
+  qa: 'Kiểm thử viên (QA)',
+  member: 'Thành viên',
+  admin: 'Quản trị viên',
+  viewer: 'Người xem',
+};
+
 export default function InvitationCard({
   invitation,
   onAccept,
   onDecline,
 }: InvitationCardProps) {
+  const roleKey = (invitation.role || '').toLowerCase();
+  const displayRole = ROLE_NAMES[roleKey] || invitation.role;
+
   return (
     <div className="flex items-center justify-between p-4 bg-white border border-[#E5E5E7] rounded-xl hover:border-[#C5C5C8] transition-colors">
       <div className="flex items-center gap-3">
@@ -26,7 +38,7 @@ export default function InvitationCard({
                 Dự án <span className="text-[#C5221F] font-bold">{invitation.projectName}</span> ·{' '}
               </>
             ) : null}
-            Vai trò <span className="capitalize">{invitation.role}</span>
+            Vai trò: <span className="text-[#1E293B] font-medium">{displayRole}</span>
           </p>
           <p className="text-[11px] text-[#6B6B70] mt-0.5">
             Người gửi: {invitation.inviter?.name || invitation.inviterName || 'Quản trị viên'}

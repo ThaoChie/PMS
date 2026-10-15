@@ -14,17 +14,17 @@ import ProjectSwitcher from './ProjectSwitcher';
 import UserMenu from './UserMenu';
 
 const NAV_ITEMS = [
-  { id: 'dashboard' as Screen, label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'board' as Screen, label: 'Board', icon: KanbanSquare },
-  { id: 'issues' as Screen, label: 'Issues', icon: ListTodo },
-  { id: 'saved-filters' as Screen, label: 'Saved Filters', icon: Bookmark },
-  { id: 'reports' as Screen, label: 'Reports', icon: BarChart3 },
+  { id: 'dashboard' as Screen, label: 'Tổng quan', icon: LayoutDashboard },
+  { id: 'board' as Screen, label: 'Bảng công việc', icon: KanbanSquare },
+  { id: 'issues' as Screen, label: 'Danh sách công việc', icon: ListTodo },
+  { id: 'saved-filters' as Screen, label: 'Bộ lọc đã lưu', icon: Bookmark },
+  { id: 'reports' as Screen, label: 'Báo cáo', icon: BarChart3 },
 ];
 
 const SETTINGS_NAV = [
-  { id: 'members-roles' as Screen, label: 'Members & Roles', icon: Users },
-  { id: 'workflow' as Screen, label: 'Workflow', icon: GitBranch },
-  { id: 'project-settings' as Screen, label: 'Project Settings', icon: Settings },
+  { id: 'members-roles' as Screen, label: 'Thành viên & Vai trò', icon: Users },
+  { id: 'workflow' as Screen, label: 'Quy trình làm việc', icon: GitBranch },
+  { id: 'project-settings' as Screen, label: 'Cài đặt dự án', icon: Settings },
 ];
 
 interface SidebarProps {
@@ -100,7 +100,7 @@ export default function Sidebar({
             <div className="pt-3 pb-1">
               <div className="h-px bg-[#E5E5E7] mx-1" />
               <p className="text-[10px] font-medium text-[#9B9B9F] uppercase tracking-wider px-2 pt-3 pb-1">
-                Project Settings
+                Cài đặt dự án
               </p>
             </div>
             {SETTINGS_NAV.map(({ id, label, icon: Icon }) => (

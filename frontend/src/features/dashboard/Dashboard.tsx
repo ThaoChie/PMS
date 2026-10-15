@@ -27,14 +27,14 @@ export default function Dashboard({ role, onSelectIssue, onNavigate }: Dashboard
   const recentActivity = notifications.slice(0, 4);
 
   const stats = [
-    { label: 'Open issues', value: openIssues.length, icon: ListTodo, sub: 'EPMS Platform' },
-    { label: 'Bugs open', value: bugCount, icon: Bug, sub: 'across all types', atRisk: bugCount > 2 },
-    { label: 'Pending approval', value: pendingApproval, icon: KanbanSquare, sub: 'awaiting review' },
+    { label: 'Việc đang mở', value: openIssues.length, icon: ListTodo, sub: 'Dự án hiện tại' },
+    { label: 'Lỗi chưa sửa', value: bugCount, icon: Bug, sub: 'trên toàn bộ hệ thống', atRisk: bugCount > 2 },
+    { label: 'Chờ phê duyệt', value: pendingApproval, icon: KanbanSquare, sub: 'đang chờ xem xét' },
     {
-      label: 'Overdue',
+      label: 'Quá hạn',
       value: overdueIssues.length,
       icon: Clock,
-      sub: 'past due date',
+      sub: 'đã qua hạn chót',
       atRisk: overdueIssues.length > 0,
     },
   ];
@@ -43,9 +43,9 @@ export default function Dashboard({ role, onSelectIssue, onNavigate }: Dashboard
     <div className="h-full overflow-y-auto bg-white">
       <div className="max-w-5xl mx-auto px-8 py-10">
         <div className="mb-8">
-          <h1 className="text-xl font-bold text-[#1A1A1A]">Dashboard</h1>
+          <h1 className="text-xl font-bold text-[#1A1A1A]">Tổng quan</h1>
           <p className="text-sm text-[#6B6B70] mt-0.5">
-            Welcome back, Alex — here's what needs your attention
+            Chào mừng bạn quay lại — đây là các thông tin cần chú ý
           </p>
         </div>
 

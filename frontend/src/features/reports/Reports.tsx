@@ -15,16 +15,16 @@ export default function Reports({ role }: ReportsProps) {
     <div className="h-full overflow-y-auto bg-white">
       <div className="max-w-5xl mx-auto px-8 py-10">
         <div className="mb-8">
-          <h1 className="text-xl font-bold text-[#1A1A1A]">Reports</h1>
-          <p className="text-sm text-[#6B6B70] mt-0.5">EPMS Platform · Sprint 7 · Mar 1 – Mar 19</p>
+          <h1 className="text-xl font-bold text-[#1A1A1A]">Báo cáo & Thống kê</h1>
+          <p className="text-sm text-[#6B6B70] mt-0.5">Tiến độ và hiệu suất công việc trong dự án</p>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-[#E5E5E7] mb-8">
           {[
-            { id: 'progress' as const, label: 'Progress' },
-            { id: 'productivity' as const, label: 'Productivity' },
-            { id: 'bugs' as const, label: 'Bug Report' },
+            { id: 'progress' as const, label: 'Tiến độ' },
+            { id: 'productivity' as const, label: 'Năng suất' },
+            { id: 'bugs' as const, label: 'Báo cáo lỗi (Bugs)' },
           ].map(t => (
             <button
               key={t.id}

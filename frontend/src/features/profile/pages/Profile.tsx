@@ -65,9 +65,9 @@ export default function Profile() {
     <div className="h-full overflow-y-auto bg-white">
       <div className="max-w-2xl mx-auto px-8 py-10">
         <div className="mb-8">
-          <h1 className="text-xl font-bold text-[#1A1A1A]">My Profile</h1>
+          <h1 className="text-xl font-bold text-[#1A1A1A]">Hồ sơ cá nhân</h1>
           <p className="text-sm text-[#6B6B70] mt-0.5">
-            Manage your personal information and account settings
+            Quản lý thông tin cá nhân và cài đặt tài khoản của bạn
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export default function Profile() {
 
         {/* Profile section */}
         <div className="bg-white border border-[#E5E5E7] rounded-xl p-6 mb-5">
-          <h2 className="text-sm font-semibold text-[#1A1A1A] mb-5">Profile information</h2>
+          <h2 className="text-sm font-semibold text-[#1A1A1A] mb-5">Thông tin tài khoản</h2>
 
           <AvatarUpload user={currentUser} onUpload={handleAvatarUpload} />
 
@@ -87,7 +87,7 @@ export default function Profile() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
-                  Display name
+                  Tên hiển thị
                 </label>
                 <input
                   value={name}
@@ -97,7 +97,7 @@ export default function Profile() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
-                  Email address
+                  Địa chỉ email
                 </label>
                 <input
                   value={email}
@@ -112,11 +112,11 @@ export default function Profile() {
                 disabled={saving}
                 className="px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-60 transition-colors"
               >
-                {saving ? 'Saving…' : 'Save changes'}
+                {saving ? 'Đang lưu…' : 'Lưu thay đổi'}
               </button>
               {saved && (
                 <span className="flex items-center gap-1.5 text-xs text-[#1A1A1A]">
-                  <Check className="w-3.5 h-3.5" /> Saved
+                  <Check className="w-3.5 h-3.5" /> Đã lưu ✓
                 </span>
               )}
             </div>
@@ -129,8 +129,7 @@ export default function Profile() {
         ) : (
           <div className="bg-[#F7F7F8] border border-[#E5E5E7] rounded-xl p-5">
             <p className="text-xs text-[#6B6B70]">
-              Your account is authenticated via Google. Password management is handled through your
-              Google account.
+              Tài khoản của bạn được liên kết qua Google. Quản lý mật khẩu được xử lý thông qua tài khoản Google của bạn.
             </p>
           </div>
         )}

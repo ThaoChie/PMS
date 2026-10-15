@@ -99,9 +99,9 @@ export default function WorkflowSettings() {
     <div className="h-full overflow-y-auto bg-white">
       <div className="max-w-4xl mx-auto px-8 py-10">
         <div className="mb-8">
-          <h1 className="text-xl font-bold text-[#1A1A1A]">Workflow Configuration</h1>
+          <h1 className="text-xl font-bold text-[#1A1A1A]">Cấu hình quy trình làm việc</h1>
           <p className="text-sm text-[#6B6B70] mt-0.5">
-            Define status transitions and approval gates for issues in this project
+            Định nghĩa các bước chuyển trạng thái và cổng phê duyệt cho công việc trong dự án
           </p>
         </div>
 
@@ -109,19 +109,19 @@ export default function WorkflowSettings() {
           {/* Visual editor */}
           <div className="lg:col-span-2 border border-[#E5E5E7] rounded-xl overflow-hidden bg-white">
             <div className="px-5 py-3 border-b border-[#E5E5E7] bg-[#F7F7F8] flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#1A1A1A]">Visual workflow</span>
+              <span className="text-xs font-semibold text-[#1A1A1A]">Sơ đồ quy trình trực quan</span>
               <div className="flex items-center gap-4 text-[10px] text-[#9B9B9F]">
                 <div className="flex items-center gap-1.5">
                   <div className="w-5 h-0.5 bg-[#C5C5C8]" />
-                  <span>Transition</span>
+                  <span>Bước chuyển</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-5 h-0.5 bg-[#E53E3E]" />
-                  <span>Approval gate</span>
+                  <span>Cổng phê duyệt</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-5 border-t border-dashed border-[#C5C5C8]" />
-                  <span>Requires field</span>
+                  <span>Yêu cầu trường dữ liệu</span>
                 </div>
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function WorkflowSettings() {
           {/* Transition config panel */}
           <div className="border border-[#E5E5E7] rounded-xl overflow-hidden flex flex-col bg-white">
             <div className="px-4 py-3 border-b border-[#E5E5E7] bg-[#F7F7F8]">
-              <span className="text-xs font-semibold text-[#1A1A1A]">Transition settings</span>
+              <span className="text-xs font-semibold text-[#1A1A1A]">Cài đặt bước chuyển</span>
             </div>
 
             <TransitionEditor
@@ -193,22 +193,22 @@ export default function WorkflowSettings() {
         {/* All Transitions list */}
         <div className="mt-5 border border-[#E5E5E7] rounded-xl overflow-hidden bg-white">
           <div className="px-5 py-3 border-b border-[#E5E5E7] bg-[#F7F7F8]">
-            <span className="text-xs font-semibold text-[#1A1A1A]">All transitions</span>
+            <span className="text-xs font-semibold text-[#1A1A1A]">Danh sách tất cả bước chuyển</span>
           </div>
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#F0F0F1]">
                 <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-                  From
+                  Từ trạng thái
                 </th>
                 <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-                  To
+                  Đến trạng thái
                 </th>
                 <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-                  Requires field
+                  Yêu cầu trường dữ liệu
                 </th>
                 <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-                  Approval step
+                  Cần phê duyệt
                 </th>
               </tr>
             </thead>
@@ -231,10 +231,10 @@ export default function WorkflowSettings() {
                   <td className="px-5 py-2.5">
                     {t.isApprovalStep ? (
                       <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#FDECEC] text-[#E53E3E] border border-[#E53E3E]/20">
-                        Yes
+                        Có
                       </span>
                     ) : (
-                      <span className="text-xs text-[#9B9B9F]">No</span>
+                      <span className="text-xs text-[#9B9B9F]">Không</span>
                     )}
                   </td>
                 </tr>

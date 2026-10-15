@@ -64,7 +64,7 @@ export default function Topbar({
         onClick={onSearch}
       >
         <Search className="w-3.5 h-3.5" />
-        <span className="text-xs">Search issues, projects…</span>
+        <span className="text-xs">Tìm kiếm công việc, dự án…</span>
         <kbd className="ml-auto text-[10px] text-[#9B9B9F] border border-[#E5E5E7] rounded px-1 py-0.5">
           ⌘K
         </kbd>
@@ -94,11 +94,11 @@ export default function Topbar({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E5E7]">
-                <h3 className="text-sm font-semibold text-[#1A1A1A]">Notifications</h3>
+                <h3 className="text-sm font-semibold text-[#1A1A1A]">Thông báo</h3>
                 <div className="flex items-center gap-2">
                   {unreadCount > 0 && (
                     <span className="text-[10px] text-[#E53E3E] font-medium">
-                      {unreadCount} unread
+                      {unreadCount} chưa đọc
                     </span>
                   )}
                   <button
@@ -109,7 +109,7 @@ export default function Topbar({
                       setNotifOpen(false);
                     }}
                   >
-                    View all
+                    Xem tất cả
                   </button>
                 </div>
               </div>
@@ -150,7 +150,7 @@ export default function Topbar({
           onClick={onCreateIssue}
         >
           <Plus className="w-3.5 h-3.5" />
-          Create Issue
+          Tạo công việc
         </button>
 
         {/* User avatar toggle */}

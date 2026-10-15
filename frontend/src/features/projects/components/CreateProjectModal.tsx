@@ -91,7 +91,7 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E5E7]">
-          <h2 className="text-sm font-semibold text-[#1A1A1A]">Create project</h2>
+          <h2 className="text-sm font-semibold text-[#1A1A1A]">Tạo dự án mới</h2>
           <button
             type="button"
             onClick={onClose}
@@ -151,12 +151,12 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
             )}
             <div>
               <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
-                Project name <span className="text-[#E53E3E]">*</span>
+                Tên dự án <span className="text-[#E53E3E]">*</span>
               </label>
               <input
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="e.g. Mobile App Redesign"
+                placeholder="Ví dụ: Thiết kế ứng dụng di động"
                 className={inputCls}
                 required
               />
@@ -164,31 +164,31 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
 
           <div>
             <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
-              Project key <span className="text-[#E53E3E]">*</span>
+              Mã dự án (Key) <span className="text-[#E53E3E]">*</span>
             </label>
             <input
               value={key}
               onChange={(e) =>
                 setKey(e.target.value.toUpperCase().slice(0, 6).replace(/[^A-Z0-9]/g, ''))
               }
-              placeholder="e.g. MAR"
+              placeholder="Ví dụ: MAR"
               className={`${inputCls} font-mono uppercase`}
               maxLength={6}
               required
             />
             <p className="text-[10px] text-[#9B9B9F] mt-1">
-              2–6 characters. Used as a prefix for issue keys, e.g. MAR-1.
+              Từ 2–6 ký tự chữ hoa/số. Dùng làm tiền tố mã công việc (ví dụ MAR-1).
             </p>
           </div>
 
           <div>
             <label className="flex items-center gap-1 text-xs font-medium text-[#1A1A1A] mb-1.5">
-              Description <span className="text-[10px] text-[#9B9B9F] font-normal">optional</span>
+              Mô tả dự án <span className="text-[10px] text-[#9B9B9F] font-normal">(tùy chọn)</span>
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of the project's purpose and goals"
+              placeholder="Mô tả ngắn gọn về mục tiêu và phạm vi của dự án"
               rows={3}
               className={`${inputCls} resize-none`}
             />
@@ -196,7 +196,7 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
 
           <div>
             <label className="flex items-center gap-1 text-xs font-medium text-[#1A1A1A] mb-1.5">
-              Invite members <span className="text-[10px] text-[#9B9B9F] font-normal">optional</span>
+              Mời thành viên ban đầu <span className="text-[10px] text-[#9B9B9F] font-normal">(tùy chọn)</span>
             </label>
             <div className="space-y-2">
               {memberEmails.map((email, i) => (
@@ -205,7 +205,7 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
                     type="email"
                     value={email}
                     onChange={(e) => updateEmail(i, e.target.value)}
-                    placeholder="colleague@company.com"
+                    placeholder="dongnghiep@company.com"
                     className={`${inputCls} flex-1`}
                   />
                   {memberEmails.length > 1 && (
@@ -224,7 +224,7 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
                 onClick={addEmail}
                 className="flex items-center gap-1.5 text-xs text-[#6B6B70] hover:text-[#1A1A1A] transition-colors"
               >
-                <Plus className="w-3.5 h-3.5" /> Add another
+                <Plus className="w-3.5 h-3.5" /> + Thêm email khác
               </button>
             </div>
           </div>
@@ -235,14 +235,14 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
               onClick={onClose}
               className="px-4 py-2 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
               disabled={saving || !name.trim() || !key.trim()}
               className="px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {saving ? 'Creating…' : 'Create project'}
+              {saving ? 'Đang tạo…' : 'Tạo dự án'}
             </button>
           </div>
         </form>

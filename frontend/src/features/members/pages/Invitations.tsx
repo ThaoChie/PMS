@@ -68,7 +68,7 @@ export default function Invitations() {
     <div className="h-full overflow-y-auto bg-white">
       <div className="max-w-3xl mx-auto px-8 py-10">
         <div className="mb-8">
-          <h1 className="text-xl font-bold text-[#1A1A1A]">Project Invitations</h1>
+          <h1 className="text-xl font-bold text-[#1A1A1A]">Lời mời tham gia dự án</h1>
           <p className="text-sm text-[#6B6B70] mt-0.5">
             Các lời mời tham gia dự án đang chờ bạn phản hồi
           </p>

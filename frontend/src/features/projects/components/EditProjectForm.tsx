@@ -26,10 +26,10 @@ export default function EditProjectForm({ project, canEdit, onSave }: EditProjec
 
   return (
     <div className="bg-white border border-[#E5E5E7] rounded-xl p-6 mb-5">
-      <h2 className="text-sm font-semibold text-[#1A1A1A] mb-5">General</h2>
+      <h2 className="text-sm font-semibold text-[#1A1A1A] mb-5">Thông tin chung</h2>
       <form onSubmit={handleSave} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Project name</label>
+          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Tên dự án</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -38,18 +38,18 @@ export default function EditProjectForm({ project, canEdit, onSave }: EditProjec
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Project key</label>
+          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Mã dự án (Key)</label>
           <input
             value={project.key}
             disabled
             className="w-full px-3 py-2.5 border border-[#E5E5E7] rounded-lg text-sm text-[#9B9B9F] bg-[#F7F7F8] cursor-not-allowed font-mono"
           />
           <p className="text-[10px] text-[#9B9B9F] mt-1">
-            Project key cannot be changed after creation.
+            Mã dự án không thể thay đổi sau khi tạo.
           </p>
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Description</label>
+          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Mô tả dự án</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -64,9 +64,9 @@ export default function EditProjectForm({ project, canEdit, onSave }: EditProjec
               type="submit"
               className="px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
             >
-              Save changes
+              Lưu thay đổi
             </button>
-            {saved && <span className="text-xs text-[#1A1A1A]">Saved ✓</span>}
+            {saved && <span className="text-xs text-[#1A1A1A]">Đã lưu ✓</span>}
           </div>
         )}
       </form>

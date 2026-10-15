@@ -53,7 +53,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
       <div>
         <label className="flex items-center gap-1.5 text-xs font-medium text-[#1A1A1A] mb-1.5">
           {label}
-          {optional && <span className="text-[10px] text-[#9B9B9F] font-normal">optional</span>}
+          {optional && <span className="text-[10px] text-[#9B9B9F] font-normal">tùy chọn</span>}
         </label>
         {children}
       </div>
@@ -75,7 +75,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E5E7] shrink-0">
-          <h2 className="text-sm font-semibold text-[#1A1A1A]">Create issue</h2>
+          <h2 className="text-sm font-semibold text-[#1A1A1A]">Tạo công việc mới</h2>
           <button
             type="button"
             onClick={onClose}
@@ -89,7 +89,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <div className="overflow-y-auto flex-1 px-6 py-5">
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <Field label="Project">
+              <Field label="Dự án">
                 <select
                   value={form.project}
                   onChange={(e) => set('project', e.target.value)}
@@ -102,27 +102,27 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   ))}
                 </select>
               </Field>
-              <Field label="Issue type">
+              <Field label="Loại công việc">
                 <select
                   value={form.type}
                   onChange={(e) => set('type', e.target.value as IssueType)}
                   className={selectCls}
                 >
-                  {(['Story', 'Bug', 'Task', 'Epic', 'Sub-task'] as IssueType[]).map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
+                  <option value="Story">Story (Câu chuyện)</option>
+                  <option value="Task">Task (Tác vụ)</option>
+                  <option value="Bug">Bug (Lỗi phần mềm)</option>
+                  <option value="Epic">Epic (Sử thi / Tính năng lớn)</option>
+                  <option value="Sub-task">Sub-task (Tác vụ con)</option>
                 </select>
               </Field>
             </div>
 
             <div className="mb-4">
-              <Field label="Summary">
+              <Field label="Tóm tắt công việc">
                 <input
                   value={form.summary}
                   onChange={(e) => set('summary', e.target.value)}
-                  placeholder="Short, clear description of the issue"
+                  placeholder="Mô tả ngắn gọn, rõ ràng về công việc cần thực hiện"
                   className={inputCls}
                   required
                 />
@@ -130,11 +130,11 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
             </div>
 
             <div className="mb-4">
-              <Field label="Description" optional>
+              <Field label="Mô tả chi tiết" optional>
                 <textarea
                   value={form.description}
                   onChange={(e) => set('description', e.target.value)}
-                  placeholder="Describe the issue in detail, steps to reproduce, expected vs. actual behavior…"
+                  placeholder="Mô tả chi tiết yêu cầu, các bước tái hiện, kết quả mong đợi…"
                   rows={4}
                   className={`${inputCls} resize-none`}
                 />
@@ -142,39 +142,37 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
             </div>
 
             <div className="grid grid-cols-3 gap-4 mb-4">
-              <Field label="Status">
+              <Field label="Trạng thái">
                 <select
                   value={form.status}
                   onChange={(e) => set('status', e.target.value as IssueStatus)}
                   className={selectCls}
                 >
-                  {['To Do', 'In Progress', 'Pending Approval', 'Done'].map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
+                  <option value="To Do">Cần làm (To Do)</option>
+                  <option value="In Progress">Đang thực hiện (In Progress)</option>
+                  <option value="Pending Approval">Chờ phê duyệt (Pending Approval)</option>
+                  <option value="Done">Hoàn thành (Done)</option>
                 </select>
               </Field>
-              <Field label="Priority">
+              <Field label="Mức độ ưu tiên">
                 <select
                   value={form.priority}
                   onChange={(e) => set('priority', e.target.value as Priority)}
                   className={selectCls}
                 >
-                  {(['Critical', 'High', 'Medium', 'Low'] as Priority[]).map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
+                  <option value="Critical">Khẩn cấp (Critical)</option>
+                  <option value="High">Cao (High)</option>
+                  <option value="Medium">Trung bình (Medium)</option>
+                  <option value="Low">Thấp (Low)</option>
                 </select>
               </Field>
-              <Field label="Assignee" optional>
+              <Field label="Người thực hiện" optional>
                 <select
                   value={form.assignee}
                   onChange={(e) => set('assignee', e.target.value)}
                   className={selectCls}
                 >
-                  <option value="">Unassigned</option>
+                  <option value="">Chưa phân công</option>
                   {users.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.name}
@@ -185,26 +183,26 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <Field label="Labels" optional>
+              <Field label="Nhãn (Labels)" optional>
                 <input
                   value={form.labels}
                   onChange={(e) => set('labels', e.target.value)}
-                  placeholder="e.g. security, ux, api (comma-separated)"
+                  placeholder="Ví dụ: security, ux, api (cách nhau bởi dấu phẩy)"
                   className={inputCls}
                 />
               </Field>
-              <Field label="Estimate" optional>
+              <Field label="Ước tính thời gian" optional>
                 <input
                   value={form.estimates}
                   onChange={(e) => set('estimates', e.target.value)}
-                  placeholder="e.g. 3 days, 2h30m"
+                  placeholder="Ví dụ: 3 days, 2h30m"
                   className={inputCls}
                 />
               </Field>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <Field label="Due date" optional>
+              <Field label="Hạn hoàn thành" optional>
                 <input
                   type="date"
                   value={form.dueDate}
@@ -212,22 +210,22 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   className={inputCls}
                 />
               </Field>
-              <Field label="Environment" optional>
+              <Field label="Môi trường" optional>
                 <input
                   value={form.environment}
                   onChange={(e) => set('environment', e.target.value)}
-                  placeholder="e.g. Production, Staging"
+                  placeholder="Ví dụ: Production, Staging"
                   className={inputCls}
                 />
               </Field>
             </div>
 
             <div className="mb-2">
-              <Field label="Epic link" optional>
+              <Field label="Liên kết Epic" optional>
                 <input
                   value={form.epicLink}
                   onChange={(e) => set('epicLink', e.target.value)}
-                  placeholder="e.g. EPMS-50"
+                  placeholder="Ví dụ: EPMS-50"
                   className={`${inputCls} font-mono text-[13px]`}
                 />
               </Field>
@@ -241,14 +239,14 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
               onClick={onClose}
               className="px-4 py-2 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
               disabled={saving || !form.summary.trim()}
               className="px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {saving ? 'Creating…' : 'Create issue'}
+              {saving ? 'Đang tạo…' : 'Tạo công việc'}
             </button>
           </div>
         </form>

@@ -4,12 +4,12 @@ import type { Role } from '../../../types';
 
 const ROLE_OPTIONS: Role[] = ['pm', 'developer', 'qa', 'member'];
 const ROLE_LABELS: Record<Role, string> = {
-  pm: 'Project Manager',
-  developer: 'Developer',
-  qa: 'QA Engineer',
-  member: 'Member',
-  admin: 'Admin',
-  viewer: 'Viewer',
+  pm: 'Quản lý dự án (PM)',
+  developer: 'Lập trình viên (Developer)',
+  qa: 'Kiểm thử viên (QA)',
+  member: 'Thành viên',
+  admin: 'Quản trị viên',
+  viewer: 'Người xem',
 };
 
 interface InviteMemberPanelProps {
@@ -31,7 +31,7 @@ export default function InviteMemberPanel({ onClose, onInvite }: InviteMemberPan
   return (
     <div className="border border-[#E5E5E7] rounded-xl p-5 mb-6 bg-[#F7F7F8]">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-[#1A1A1A]">Invite member</h3>
+        <h3 className="text-sm font-semibold text-[#1A1A1A]">Mời thành viên vào dự án</h3>
         <button
           type="button"
           onClick={onClose}
@@ -42,18 +42,18 @@ export default function InviteMemberPanel({ onClose, onInvite }: InviteMemberPan
       </div>
       <form onSubmit={handleSubmit} className="flex items-end gap-3">
         <div className="flex-1">
-          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Email address</label>
+          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Địa chỉ email</label>
           <input
             type="email"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
-            placeholder="colleague@company.com"
+            placeholder="dongnghiep@company.com"
             className="w-full px-3 py-2.5 border border-[#E5E5E7] rounded-lg text-sm text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none focus:border-[#1A1A1A] bg-white transition-colors"
             required
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Role</label>
+          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Vai trò trong dự án</label>
           <select
             value={inviteRole}
             onChange={(e) => setInviteRole(e.target.value as Role)}
@@ -70,7 +70,7 @@ export default function InviteMemberPanel({ onClose, onInvite }: InviteMemberPan
           type="submit"
           className="px-4 py-2.5 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors flex items-center gap-1.5"
         >
-          <Mail className="w-3.5 h-3.5" /> Send invite
+          <Mail className="w-3.5 h-3.5" /> Gửi lời mời
         </button>
       </form>
     </div>

@@ -126,14 +126,14 @@ export default function IssueDetailDrawer({
                 className="px-3 py-1.5 bg-[#1A1A1A] text-white text-xs font-medium rounded-lg hover:bg-[#333] transition-colors"
                 onClick={() => handleStatusChange('Done')}
               >
-                Approve
+                Phê duyệt
               </button>
               <button
                 type="button"
                 className="px-3 py-1.5 border border-[#E53E3E] text-[#E53E3E] text-xs font-medium rounded-lg hover:bg-[#E53E3E] hover:text-white transition-colors"
                 onClick={() => setShowRejectForm(true)}
               >
-                Reject
+                Từ chối
               </button>
             </div>
           )}
@@ -143,12 +143,12 @@ export default function IssueDetailDrawer({
         {showRejectForm && (
           <div className="px-5 py-3 border-b border-[#E5E5E7] bg-[#FDECEC] shrink-0">
             <p className="text-xs font-medium text-[#E53E3E] mb-2 flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5" /> Rejection reason (required)
+              <AlertTriangle className="w-3.5 h-3.5" /> Lý do từ chối (bắt buộc)
             </p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Explain why this issue is being rejected…"
+              placeholder="Giải thích lý do công việc này bị từ chối…"
               rows={2}
               className="w-full px-3 py-2 border border-[#E53E3E]/30 rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#E53E3E] resize-none bg-white transition-colors"
             />
@@ -158,7 +158,7 @@ export default function IssueDetailDrawer({
                 onClick={() => setShowRejectForm(false)}
                 className="px-3 py-1.5 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-white transition-colors"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="button"
@@ -170,7 +170,7 @@ export default function IssueDetailDrawer({
                 }}
                 className="px-3 py-1.5 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                Reject & return
+                Từ chối &amp; Trả lại
               </button>
             </div>
           </div>
@@ -181,11 +181,11 @@ export default function IssueDetailDrawer({
           {/* Description */}
           <div className="mb-5">
             <h4 className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider mb-2">
-              Description
+              Mô tả
             </h4>
             <div className="text-xs text-[#1A1A1A] leading-relaxed whitespace-pre-wrap bg-[#F7F7F8] rounded-lg p-3 border border-[#E5E5E7]">
               {issue.description || (
-                <span className="text-[#9B9B9F] italic">No description provided.</span>
+                <span className="text-[#9B9B9F] italic">Chưa có thông tin mô tả.</span>
               )}
             </div>
           </div>
@@ -193,7 +193,7 @@ export default function IssueDetailDrawer({
           {/* Details / Attributes */}
           <div className="mb-5">
             <h4 className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider mb-2">
-              Details
+              Chi tiết công việc
             </h4>
             <AttributesPanel issue={issue} />
           </div>

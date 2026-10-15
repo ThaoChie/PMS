@@ -25,7 +25,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     <div className="w-80 sm:w-96 bg-white border border-[#E5E5E7] rounded-xl shadow-lg overflow-hidden z-50">
       <div className="px-4 py-3 border-b border-[#E5E5E7] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-[#1A1A1A]">Notifications</span>
+          <span className="text-xs font-semibold text-[#1A1A1A]">Thông báo</span>
           {unreadCount > 0 && (
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-[#E53E3E] text-white">
               {unreadCount}
@@ -37,7 +37,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             onClick={onReadAll}
             className="flex items-center gap-1 text-[11px] text-[#6B6B70] hover:text-[#1A1A1A] transition-colors"
           >
-            <Check className="w-3 h-3" /> Mark all read
+            <Check className="w-3 h-3" /> Đánh dấu đã đọc tất cả
           </button>
         )}
       </div>
@@ -45,7 +45,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       <div className="max-h-80 overflow-y-auto divide-y divide-[#F0F0F1]">
         {recent.length === 0 ? (
           <div className="py-8 text-center text-xs text-[#9B9B9F]">
-            No notifications
+            Không có thông báo nào
           </div>
         ) : (
           recent.map(n => (
@@ -71,7 +71,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             }}
             className="text-xs text-[#6B6B70] hover:text-[#1A1A1A] font-medium flex items-center justify-center gap-1 transition-colors w-full"
           >
-            View all notifications <ArrowRight className="w-3.5 h-3.5" />
+            Xem tất cả thông báo <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
