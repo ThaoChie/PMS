@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KanbanSquare, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { MESSAGES } from '../../../constants/messages';
 import { authService } from '../../../services/authService';
 
@@ -62,11 +62,13 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-white">
       <div className="w-full max-w-[360px]">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-9 h-9 rounded-xl bg-[#E53E3E] flex items-center justify-center">
-            <KanbanSquare className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-[#1A1A1A] font-semibold text-lg tracking-tight">EPMS</span>
+        {/* Logo VJU */}
+        <div className="flex justify-center mb-4">
+          <img
+            src="/logoVJU.png"
+            alt="Vietnam Japan University"
+            className="w-20 h-20 sm:w-22 sm:h-22 object-contain select-none"
+          />
         </div>
 
         <div className="mb-6">
