@@ -22,14 +22,28 @@ export default function Login({ onLogin, onRegister, onForgotPassword }: LoginPr
     try {
       const res = await authService.login(email, password);
       if (res?.success || res?.data?.accessToken) {
-        try {
-          const meRes = await userService.getMe();
-          if (meRes?.data) {
-            useAuthStore.getState().login(mapUserResponseToUser(meRes.data), res.data.accessToken);
+        let userObj = res.data?.user ? mapUserResponseToUser(res.data.user) : null;
+        if (!userObj) {
+          try {
+            const meRes = await userService.getMe();
+            if (meRes?.data) {
+              userObj = mapUserResponseToUser(meRes.data);
+            }
+          } catch {
+            // fallback if getMe fails
           }
-        } catch {
-          // fallback if getMe fails
         }
+        if (!userObj) {
+          userObj = {
+            id: '1',
+            name: email.split('@')[0],
+            email,
+            initials: email.slice(0, 2).toUpperCase(),
+            role: 'member',
+            status: 'Active',
+          };
+        }
+        useAuthStore.getState().login(userObj, res.data.accessToken);
         onLogin();
       } else {
         setError(res?.message || 'Email và/hoặc mật khẩu chưa đúng');

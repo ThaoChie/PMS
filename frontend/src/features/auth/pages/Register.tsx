@@ -44,9 +44,19 @@ export default function Register({ onLogin, onBack }: RegisterProps) {
         try {
           const loginRes = await authService.login(form.email.trim(), form.password);
           if (loginRes?.data?.accessToken) {
-            const meRes = await userService.getMe();
-            if (meRes?.data) {
-              useAuthStore.getState().login(mapUserResponseToUser(meRes.data), loginRes.data.accessToken);
+            let userObj = loginRes.data?.user ? mapUserResponseToUser(loginRes.data.user) : null;
+            if (!userObj) {
+              try {
+                const meRes = await userService.getMe();
+                if (meRes?.data) {
+                  userObj = mapUserResponseToUser(meRes.data);
+                }
+              } catch {
+                // fallback
+              }
+            }
+            if (userObj) {
+              useAuthStore.getState().login(userObj, loginRes.data.accessToken);
             }
             onLogin();
             return;
