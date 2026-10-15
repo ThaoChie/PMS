@@ -62,3 +62,5 @@ export interface Issue {
   updatedAt: string;
   version?: number;
 }
+
+export type QuickFilter = 'my-issues' | 'recently-updated' | 'reported-by-me' | 'critical' | string;

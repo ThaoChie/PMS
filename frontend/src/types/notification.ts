@@ -9,3 +9,5 @@ export interface Notification {
   createdAt: string;
   sourceId?: string;
 }
+
+export type NotificationItem = Notification;
