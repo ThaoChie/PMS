@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Lời mời tham gia dự án EPMS</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f7f7f8; margin: 0; padding: 24px;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e5e7; padding: 32px;">
+        <h2 style="color: #1a1a1a; margin-top: 0;">Lời mời tham gia dự án</h2>
+        <p style="color: #6b6b70; font-size: 14px;">Xin chào <span th:text="${recipientEmail}">bạn</span>,</p>
+        <p style="color: #1a1a1a; font-size: 14px; line-height: 1.6;">
+            Bạn đã được mời tham gia vào dự án <strong th:text="${projectName}">EPMS Platform</strong> với vai trò <strong th:text="${role}">MEMBER</strong> bởi <span th:text="${inviterName}">PM</span>.
+        </p>
+        <div style="margin-top: 24px;">
+            <a th:href="${acceptUrl}" style="background-color: #e53e3e; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; display: inline-block;">Chấp nhận lời mời</a>
+        </div>
+        <p style="color: #9b9b9f; font-size: 12px; margin-top: 16px;">
+            Lời mời này có hiệu lực trong vòng <span th:text="${expiryDays}">7</span> ngày.
+        </p>
+        <hr style="border: none; border-top: 1px solid #f0f0f1; margin: 32px 0 16px 0;" />
+        <p style="color: #9b9b9f; font-size: 12px; margin: 0;">Hệ thống Quản lý Dự án Doanh nghiệp EPMS.</p>
+    </div>
+</body>
+</html>
