@@ -42,6 +42,15 @@ public class IssueService {
     private final FileStorageService fileStorageService;
     private final AppProperties appProperties;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private WatcherService watcherService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private RecentViewService recentViewService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private MailService mailService;
+
     public IssueService(IssueRepository issueRepository,
                         ProjectRepository projectRepository,
                         UserRepository userRepository,
@@ -199,6 +208,11 @@ public class IssueService {
             );
         }
 
+        // Auto-watch hook (T3.07)
+        if (watcherService != null) {
+            watcherService.watchIssue(saved, currentUser);
+        }
+
         return IssueResponse.from(saved);
     }
 
@@ -208,12 +222,19 @@ public class IssueService {
         return page.map(IssueResponse::from);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public IssueResponse getIssueDetail(String issueKey, User currentUser) {
         Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
 
+        if (recentViewService != null && currentUser != null) {
+            recentViewService.recordView(issue, currentUser);
+        }
+
         IssueResponse res = IssueResponse.from(issue);
+        if (watcherService != null && currentUser != null) {
+            res.setIsWatching(watcherService.isWatching(issue.getId(), currentUser.getId()));
+        }
 
         // Linked issues
         List<IssueLink> links = linkRepository.findAllLinksForIssue(issue.getId());
@@ -370,6 +391,9 @@ public class IssueService {
                         issue.getIssueKey(),
                         currentUser
                 );
+            }
+            if (watcherService != null) {
+                watcherService.watchIssue(issue, assignee);
             }
         }
 
@@ -534,5 +558,108 @@ public class IssueService {
 
         List<IssueStatusHistory> list = historyRepository.findByIssueIdOrderByChangedAtAsc(issue.getId());
         return list.stream().map(IssueStatusHistoryResponse::from).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void convertToSubtask(String issueKey, String parentKey, User currentUser) {
+        if (issueKey.equalsIgnoreCase(parentKey)) {
+            throw new ValidationException("Cannot convert issue to subtask of itself");
+        }
+
+        Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
+                .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
+
+        projectSecurity.assertProjectWritable(issue.getProject());
+
+        Issue parent = issueRepository.findByIssueKeyAndDeletedAtIsNull(parentKey)
+                .orElseThrow(() -> new ResourceNotFoundException("Parent issue not found: " + parentKey));
+
+        if (parent.getType() == IssueType.SUB_TASK) {
+            throw new BusinessException(ErrorCode.SUBTASK_NESTING_NOT_ALLOWED, "Sub-task cannot have sub-tasks");
+        }
+
+        // Check if issue is an Epic with child issues (BR-COL-03)
+        if (issue.getType() == IssueType.EPIC) {
+            List<Issue> epicChildren = issueRepository.findByEpicIdAndDeletedAtIsNull(issue.getId());
+            if (!epicChildren.isEmpty()) {
+                throw new BusinessException(ErrorCode.UNPROCESSABLE_ENTITY, "Không thể chuyển Epic có chứa issue con thành Sub-task");
+            }
+        }
+
+        // Unlink epic_id and inappropriate links in same transaction (BR-COL-03)
+        issue.setEpic(null);
+        linkRepository.deleteBySourceIssueIdOrTargetIssueId(issue.getId(), parent.getId());
+        linkRepository.deleteBySourceIssueIdOrTargetIssueId(parent.getId(), issue.getId());
+
+        issue.setType(IssueType.SUB_TASK);
+        issue.setParent(parent);
+        issueRepository.save(issue);
+
+        auditService.log("CONVERT_TO_SUBTASK", "ISSUE", issue.getId(), issue.getProject().getId(), issueKey,
+                "Converted " + issueKey + " to subtask of " + parentKey);
+    }
+
+    @Transactional
+    public ShareIssueResponse shareIssue(String issueKey, ShareIssueRequest request, User currentUser) {
+        Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
+                .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
+
+        List<String> warnings = new ArrayList<>();
+        if (request.getRecipients() == null || request.getRecipients().isEmpty()) {
+            return new ShareIssueResponse(warnings);
+        }
+
+        String note = request.getNote() != null ? request.getNote() : "";
+        String link = "/projects/" + issue.getProject().getProjectKey() + "/issues/" + issue.getIssueKey();
+
+        for (String recipient : request.getRecipients()) {
+            if (recipient == null || recipient.isBlank()) continue;
+            String recTrimmed = recipient.trim();
+
+            Optional<User> userOpt = Optional.empty();
+            if (recTrimmed.matches("^\\d+$")) {
+                userOpt = userRepository.findById(Long.parseLong(recTrimmed));
+            }
+            if (userOpt.isEmpty()) {
+                userOpt = userRepository.findByEmail(recTrimmed);
+            }
+
+            if (userOpt.isPresent()) {
+                User internalUser = userOpt.get();
+                // Check project membership warning (BR-COL-06)
+                if (!memberRepository.existsByProjectIdAndUserId(issue.getProject().getId(), internalUser.getId())) {
+                    warnings.add("Người dùng " + internalUser.getEmail() + " không có quyền truy cập vào dự án này");
+                }
+
+                // Notify in-app + email
+                notificationService.notify(
+                        NotificationType.MENTION,
+                        List.of(internalUser),
+                        currentUser.getFullName() + " đã chia sẻ một Issue với bạn: " + issue.getIssueKey(),
+                        (note.isBlank() ? "Bạn được chia sẻ Issue " : (note + " - ")) + issue.getIssueKey() + ": " + issue.getSummary(),
+                        link,
+                        issue.getIssueKey(),
+                        currentUser
+                );
+            } else if (recTrimmed.contains("@") && mailService != null) {
+                // External recipient email
+                mailService.sendMailAsync(
+                        recTrimmed,
+                        "[EPMS] " + currentUser.getFullName() + " đã chia sẻ Issue " + issue.getIssueKey(),
+                        "notification",
+                        Map.of(
+                                "recipientName", recTrimmed,
+                                "title", currentUser.getFullName() + " đã chia sẻ Issue: " + issue.getIssueKey(),
+                                "message", (note.isBlank() ? "Nội dung công việc: " : (note + "\n\n")) + issue.getSummary(),
+                                "link", link
+                        )
+                );
+            }
+        }
+
+        auditService.log("SHARE_ISSUE", "ISSUE", issue.getId(), issue.getProject().getId(), issue.getIssueKey(),
+                "Chia sẻ Issue " + issue.getIssueKey() + " tới " + request.getRecipients().size() + " người nhận");
+
+        return new ShareIssueResponse(warnings);
     }
 }

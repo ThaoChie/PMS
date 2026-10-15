@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -162,5 +163,78 @@ public class IssueServiceTest {
         });
 
         assertEquals(ErrorCode.EPIC_LINK_CYCLE, ex.getErrorCode());
+    }
+
+    @Test
+    public void testCreateSubtask_ParentIsSubtask_ThrowsException() {
+        Issue parent = new Issue();
+        parent.setId(20L);
+        parent.setIssueKey("TEST-20");
+        parent.setType(IssueType.SUB_TASK);
+        parent.setProject(project);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-20")).thenReturn(Optional.of(parent));
+
+        BusinessException ex = assertThrows(BusinessException.class, () ->
+                issueService.createSubtask("TEST-20", "Child subtask", null, user));
+
+        assertEquals(ErrorCode.SUBTASK_NESTING_NOT_ALLOWED, ex.getErrorCode());
+    }
+
+    @Test
+    public void testConvertToSubtask_EpicWithChildren_ThrowsException() {
+        Issue epic = new Issue();
+        epic.setId(30L);
+        epic.setIssueKey("TEST-30");
+        epic.setType(IssueType.EPIC);
+        epic.setProject(project);
+
+        Issue parent = new Issue();
+        parent.setId(31L);
+        parent.setIssueKey("TEST-31");
+        parent.setType(IssueType.TASK);
+        parent.setProject(project);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-30")).thenReturn(Optional.of(epic));
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-31")).thenReturn(Optional.of(parent));
+        when(issueRepository.findByEpicIdAndDeletedAtIsNull(30L)).thenReturn(List.of(new Issue()));
+
+        BusinessException ex = assertThrows(BusinessException.class, () ->
+                issueService.convertToSubtask("TEST-30", "TEST-31", user));
+
+        assertEquals(ErrorCode.UNPROCESSABLE_ENTITY, ex.getErrorCode());
+    }
+
+    @Test
+    public void testConvertToSubtask_Success_UnlinksEpicAndLinks() {
+        Issue epic = new Issue();
+        epic.setId(40L);
+        epic.setIssueKey("TEST-40");
+
+        Issue story = new Issue();
+        story.setId(41L);
+        story.setIssueKey("TEST-41");
+        story.setType(IssueType.TASK);
+        story.setProject(project);
+        story.setEpic(epic);
+
+        Issue parent = new Issue();
+        parent.setId(42L);
+        parent.setIssueKey("TEST-42");
+        parent.setType(IssueType.TASK);
+        parent.setProject(project);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-41")).thenReturn(Optional.of(story));
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-42")).thenReturn(Optional.of(parent));
+
+        issueService.convertToSubtask("TEST-41", "TEST-42", user);
+
+        assertEquals(IssueType.SUB_TASK, story.getType());
+        assertEquals(parent, story.getParent());
+        assertNull(story.getEpic());
+
+        verify(linkRepository, times(1)).deleteBySourceIssueIdOrTargetIssueId(41L, 42L);
+        verify(linkRepository, times(1)).deleteBySourceIssueIdOrTargetIssueId(42L, 41L);
+        verify(issueRepository, times(1)).save(story);
     }
 }

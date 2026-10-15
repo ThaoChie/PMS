@@ -1,5 +1,6 @@
-import { formatDuration, parseDuration } from '../../utils/duration';
-import { can, canManageMembers, canManageWorkflow } from '../../utils/permission';
+import { formatDuration, parseDuration } from '../utils/duration';
+import { can, canManageMembers, canManageWorkflow } from '../utils/permission';
+import { filtersToSearchParams, searchParamsToFilters } from '../utils/searchParams';
 
 describe('duration utility', () => {
   it('should parse duration string correctly', () => {
@@ -29,5 +30,27 @@ describe('permission utility', () => {
   it('member cannot manage members or workflow', () => {
     expect(canManageMembers('member')).toBe(false);
     expect(canManageWorkflow('member')).toBe(false);
+  });
+});
+
+describe('searchParams utility round-trip', () => {
+  it('should convert filters to search params and back to filters', () => {
+    const originalFilters = {
+      type: ['Story', 'Bug'],
+      priority: ['High'],
+      keyword: 'login-fix',
+      page: '1',
+    };
+
+    const params = filtersToSearchParams(originalFilters);
+    expect(params.get('type')).toBe('Story,Bug');
+    expect(params.get('priority')).toBe('High');
+    expect(params.get('keyword')).toBe('login-fix');
+
+    const restoredFilters = searchParamsToFilters(params);
+    expect(restoredFilters.type).toEqual(['Story', 'Bug']);
+    expect(restoredFilters.priority).toBe('High');
+    expect(restoredFilters.keyword).toBe('login-fix');
+    expect(restoredFilters.page).toBe('1');
   });
 });

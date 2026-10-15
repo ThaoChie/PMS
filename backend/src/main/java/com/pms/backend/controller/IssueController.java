@@ -9,6 +9,9 @@ import com.pms.backend.model.User;
 import com.pms.backend.service.IssueService;
 import com.pms.backend.service.UserService;
 import com.pms.backend.service.WorkflowService;
+import com.pms.backend.service.CommentService;
+import com.pms.backend.service.WorklogService;
+import com.pms.backend.service.WatcherService;
 import com.pms.backend.wrapper.PageWrapper;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -29,13 +32,22 @@ public class IssueController {
     private final IssueService issueService;
     private final WorkflowService workflowService;
     private final UserService userService;
+    private final CommentService commentService;
+    private final WorklogService worklogService;
+    private final WatcherService watcherService;
 
     public IssueController(IssueService issueService,
                            WorkflowService workflowService,
-                           UserService userService) {
+                           UserService userService,
+                           CommentService commentService,
+                           WorklogService worklogService,
+                           WatcherService watcherService) {
         this.issueService = issueService;
         this.workflowService = workflowService;
         this.userService = userService;
+        this.commentService = commentService;
+        this.worklogService = worklogService;
+        this.watcherService = watcherService;
     }
 
     private User getCurrentUser() {
@@ -210,5 +222,98 @@ public class IssueController {
     ) {
         Issue updated = workflowService.rejectIssue(issueKey, request.getReason(), getCurrentUser());
         return ApiResponse.success(IssueResponse.from(updated));
+    }
+
+    // --- Subtask Conversion ---
+
+    @PostMapping({"/api/issues/{issueKey}/convert-to-subtask", "/issues/{issueKey}/convert-to-subtask"})
+    @PreAuthorize("@issueSecurity.canEdit(#issueKey)")
+    public ApiResponse<Void> convertToSubtask(
+            @PathVariable String issueKey,
+            @Valid @RequestBody ConvertToSubtaskRequest request
+    ) {
+        issueService.convertToSubtask(issueKey, request.getParentKey(), getCurrentUser());
+        return ApiResponse.success(null);
+    }
+
+    // --- Share Issue ---
+
+    @PostMapping({"/api/issues/{issueKey}/share", "/issues/{issueKey}/share"})
+    @PreAuthorize("@issueSecurity.canView(#issueKey)")
+    public ApiResponse<ShareIssueResponse> shareIssue(
+            @PathVariable String issueKey,
+            @Valid @RequestBody ShareIssueRequest request
+    ) {
+        return ApiResponse.success(issueService.shareIssue(issueKey, request, getCurrentUser()));
+    }
+
+    // --- Watchers ---
+
+    @PostMapping({"/api/issues/{issueKey}/watch", "/issues/{issueKey}/watch"})
+    @PreAuthorize("@issueSecurity.canView(#issueKey)")
+    public ApiResponse<Void> watchIssue(@PathVariable String issueKey) {
+        watcherService.watchIssue(issueKey, getCurrentUser());
+        return ApiResponse.success(null);
+    }
+
+    @DeleteMapping({"/api/issues/{issueKey}/watch", "/issues/{issueKey}/watch"})
+    @PreAuthorize("@issueSecurity.canView(#issueKey)")
+    public ApiResponse<Void> unwatchIssue(@PathVariable String issueKey) {
+        watcherService.unwatchIssue(issueKey, getCurrentUser());
+        return ApiResponse.success(null);
+    }
+
+    // --- Comments ---
+
+    @GetMapping({"/api/issues/{issueKey}/comments", "/issues/{issueKey}/comments"})
+    @PreAuthorize("@issueSecurity.canView(#issueKey)")
+    public ApiResponse<List<CommentResponse>> getComments(@PathVariable String issueKey) {
+        return ApiResponse.success(commentService.getComments(issueKey));
+    }
+
+    @PostMapping({"/api/issues/{issueKey}/comments", "/issues/{issueKey}/comments"})
+    @PreAuthorize("@issueSecurity.canView(#issueKey)")
+    public ApiResponse<CommentResponse> createComment(
+            @PathVariable String issueKey,
+            @Valid @RequestBody CreateCommentRequest request
+    ) {
+        return ApiResponse.success(commentService.createComment(issueKey, request, getCurrentUser()));
+    }
+
+    @PutMapping({"/api/issues/{issueKey}/comments/{commentId}", "/issues/{issueKey}/comments/{commentId}"})
+    @PreAuthorize("@issueSecurity.canView(#issueKey)")
+    public ApiResponse<CommentResponse> updateComment(
+            @PathVariable String issueKey,
+            @PathVariable Long commentId,
+            @Valid @RequestBody UpdateCommentRequest request
+    ) {
+        return ApiResponse.success(commentService.updateComment(issueKey, commentId, request, getCurrentUser()));
+    }
+
+    @DeleteMapping({"/api/issues/{issueKey}/comments/{commentId}", "/issues/{issueKey}/comments/{commentId}"})
+    @PreAuthorize("@issueSecurity.canView(#issueKey)")
+    public ApiResponse<Void> deleteComment(
+            @PathVariable String issueKey,
+            @PathVariable Long commentId
+    ) {
+        commentService.deleteComment(issueKey, commentId, getCurrentUser());
+        return ApiResponse.success(null);
+    }
+
+    // --- Worklogs ---
+
+    @GetMapping({"/api/issues/{issueKey}/worklogs", "/issues/{issueKey}/worklogs"})
+    @PreAuthorize("@issueSecurity.canView(#issueKey)")
+    public ApiResponse<List<WorklogResponse>> getWorklogs(@PathVariable String issueKey) {
+        return ApiResponse.success(worklogService.getWorklogs(issueKey));
+    }
+
+    @PostMapping({"/api/issues/{issueKey}/worklogs", "/issues/{issueKey}/worklogs"})
+    @PreAuthorize("@issueSecurity.canView(#issueKey)")
+    public ApiResponse<WorklogResponse> logWork(
+            @PathVariable String issueKey,
+            @Valid @RequestBody CreateWorklogRequest request
+    ) {
+        return ApiResponse.success(worklogService.logWork(issueKey, request, getCurrentUser()));
     }
 }

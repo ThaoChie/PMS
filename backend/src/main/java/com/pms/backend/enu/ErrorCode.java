@@ -22,6 +22,8 @@ public enum ErrorCode {
     EXPORT_LIMIT_EXCEEDED(HttpStatus.UNPROCESSABLE_ENTITY, "Export row limit exceeded"),
     FILE_TYPE_NOT_ALLOWED(HttpStatus.UNPROCESSABLE_ENTITY, "File type is not allowed"),
     FILE_TOO_LARGE(HttpStatus.UNPROCESSABLE_ENTITY, "File size exceeds allowed limit"),
+    FILTER_SHARE_FORBIDDEN(HttpStatus.UNPROCESSABLE_ENTITY, "Cannot share filter with users lacking project access"),
+    INVALID_SUBSCRIPTION_FREQUENCY(HttpStatus.UNPROCESSABLE_ENTITY, "Subscription frequency must be DAILY or WEEKLY"),
     INVALID_TRANSITION(HttpStatus.BAD_REQUEST, "Invalid status transition"),
     INVITATION_EXPIRED(HttpStatus.UNPROCESSABLE_ENTITY, "Invitation has expired"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
