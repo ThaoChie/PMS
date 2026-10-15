@@ -100,10 +100,20 @@ export default function App() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3 text-center max-w-sm">
           <div className="w-8 h-8 border-2 border-[#E53E3E] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-[#6B6B70]">Đang khởi tạo phiên làm việc…</p>
+          <p className="text-sm font-medium text-[#1E293B]">Đang khởi tạo phiên làm việc…</p>
+          <p className="text-xs text-[#94A3B8]">
+            Nếu hệ thống đang ở trạng thái ngủ (Render Cold Start), quá trình có thể mất ít giây.
+          </p>
+          <button
+            type="button"
+            onClick={() => useAuthStore.setState({ isLoading: false, isAuthenticated: false })}
+            className="mt-1 text-xs text-[#E53E3E] font-medium hover:underline"
+          >
+            Bỏ qua &amp; đến màn hình Đăng nhập &rarr;
+          </button>
         </div>
       </div>
     );

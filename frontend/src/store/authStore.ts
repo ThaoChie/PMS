@@ -33,6 +33,18 @@ export function mapUserResponseToUser(raw: any): User {
   };
 }
 
+const USER_STORAGE_KEY = 'epms_user';
+
+function getStoredUser(): User | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 interface AuthState {
   user: User | null;
   role: Role;
@@ -47,84 +59,129 @@ interface AuthState {
   bootstrap: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  role: 'member',
-  accessToken: null,
-  isAuthenticated: false,
-  isLoading: true,
+export const useAuthStore = create<AuthState>((set, get) => {
+  const initialToken = typeof window !== 'undefined' ? localStorage.getItem('epms_access_token') : null;
+  const initialUser = getStoredUser();
 
-  login: (user, token) => {
-    if (token) setAuthToken(token);
-    set({
-      user,
-      role: user.role,
-      accessToken: token || null,
-      isAuthenticated: true,
-      isLoading: false,
-    });
-  },
+  return {
+    user: initialUser,
+    role: initialUser?.role || 'member',
+    accessToken: initialToken,
+    isAuthenticated: !!initialToken && !!initialUser,
+    // If no token exists in local storage, user is not logged in -> don't show loading spinner!
+    isLoading: !!initialToken,
 
-  logout: async () => {
-    try {
-      await authService.logout();
-    } catch {
-      // ignore logout network errors
-    } finally {
+    login: (user, token) => {
+      if (token) setAuthToken(token);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+      }
+      set({
+        user,
+        role: user.role,
+        accessToken: token || null,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    },
+
+    logout: async () => {
+      try {
+        await authService.logout();
+      } catch {
+        // ignore logout network errors
+      } finally {
+        setAuthToken(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(USER_STORAGE_KEY);
+        }
+        set({
+          user: null,
+          accessToken: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+      }
+    },
+
+    setRole: (role) => {
+      set((state) => {
+        const updatedUser = state.user ? { ...state.user, role } : null;
+        if (updatedUser && typeof window !== 'undefined') {
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+        }
+        return {
+          role,
+          user: updatedUser,
+        };
+      });
+    },
+
+    updateUser: (data) => {
+      set((state) => {
+        const updatedUser = state.user ? { ...state.user, ...data } : null;
+        if (updatedUser && typeof window !== 'undefined') {
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+        }
+        return {
+          user: updatedUser,
+        };
+      });
+    },
+
+    bootstrap: async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('epms_access_token') : null;
+
+      // If no stored token, no session exists -> immediately ready for login
+      if (!token) {
+        set({
+          user: null,
+          accessToken: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+        return;
+      }
+
+      try {
+        // Enforce a 6-second timeout so Render cold start never hangs the page
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Auth check timeout')), 6000),
+        );
+
+        const meRes = (await Promise.race([userService.getMe(), timeoutPromise])) as any;
+        if (meRes?.data) {
+          const mappedUser = mapUserResponseToUser(meRes.data);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(mappedUser));
+          }
+          set({
+            user: mappedUser,
+            role: mappedUser.role,
+            accessToken: token,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn('Bootstrap verification failed or timed out:', err);
+      }
+
+      // If token verification failed or timed out, clear session safely
       setAuthToken(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(USER_STORAGE_KEY);
+      }
       set({
         user: null,
         accessToken: null,
         isAuthenticated: false,
         isLoading: false,
       });
-    }
-  },
-
-  setRole: (role) => {
-    set((state) => ({
-      role,
-      user: state.user ? { ...state.user, role } : null,
-    }));
-  },
-
-  updateUser: (data) => {
-    set((state) => ({
-      user: state.user ? { ...state.user, ...data } : null,
-    }));
-  },
-
-  bootstrap: async () => {
-    try {
-      // Attempt to refresh token using httpOnly cookie
-      const refreshRes = await authService.refreshToken();
-      if (refreshRes?.data?.accessToken) {
-        setAuthToken(refreshRes.data.accessToken);
-        const meRes = await userService.getMe();
-        if (meRes?.data) {
-          const mappedUser = mapUserResponseToUser(meRes.data);
-          set({
-            user: mappedUser,
-            role: mappedUser.role,
-            accessToken: refreshRes.data.accessToken,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-          return;
-        }
-      }
-    } catch {
-      // Not authenticated or refresh expired
-    }
-    setAuthToken(null);
-    set({
-      user: null,
-      accessToken: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
-  },
-}));
+    },
+  };
+});
 
 // Listen for unauthorized events to trigger logout
 if (typeof window !== 'undefined') {
