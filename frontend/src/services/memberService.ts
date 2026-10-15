@@ -13,7 +13,7 @@ export const memberService = {
   ): Promise<ApiResponse<ProjectMember>> {
     return axiosClient.put<any, ApiResponse<ProjectMember>>(
       `/projects/${projectId}/members/${userId}/role`,
-      { role },
+      { role: role ? (role.toUpperCase() as any) : 'MEMBER' },
     );
   },
 

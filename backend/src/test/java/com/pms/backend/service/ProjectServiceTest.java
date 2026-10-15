@@ -112,15 +112,21 @@ public class ProjectServiceTest {
     }
 
     @Test
-    public void testCreateProject_MemberRole_ThrowsForbidden() {
+    public void testCreateProject_AnyUserCanCreate_Success() {
         CreateProjectRequest request = new CreateProjectRequest();
         request.setName("Member Project");
         request.setProjectKey("MPR");
 
-        assertThrows(ForbiddenException.class, () -> {
-            projectService.createProject(request, memberUser);
+        when(projectRepository.existsByProjectKeyIgnoreCase("MPR")).thenReturn(false);
+        when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> {
+            Project p = invocation.getArgument(0);
+            p.setId(20L);
+            return p;
         });
 
-        verify(projectRepository, never()).save(any());
+        ProjectResponse response = projectService.createProject(request, memberUser);
+        assertNotNull(response);
+        assertEquals("PM", response.getMyRole());
+        verify(projectRepository, times(1)).save(any());
     }
 }

@@ -4,6 +4,7 @@ import { projectService } from '../services/projectService';
 
 export function mapProjectResponseToProject(raw: any): Project {
   if (!raw) return raw;
+  const myRole = raw.myRole ? (raw.myRole.toLowerCase() as Role) : undefined;
   return {
     id: String(raw.id),
     name: raw.name || '',
@@ -13,6 +14,7 @@ export function mapProjectResponseToProject(raw: any): Project {
     openIssues: raw.openIssuesCount ?? raw.openIssues ?? 0,
     members: raw.members || [],
     createdAt: raw.createdAt || new Date().toISOString(),
+    myRole,
   };
 }
 
@@ -33,15 +35,21 @@ interface ProjectState {
 export const useProjectStore = create<ProjectState>((set, get) => ({
   projects: [],
   currentProject: null,
-  myProjectRole: 'member',
+  myProjectRole: 'pm',
   isLoading: false,
 
-  setCurrentProject: (currentProject) => set({ currentProject }),
+  setCurrentProject: (currentProject) =>
+    set({
+      currentProject,
+      myProjectRole: currentProject?.myRole || 'pm',
+    }),
   setProjects: (projects) => {
     const cur = get().currentProject;
+    const target = cur && projects.some((p) => p.id === cur.id) ? cur : projects[0] || null;
     set({
       projects,
-      currentProject: cur && projects.some((p) => p.id === cur.id) ? cur : projects[0] || null,
+      currentProject: target,
+      myProjectRole: target?.myRole || 'pm',
     });
   },
   setMyProjectRole: (myProjectRole) => set({ myProjectRole }),
@@ -50,6 +58,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set((state) => ({
       projects: [project, ...state.projects],
       currentProject: project,
+      myProjectRole: project.myRole || 'pm',
     })),
 
   updateProject: (id, data) =>
@@ -68,9 +77,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const rawList = res?.data?.content || (res?.data as any)?.items || (Array.isArray(res?.data) ? res.data : []);
       const list = rawList.map(mapProjectResponseToProject);
       const cur = get().currentProject;
+      const target = cur && list.some((p) => p.id === cur.id) ? cur : list[0] || null;
       set({
         projects: list,
-        currentProject: cur && list.some((p) => p.id === cur.id) ? cur : list[0] || null,
+        currentProject: target,
+        myProjectRole: target?.myRole || 'pm',
         isLoading: false,
       });
       return list;
