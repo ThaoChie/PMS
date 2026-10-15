@@ -69,12 +69,12 @@ export default function ChangePasswordForm({ onSuccess }: ChangePasswordFormProp
 
   return (
     <div className="bg-white border border-[#E5E5E7] rounded-xl p-6">
-      <h2 className="text-sm font-semibold text-[#1A1A1A] mb-1">Change password</h2>
-      <p className="text-xs text-[#6B6B70] mb-5">Choose a password at least 8 characters long.</p>
+      <h2 className="text-sm font-semibold text-[#1A1A1A] mb-1">Đổi mật khẩu</h2>
+      <p className="text-xs text-[#6B6B70] mb-5">Chọn mật khẩu có độ dài tối thiểu 6 ký tự.</p>
       <form onSubmit={handleSavePw} className="space-y-4 max-w-sm">
-        <PwField k="current" label="Current password" />
-        <PwField k="next" label="New password" />
-        <PwField k="confirm" label="Confirm new password" />
+        <PwField k="current" label="Mật khẩu hiện tại" />
+        <PwField k="next" label="Mật khẩu mới" />
+        <PwField k="confirm" label="Xác nhận mật khẩu mới" />
         {pwError && (
           <div className="bg-[#FDECEC] border border-[#E53E3E]/20 rounded-lg px-3 py-2">
             <p className="text-xs text-[#E53E3E]">{pwError}</p>
@@ -86,11 +86,11 @@ export default function ChangePasswordForm({ onSuccess }: ChangePasswordFormProp
             disabled={loading}
             className="px-4 py-2 bg-[#1A1A1A] text-white text-xs font-medium rounded-lg hover:bg-[#333] disabled:opacity-60 transition-colors"
           >
-            {loading ? 'Updating…' : 'Update password'}
+            {loading ? 'Đang cập nhật…' : 'Cập nhật mật khẩu'}
           </button>
           {pwSaved && (
             <span className="flex items-center gap-1.5 text-xs text-[#1A1A1A]">
-              <Check className="w-3.5 h-3.5" /> Updated
+              <Check className="w-3.5 h-3.5" /> Đã cập nhật ✓
             </span>
           )}
         </div>

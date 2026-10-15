@@ -135,10 +135,10 @@ export default function Members({ role }: MembersProps) {
       <div className="max-w-4xl mx-auto px-8 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-xl font-bold text-[#1A1A1A]">Members & Roles</h1>
+            <h1 className="text-xl font-bold text-[#1A1A1A]">Thành viên & Vai trò</h1>
             <p className="text-sm text-[#6B6B70] mt-0.5">
-              {members.filter((m) => m.status === 'Active').length} active members ·{' '}
-              {members.filter((m) => m.status === 'Pending').length} pending
+              {members.filter((m) => m.status === 'Active').length} thành viên đang hoạt động ·{' '}
+              {members.filter((m) => m.status === 'Pending').length} lời mời đang chờ
             </p>
           </div>
           {canManage && (
@@ -147,7 +147,7 @@ export default function Members({ role }: MembersProps) {
               onClick={() => setShowInvite(true)}
               className="flex items-center gap-1.5 px-3 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" /> Invite member
+              <Plus className="w-3.5 h-3.5" /> Mời thành viên
             </button>
           )}
         </div>
@@ -200,15 +200,15 @@ export default function Members({ role }: MembersProps) {
                 <AlertTriangle className="w-4 h-4 text-[#E53E3E]" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-[#1A1A1A]">Remove member</h3>
+                <h3 className="text-sm font-semibold text-[#1A1A1A]">Xóa thành viên khỏi dự án</h3>
                 <p className="text-xs text-[#6B6B70] mt-0.5">
-                  This will revoke{' '}
-                  <strong className="text-[#1A1A1A]">{removeTarget.name}</strong>'s access to this
-                  project immediately.
+                  Thao tác này sẽ hủy quyền truy cập của{' '}
+                  <strong className="text-[#1A1A1A]">{removeTarget.name}</strong> vào dự án ngay
+                  lập tức.
                 </p>
               </div>
             </div>
-            <p className="text-xs text-[#6B6B70] mb-3">Type their name to confirm:</p>
+            <p className="text-xs text-[#6B6B70] mb-3">Nhập lại chính xác tên thành viên để xác nhận:</p>
             <input
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
@@ -224,7 +224,7 @@ export default function Members({ role }: MembersProps) {
                 }}
                 className="px-4 py-2 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
               >
-                Cancel
+                Hủy bỏ
               </button>
               <button
                 type="button"
@@ -232,7 +232,7 @@ export default function Members({ role }: MembersProps) {
                 onClick={handleRemove}
                 className="px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                Remove member
+                Xác nhận xóa
               </button>
             </div>
           </div>

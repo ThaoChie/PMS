@@ -24,9 +24,9 @@ export default function SavedFilters() {
       <div className="max-w-3xl mx-auto px-8 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-xl font-bold text-[#1A1A1A]">Saved Filters</h1>
+            <h1 className="text-xl font-bold text-[#1A1A1A]">Bộ lọc đã lưu</h1>
             <p className="text-sm text-[#6B6B70] mt-0.5">
-              Manage your saved searches and email subscriptions
+              Quản lý các bộ lọc tìm kiếm và đăng ký thông báo qua email
             </p>
           </div>
         </div>
@@ -39,9 +39,9 @@ export default function SavedFilters() {
                 <path d="m30 30 8 8M18 15h8M18 20h5" strokeLinecap="round" />
               </svg>
             </div>
-            <p className="text-sm font-medium text-[#1A1A1A] mb-1">No saved filters</p>
+            <p className="text-sm font-medium text-[#1A1A1A] mb-1">Chưa có bộ lọc nào được lưu</p>
             <p className="text-xs text-[#6B6B70]">
-              Save a filter from the Issues page to see it here
+              Lưu một bộ lọc từ trang Danh sách công việc để xem tại đây
             </p>
           </div>
         ) : (
@@ -62,7 +62,7 @@ export default function SavedFilters() {
                           key={t}
                           className="text-[10px] px-1.5 py-0.5 rounded bg-[#F7F7F8] border border-[#E5E5E7] text-[#6B6B70]"
                         >
-                          type:{t}
+                          loại:{t}
                         </span>
                       ))}
                       {f.filters.status?.map((s) => (
@@ -70,7 +70,7 @@ export default function SavedFilters() {
                           key={s}
                           className="text-[10px] px-1.5 py-0.5 rounded bg-[#F7F7F8] border border-[#E5E5E7] text-[#6B6B70]"
                         >
-                          status:{s}
+                          trạng thái:{s}
                         </span>
                       ))}
                       {f.filters.priority?.map((p) => (
@@ -82,7 +82,7 @@ export default function SavedFilters() {
                               : 'bg-[#F7F7F8] border-[#E5E5E7] text-[#6B6B70]'
                           }`}
                         >
-                          priority:{p}
+                          ưu tiên:{p}
                         </span>
                       ))}
                     </div>
@@ -106,9 +106,7 @@ export default function SavedFilters() {
                             ))}
                           </div>
                           <span className="text-xs text-[#6B6B70]">
-                            {f.sharedWith.length === 1
-                              ? `1 person`
-                              : `${f.sharedWith.length} people`}
+                            {f.sharedWith.length} người
                           </span>
                         </div>
                       )}
@@ -135,7 +133,7 @@ export default function SavedFilters() {
                       </div>
                       <div className="flex items-center gap-1 text-xs text-[#6B6B70]">
                         <Mail className="w-3 h-3" />
-                        {f.emailSubscription ? 'Subscribed' : 'Subscribe'}
+                        {f.emailSubscription ? 'Đã đăng ký nhận tin' : 'Đăng ký nhận tin'}
                       </div>
                     </button>
 
@@ -148,8 +146,8 @@ export default function SavedFilters() {
                           }
                           className="text-[10px] text-[#6B6B70] bg-[#F7F7F8] border border-[#E5E5E7] rounded-lg px-2 py-1 focus:outline-none appearance-none pr-5"
                         >
-                          <option value="daily">Daily digest</option>
-                          <option value="weekly">Weekly digest</option>
+                          <option value="daily">Bản tin hàng ngày</option>
+                          <option value="weekly">Bản tin hàng tuần</option>
                         </select>
                         <ChevronDown className="w-2.5 h-2.5 text-[#9B9B9F] absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>

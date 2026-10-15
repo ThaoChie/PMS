@@ -5,11 +5,11 @@ import type { NotificationType } from '../../types';
 import { NotificationItem } from './NotificationItem';
 
 const TYPE_LABELS: Record<NotificationType, string> = {
-  mention: 'Mentions',
-  assignment: 'Assignments',
-  workflow: 'Workflow',
-  approval: 'Approvals',
-  invite: 'Invites',
+  mention: 'Nhắc đến',
+  assignment: 'Phân công',
+  workflow: 'Quy trình',
+  approval: 'Phê duyệt',
+  invite: 'Lời mời',
 };
 
 const FILTERS = ['all', 'mention', 'assignment', 'approval', 'workflow', 'invite'] as const;
@@ -34,14 +34,14 @@ export default function NotificationCenter() {
       <div className="max-w-2xl mx-auto px-8 py-10">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-bold text-[#1A1A1A]">Notifications</h1>
+            <h1 className="text-xl font-bold text-[#1A1A1A]">Thông báo</h1>
             {unreadCount > 0 && (
-              <p className="text-xs text-[#6B6B70] mt-0.5">{unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-[#6B6B70] mt-0.5">{unreadCount} thông báo chưa đọc</p>
             )}
           </div>
           {unreadCount > 0 && (
             <button onClick={markAllRead} className="flex items-center gap-1.5 text-xs text-[#6B6B70] hover:text-[#1A1A1A] border border-[#E5E5E7] rounded-lg px-3 py-1.5 hover:bg-[#F7F7F8] transition-colors">
-              <Check className="w-3.5 h-3.5" /> Mark all read
+              <Check className="w-3.5 h-3.5" /> Đánh dấu đã đọc tất cả
             </button>
           )}
         </div>
@@ -52,11 +52,11 @@ export default function NotificationCenter() {
             <button
               key={f}
               onClick={() => setActiveFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 activeFilter === f ? 'bg-[#1A1A1A] text-white' : 'text-[#6B6B70] hover:bg-[#F7F7F8] hover:text-[#1A1A1A]'
               }`}
             >
-              {f === 'all' ? 'All' : TYPE_LABELS[f as NotificationType]}
+              {f === 'all' ? 'Tất cả' : TYPE_LABELS[f as NotificationType]}
             </button>
           ))}
         </div>
@@ -70,7 +70,7 @@ export default function NotificationCenter() {
                   <path d="M24 6C15.163 6 8 13.163 8 22c0 5.052 2.356 9.551 6.04 12.484L12 42l7.516-2.04A15.915 15.915 0 0024 41c8.837 0 16-7.163 16-16S32.837 6 24 6z" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <p className="text-sm text-[#6B6B70]">No notifications</p>
+              <p className="text-sm text-[#6B6B70]">Không có thông báo nào</p>
             </div>
           ) : (
             filtered.map((n, i) => (

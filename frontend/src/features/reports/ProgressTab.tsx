@@ -39,9 +39,9 @@ export const ProgressTab: React.FC = () => {
       {/* Status summary row */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Total issues', value: '50', sub: 'Sprint scope' },
-          { label: 'Completed', value: '20', sub: '40% complete' },
-          { label: 'Remaining', value: '30', sub: isAtRisk ? '⚠ At risk' : '✓ On track', atRisk: isAtRisk },
+          { label: 'Tổng số công việc', value: '50', sub: 'Phạm vi Sprint' },
+          { label: 'Đã hoàn thành', value: '20', sub: 'Đạt 40%' },
+          { label: 'Còn lại', value: '30', sub: isAtRisk ? '⚠ Có nguy cơ trễ' : '✓ Đúng tiến độ', atRisk: isAtRisk },
         ].map(stat => (
           <div
             key={stat.label}
@@ -64,7 +64,7 @@ export const ProgressTab: React.FC = () => {
 
       {/* Burndown chart */}
       <div className="border border-[#E5E5E7] rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-5">Burn-down chart</h3>
+        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-5">Biểu đồ tiến độ (Burn-down chart)</h3>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={progressData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F1" />
@@ -75,7 +75,7 @@ export const ProgressTab: React.FC = () => {
             <Line
               type="monotone"
               dataKey="ideal"
-              name="Ideal"
+              name="Lý tưởng (Ideal)"
               stroke="#D1D1D3"
               strokeDasharray="4 2"
               dot={false}
@@ -84,7 +84,7 @@ export const ProgressTab: React.FC = () => {
             <Line
               type="monotone"
               dataKey="remaining"
-              name="Remaining"
+              name="Còn lại (Remaining)"
               stroke="#1A1A1A"
               dot={false}
               strokeWidth={2}
@@ -93,7 +93,7 @@ export const ProgressTab: React.FC = () => {
             <Line
               type="monotone"
               dataKey="completed"
-              name="Completed"
+              name="Đã hoàn thành"
               stroke="#6B6B70"
               dot={false}
               strokeWidth={1.5}

@@ -45,7 +45,7 @@ export default function AvatarUpload({ user, onUpload }: AvatarUploadProps) {
           onClick={() => fileInputRef.current?.click()}
           className="mt-2 text-xs text-[#E53E3E] hover:text-[#C53030] font-medium transition-colors"
         >
-          Upload new photo
+          Tải ảnh mới lên
         </button>
       </div>
     </div>

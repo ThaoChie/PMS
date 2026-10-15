@@ -43,9 +43,9 @@ export default function ProjectList({
       <div className="max-w-5xl mx-auto px-8 py-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-xl font-bold text-[#1A1A1A]">Projects</h1>
+            <h1 className="text-xl font-bold text-[#1A1A1A]">Danh sách dự án</h1>
             <p className="text-sm text-[#6B6B70] mt-0.5">
-              {projects.filter((p) => p.status === 'Active').length} active projects
+              {projects.filter((p) => p.status === 'Active').length} dự án đang hoạt động
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -84,7 +84,7 @@ export default function ProjectList({
                       : 'text-[#6B6B70] hover:text-[#1A1A1A]'
                   }`}
                 >
-                  {f === 'all' ? 'All' : f}
+                  {f === 'all' ? 'Tất cả' : f === 'Active' ? 'Đang hoạt động' : 'Đã đóng'}
                 </button>
               ))}
             </div>
@@ -95,7 +95,7 @@ export default function ProjectList({
                 onClick={onCreateProject}
                 className="flex items-center gap-1.5 px-3 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
               >
-                <Plus className="w-3.5 h-3.5" /> New Project
+                <Plus className="w-3.5 h-3.5" /> Tạo dự án mới
               </button>
             )}
           </div>
@@ -114,15 +114,15 @@ export default function ProjectList({
                 <path d="M20 32h16M20 38h8" strokeLinecap="round" />
               </svg>
             </div>
-            <p className="text-sm font-medium text-[#1A1A1A] mb-1">No projects found</p>
-            <p className="text-xs text-[#6B6B70] mb-4">Create your first project to get started</p>
+            <p className="text-sm font-medium text-[#1A1A1A] mb-1">Chưa có dự án nào</p>
+            <p className="text-xs text-[#6B6B70] mb-4">Hãy tạo dự án đầu tiên của bạn để bắt đầu làm việc</p>
             {canCreate && (
               <button
                 type="button"
                 onClick={onCreateProject}
                 className="flex items-center gap-1.5 px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
               >
-                <Plus className="w-3.5 h-3.5" /> New Project
+                <Plus className="w-3.5 h-3.5" /> Tạo dự án mới
               </button>
             )}
           </div>

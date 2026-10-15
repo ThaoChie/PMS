@@ -75,7 +75,7 @@ export default function StatusEditor({
           onClick={() => setIsAdding(true)}
           className="flex items-center gap-1.5 text-xs text-[#6B6B70] hover:text-[#1A1A1A] transition-colors border border-dashed border-[#E5E5E7] rounded-lg px-3 py-2 w-full justify-center hover:border-[#C5C5C8]"
         >
-          <Plus className="w-3.5 h-3.5" /> Add status
+          <Plus className="w-3.5 h-3.5" /> Thêm trạng thái mới
         </button>
       )}
     </div>

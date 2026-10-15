@@ -61,7 +61,7 @@ export default function KanbanColumn({
       >
         {issues.length === 0 ? (
           <div className="flex items-center justify-center h-20 text-xs text-[#C5C5C8]">
-            Drop issues here
+            Kéo thả công việc vào đây
           </div>
         ) : (
           issues.map((issue) => (

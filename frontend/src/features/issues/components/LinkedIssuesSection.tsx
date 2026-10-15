@@ -16,7 +16,7 @@ export default function LinkedIssuesSection({
   return (
     <div className="mb-5">
       <h4 className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider mb-2">
-        Linked issues
+        Công việc liên kết
       </h4>
       <div className="border border-[#E5E5E7] rounded-lg overflow-hidden divide-y divide-[#F0F0F1] bg-white">
         {linkedIssues.map((li) => (

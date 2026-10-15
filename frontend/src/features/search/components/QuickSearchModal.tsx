@@ -71,7 +71,7 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search issues, projects…"
+            placeholder="Tìm kiếm công việc, dự án…"
             className="flex-1 text-sm text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none"
           />
           {query && (
@@ -91,14 +91,14 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
         {/* Results */}
         {!query ? (
           <div className="px-4 py-8 text-center">
-            <p className="text-xs text-[#9B9B9F]">Type to search issues and projects</p>
+            <p className="text-xs text-[#9B9B9F]">Nhập từ khóa để tìm kiếm công việc và dự án</p>
           </div>
         ) : !hasResults ? (
           <div className="px-4 py-8 text-center">
             <p className="text-sm text-[#6B6B70]">
-              No results for "<span className="font-medium text-[#1A1A1A]">{query}</span>"
+              Không tìm thấy kết quả cho "<span className="font-medium text-[#1A1A1A]">{query}</span>"
             </p>
-            <p className="text-xs text-[#9B9B9F] mt-1">Try a different keyword or issue key</p>
+            <p className="text-xs text-[#9B9B9F] mt-1">Hãy thử tìm với từ khóa hoặc mã công việc khác</p>
           </div>
         ) : (
           <div className="max-h-96 overflow-y-auto">
@@ -106,7 +106,7 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
               <div>
                 <div className="px-4 py-2">
                   <p className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-                    Projects
+                    Dự án
                   </p>
                 </div>
                 {filteredProjects.map((p) => (
@@ -122,7 +122,7 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-[#1A1A1A] truncate">{p.name}</p>
                       <p className="text-[10px] text-[#9B9B9F]">
-                        {p.key} · {p.openIssues} open issues
+                        {p.key} · {p.openIssues} công việc đang mở
                       </p>
                     </div>
                     <span
@@ -132,7 +132,7 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
                           : 'text-[#9B9B9F] bg-[#F7F7F8] border-[#E5E5E7]'
                       }`}
                     >
-                      {p.status}
+                      {p.status === 'Active' ? 'Đang hoạt động' : 'Đã đóng'}
                     </span>
                   </button>
                 ))}
@@ -143,7 +143,7 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
               <div>
                 <div className="px-4 py-2 border-t border-[#F0F0F1] first:border-0">
                   <p className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-                    Issues
+                    Công việc
                   </p>
                 </div>
                 {filteredIssues.map((issue) => (
@@ -180,10 +180,10 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
         {/* Footer hint */}
         <div className="px-4 py-2 border-t border-[#E5E5E7] flex items-center gap-4 text-[10px] text-[#9B9B9F]">
           <span className="flex items-center gap-1">
-            <kbd className="border border-[#E5E5E7] rounded px-1 py-0.5">↵</kbd> Open
+            <kbd className="border border-[#E5E5E7] rounded px-1 py-0.5">↵</kbd> Mở
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="border border-[#E5E5E7] rounded px-1 py-0.5">Esc</kbd> Close
+            <kbd className="border border-[#E5E5E7] rounded px-1 py-0.5">Esc</kbd> Đóng
           </span>
         </div>
       </div>

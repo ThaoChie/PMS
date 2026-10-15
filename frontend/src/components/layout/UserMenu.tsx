@@ -48,7 +48,7 @@ export default function UserMenu({
               setIsOpen(false);
             }}
           >
-            <UserIcon className="w-4 h-4 text-[#6B6B70]" /> Profile
+            <UserIcon className="w-4 h-4 text-[#6B6B70]" /> Hồ sơ cá nhân
           </button>
           {onNavigateInvitations && (
             <button
@@ -59,7 +59,7 @@ export default function UserMenu({
                 setIsOpen(false);
               }}
             >
-              <Mail className="w-4 h-4 text-[#6B6B70]" /> Invitations
+              <Mail className="w-4 h-4 text-[#6B6B70]" /> Lời mời tham gia
             </button>
           )}
           <div className="border-t border-[#E5E5E7]" />
@@ -71,7 +71,7 @@ export default function UserMenu({
               setIsOpen(false);
             }}
           >
-            <LogOut className="w-4 h-4" /> Log out
+            <LogOut className="w-4 h-4" /> Đăng xuất
           </button>
         </div>
       )}
