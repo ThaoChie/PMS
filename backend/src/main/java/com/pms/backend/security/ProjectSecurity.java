@@ -74,6 +74,11 @@ public class ProjectSecurity {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + projectId));
 
+        assertProjectWritable(project);
+    }
+
+    public void assertProjectWritable(Project project) {
+        if (project == null) return;
         if (project.getStatus() == ProjectStatus.CLOSED) {
             throw new BusinessException(ErrorCode.PROJECT_CLOSED, "Dự án đã đóng (CLOSED), không thể tạo mới hoặc sửa đổi");
         }

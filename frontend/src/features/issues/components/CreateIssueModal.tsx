@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
-import { users, projects } from '../../../data/mockData';
-import type { IssueType, Priority, IssueStatus } from '../../../types';
+import React, { useState, useEffect } from 'react';
+import { X, AlertCircle } from 'lucide-react';
+import { useProjectStore } from '../../../store/projectStore';
+import { memberService } from '../../../services/memberService';
+import { issueService } from '../../../services/issueService';
+import type { IssueType, Priority } from '../../../types';
 
 interface CreateIssueModalProps {
   onClose: () => void;
@@ -9,35 +11,81 @@ interface CreateIssueModalProps {
 }
 
 export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIssueModalProps) {
+  const { projects, currentProject } = useProjectStore();
+
   const [form, setForm] = useState({
+    projectId: currentProject ? currentProject.id : (projects[0]?.id || ''),
     summary: '',
     description: '',
-    type: 'Task' as IssueType,
-    status: 'To Do' as IssueStatus,
-    priority: 'Medium' as Priority,
-    assignee: '',
+    type: 'TASK' as string,
+    priority: 'MEDIUM' as string,
+    assigneeId: '',
     labels: '',
     estimates: '',
     dueDate: '',
     environment: '',
-    epicLink: '',
-    project: 'p1',
   });
+
+  const [members, setMembers] = useState<Array<{ id: string; name: string }>>([]);
   const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Sync members when selected project changes
+  useEffect(() => {
+    if (form.projectId) {
+      memberService.getMembers(form.projectId)
+        .then((res) => {
+          const raw = res?.data || [];
+          const list = Array.isArray(raw) ? raw : (raw as any).content || [];
+          setMembers(
+            list.map((m: any) => ({
+              id: String(m.user?.id || m.userId || m.id),
+              name: m.user?.fullName || m.fullName || m.user?.email || m.email || 'Thành viên',
+            }))
+          );
+        })
+        .catch(() => setMembers([]));
+    }
+  }, [form.projectId]);
 
   function set<K extends keyof typeof form>(key: K, val: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: val }));
+    if (errorMsg) setErrorMsg(null);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.summary.trim()) return;
+
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+    setErrorMsg(null);
+
+    const labelsList = form.labels
+      ? form.labels.split(',').map((l) => l.trim()).filter(Boolean)
+      : undefined;
+
+    try {
+      const payload: any = {
+        summary: form.summary.trim(),
+        description: form.description || undefined,
+        type: form.type as IssueType,
+        priority: form.priority as Priority,
+        assigneeId: form.assigneeId || undefined,
+        labels: labelsList,
+        estimates: form.estimates.trim() || undefined,
+        dueDate: form.dueDate || undefined,
+        environment: form.environment.trim() || undefined,
+      };
+
+      await issueService.createIssue(form.projectId, payload);
       onSubmitSuccess?.();
       onClose();
-    }, 500);
+    } catch (err: any) {
+      const msg = err?.message || err?.data?.message || 'Không thể tạo công việc. Vui lòng kiểm tra lại.';
+      setErrorMsg(msg);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function Field({
@@ -85,19 +133,27 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
           </button>
         </div>
 
+        {/* Error banner */}
+        {errorMsg && (
+          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-xs text-red-700">
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
         {/* Body */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <div className="overflow-y-auto flex-1 px-6 py-5">
             <div className="grid grid-cols-2 gap-4 mb-4">
               <Field label="Dự án">
                 <select
-                  value={form.project}
-                  onChange={(e) => set('project', e.target.value)}
+                  value={form.projectId}
+                  onChange={(e) => set('projectId', e.target.value)}
                   className={selectCls}
                 >
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name}
+                      {p.name} ({p.key})
                     </option>
                   ))}
                 </select>
@@ -105,14 +161,13 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
               <Field label="Loại công việc">
                 <select
                   value={form.type}
-                  onChange={(e) => set('type', e.target.value as IssueType)}
+                  onChange={(e) => set('type', e.target.value)}
                   className={selectCls}
                 >
-                  <option value="Story">Story (Câu chuyện)</option>
-                  <option value="Task">Task (Tác vụ)</option>
-                  <option value="Bug">Bug (Lỗi phần mềm)</option>
-                  <option value="Epic">Epic (Sử thi / Tính năng lớn)</option>
-                  <option value="Sub-task">Sub-task (Tác vụ con)</option>
+                  <option value="TASK">Task (Tác vụ)</option>
+                  <option value="BUG">Bug (Lỗi phần mềm)</option>
+                  <option value="EPIC">Epic (Tính năng lớn)</option>
+                  <option value="SUB_TASK">Sub-task (Tác vụ con)</option>
                 </select>
               </Field>
             </div>
@@ -141,41 +196,30 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
               </Field>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <Field label="Trạng thái">
-                <select
-                  value={form.status}
-                  onChange={(e) => set('status', e.target.value as IssueStatus)}
-                  className={selectCls}
-                >
-                  <option value="To Do">Cần làm (To Do)</option>
-                  <option value="In Progress">Đang thực hiện (In Progress)</option>
-                  <option value="Pending Approval">Chờ phê duyệt (Pending Approval)</option>
-                  <option value="Done">Hoàn thành (Done)</option>
-                </select>
-              </Field>
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <Field label="Mức độ ưu tiên">
                 <select
                   value={form.priority}
-                  onChange={(e) => set('priority', e.target.value as Priority)}
+                  onChange={(e) => set('priority', e.target.value)}
                   className={selectCls}
                 >
-                  <option value="Critical">Khẩn cấp (Critical)</option>
-                  <option value="High">Cao (High)</option>
-                  <option value="Medium">Trung bình (Medium)</option>
-                  <option value="Low">Thấp (Low)</option>
+                  <option value="HIGHEST">Khẩn cấp nhất (Highest)</option>
+                  <option value="HIGH">Cao (High)</option>
+                  <option value="MEDIUM">Trung bình (Medium)</option>
+                  <option value="LOW">Thấp (Low)</option>
+                  <option value="LOWEST">Rất thấp (Lowest)</option>
                 </select>
               </Field>
               <Field label="Người thực hiện" optional>
                 <select
-                  value={form.assignee}
-                  onChange={(e) => set('assignee', e.target.value)}
+                  value={form.assigneeId}
+                  onChange={(e) => set('assigneeId', e.target.value)}
                   className={selectCls}
                 >
                   <option value="">Chưa phân công</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
                     </option>
                   ))}
                 </select>
@@ -187,7 +231,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                 <input
                   value={form.labels}
                   onChange={(e) => set('labels', e.target.value)}
-                  placeholder="Ví dụ: security, ux, api (cách nhau bởi dấu phẩy)"
+                  placeholder="Ví dụ: backend, api, security (cách nhau bởi dấu phẩy)"
                   className={inputCls}
                 />
               </Field>
@@ -195,7 +239,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                 <input
                   value={form.estimates}
                   onChange={(e) => set('estimates', e.target.value)}
-                  placeholder="Ví dụ: 3 days, 2h30m"
+                  placeholder="Ví dụ: 2h30m, 1d"
                   className={inputCls}
                 />
               </Field>
@@ -216,17 +260,6 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   onChange={(e) => set('environment', e.target.value)}
                   placeholder="Ví dụ: Production, Staging"
                   className={inputCls}
-                />
-              </Field>
-            </div>
-
-            <div className="mb-2">
-              <Field label="Liên kết Epic" optional>
-                <input
-                  value={form.epicLink}
-                  onChange={(e) => set('epicLink', e.target.value)}
-                  placeholder="Ví dụ: EPMS-50"
-                  className={`${inputCls} font-mono text-[13px]`}
                 />
               </Field>
             </div>

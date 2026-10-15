@@ -33,7 +33,7 @@ public class IssueSecurity {
         if (user == null) return false;
         if (user.getSystemRole() == RoleSystem.ADMIN) return true;
 
-        Optional<Issue> issueOpt = issueRepository.findByIssueKey(issueKey);
+        Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
         if (issueOpt.isEmpty()) return false;
 
         Long projectId = issueOpt.get().getProject().getId();
@@ -45,7 +45,7 @@ public class IssueSecurity {
         if (user == null) return false;
         if (user.getSystemRole() == RoleSystem.ADMIN) return true;
 
-        Optional<Issue> issueOpt = issueRepository.findByIssueKey(issueKey);
+        Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
         if (issueOpt.isEmpty()) return false;
 
         Issue issue = issueOpt.get();
@@ -62,5 +62,40 @@ public class IssueSecurity {
         boolean isAssignee = issue.getAssignee() != null && userId.equals(issue.getAssignee().getId());
 
         return isReporter || isAssignee;
+    }
+
+    public boolean canDelete(String issueKey) {
+        return canEdit(issueKey);
+    }
+
+    public boolean canAssign(String issueKey) {
+        AuthUserPrincipal user = getCurrentUser();
+        if (user == null) return false;
+        if (user.getSystemRole() == RoleSystem.ADMIN) return true;
+
+        Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
+        if (issueOpt.isEmpty()) return false;
+
+        Issue issue = issueOpt.get();
+        Long projectId = issue.getProject().getId();
+
+        if (projectSecurity.isPmOrAdmin(projectId)) {
+            return true;
+        }
+
+        Long userId = user.getId();
+        return issue.getAssignee() != null && userId.equals(issue.getAssignee().getId());
+    }
+
+    public boolean canApprove(String issueKey) {
+        AuthUserPrincipal user = getCurrentUser();
+        if (user == null) return false;
+        if (user.getSystemRole() == RoleSystem.ADMIN) return true;
+
+        Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
+        if (issueOpt.isEmpty()) return false;
+
+        Long projectId = issueOpt.get().getProject().getId();
+        return projectSecurity.isPmOrAdmin(projectId);
     }
 }

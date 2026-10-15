@@ -126,7 +126,9 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
                       ? 'Chưa có tài khoản'
                       : status === 'MEMBER_ALREADY_EXISTS'
                       ? 'Đã là thành viên'
-                      : 'Đang chờ xử lý'}
+                      : status === 'CONFLICT'
+                      ? 'Đã có lời mời đang chờ'
+                      : status}
                   </span>
                 </div>
               ))}

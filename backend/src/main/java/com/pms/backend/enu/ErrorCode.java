@@ -22,6 +22,8 @@ public enum ErrorCode {
     EXPORT_LIMIT_EXCEEDED(HttpStatus.UNPROCESSABLE_ENTITY, "Export row limit exceeded"),
     FILE_TYPE_NOT_ALLOWED(HttpStatus.UNPROCESSABLE_ENTITY, "File type is not allowed"),
     FILE_TOO_LARGE(HttpStatus.UNPROCESSABLE_ENTITY, "File size exceeds allowed limit"),
+    INVALID_TRANSITION(HttpStatus.BAD_REQUEST, "Invalid status transition"),
+    INVITATION_EXPIRED(HttpStatus.UNPROCESSABLE_ENTITY, "Invitation has expired"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
 
     private final HttpStatus status;
