@@ -26,6 +26,8 @@ public class WorkflowService {
     private final ProjectSecurity projectSecurity;
     private final NotificationService notificationService;
     private final AuditService auditService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private WatcherService watcherService;
 
     public WorkflowService(WorkflowStatusRepository statusRepository,
                            WorkflowTransitionRepository transitionRepository,
@@ -276,6 +278,9 @@ public class WorkflowService {
         List<User> recipients = new ArrayList<>();
         if (savedIssue.getReporter() != null) recipients.add(savedIssue.getReporter());
         if (savedIssue.getAssignee() != null) recipients.add(savedIssue.getAssignee());
+        if (watcherService != null) {
+            recipients.addAll(watcherService.getWatchers(savedIssue.getId()));
+        }
 
         String issueTitle = savedIssue.getIssueKey() + ": " + savedIssue.getSummary();
         notificationService.notify(
