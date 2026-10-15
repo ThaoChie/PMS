@@ -47,7 +47,7 @@ export default function ProjectSwitcher({
                 key={p.id}
                 type="button"
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left hover:bg-[#F7F7F8] transition-colors ${
-                  p.id === selectedProject.id ? 'bg-[#F7F7F8]' : ''
+                  p.id === selectedProject?.id ? 'bg-[#F7F7F8]' : ''
                 }`}
                 onClick={() => {
                   onSelectProject(p);
@@ -55,7 +55,7 @@ export default function ProjectSwitcher({
                 }}
               >
                 <div className="w-5 h-5 rounded bg-[#1A1A1A] flex items-center justify-center text-white text-[9px] font-bold shrink-0">
-                  {p.key.slice(0, 2)}
+                  {(p.key || 'PR').slice(0, 2)}
                 </div>
                 <span className="truncate text-[#1A1A1A]">{p.name}</span>
                 {p.status === 'Closed' && (

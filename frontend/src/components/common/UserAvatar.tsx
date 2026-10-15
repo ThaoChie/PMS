@@ -22,11 +22,13 @@ export default function UserAvatar({
   avatarUrl,
   className = '',
 }: UserAvatarProps) {
+  const safeInitials = (initials || (name ? name.slice(0, 2) : 'U')).toUpperCase();
+
   if (avatarUrl) {
     return (
       <img
         src={avatarUrl}
-        alt={name || initials}
+        alt={name || safeInitials}
         className={`${SIZES[size]} rounded-full object-cover shrink-0 select-none border border-[#E5E5E7] ${className}`}
       />
     );
@@ -37,7 +39,7 @@ export default function UserAvatar({
       title={name}
       className={`${SIZES[size]} rounded-full bg-[#1A1A1A] text-white font-medium flex items-center justify-center shrink-0 select-none ${className}`}
     >
-      {initials}
+      {safeInitials}
     </div>
   );
 }
