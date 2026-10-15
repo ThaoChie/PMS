@@ -129,4 +129,29 @@ public class ProjectServiceTest {
         assertEquals("PM", response.getMyRole());
         verify(projectRepository, times(1)).save(any());
     }
+
+    @Test
+    public void testCreateProject_WithInitialEmails_HandlesUserNotFoundAndSelfWithoutError() {
+        CreateProjectRequest request = new CreateProjectRequest();
+        request.setName("Project With Invites");
+        request.setProjectKey("PWI");
+        request.setInitialEmails(List.of("pm@epms.com", "notfound@epms.com"));
+
+        when(projectRepository.existsByProjectKeyIgnoreCase("PWI")).thenReturn(false);
+        when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> {
+            Project p = invocation.getArgument(0);
+            p.setId(30L);
+            return p;
+        });
+        when(userRepository.findByEmailIgnoreCase("notfound@epms.com")).thenReturn(java.util.Optional.empty());
+
+        ProjectResponse response = projectService.createProject(request, pmUser);
+
+        assertNotNull(response);
+        assertNotNull(response.getInviteResults());
+        assertEquals("MEMBER_ALREADY_EXISTS", response.getInviteResults().get("pm@epms.com"));
+        assertEquals("USER_NOT_FOUND", response.getInviteResults().get("notfound@epms.com"));
+        // Notice: invitationService.createInvitation should NOT be called for these invalid cases!
+        verify(invitationService, never()).createInvitation(anyLong(), any(), any());
+    }
 }

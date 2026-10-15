@@ -5,6 +5,8 @@ import Topbar from './Topbar';
 import UserAvatar, { Avatar } from '../common/UserAvatar';
 import { useProjectStore } from '../../store/projectStore';
 import { useAuthStore } from '../../store/authStore';
+import { useNotificationStore } from '../../store/notificationStore';
+import { useNotificationPolling } from '../../hooks/useNotificationPolling';
 
 interface AppShellProps {
   currentScreen: Screen;
@@ -32,14 +34,19 @@ export default function AppShell({
   projects: propProjects,
   selectedProject: propSelectedProject,
   currentUser: propUser,
-  notifications = [],
+  notifications: propNotifications,
   children,
 }: AppShellProps) {
   const { projects: storeProjects, currentProject, setCurrentProject } = useProjectStore();
   const { user: authUser } = useAuthStore();
+  const { notifications: storeNotifications, markAsRead, markAllAsRead } = useNotificationStore();
+
+  // Poll notifications in background every 45s
+  useNotificationPolling(45000);
 
   const projects = propProjects || storeProjects;
   const selectedProject = propSelectedProject || currentProject || projects[0] || null;
+  const notifications = propNotifications && propNotifications.length > 0 ? propNotifications : storeNotifications;
 
   const currentUser: User = propUser || authUser || {
     id: '',

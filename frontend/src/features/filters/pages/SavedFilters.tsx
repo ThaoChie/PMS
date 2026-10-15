@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Mail, Users, Trash2, ChevronDown } from 'lucide-react';
-import { savedFilters } from '../../../data/mockData';
 import UserAvatar from '../../../components/common/UserAvatar';
 import type { SavedFilter } from '../../../types';
 
 export default function SavedFilters() {
-  const [filters, setFilters] = useState<SavedFilter[]>(savedFilters.map((f) => ({ ...f } as any)));
+  const [filters, setFilters] = useState<SavedFilter[]>([]);
 
   function toggleSub(id: string) {
     setFilters((fs) =>
