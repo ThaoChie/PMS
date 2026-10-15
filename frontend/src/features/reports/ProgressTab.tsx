@@ -1,20 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-
-export const progressData = [
-  { day: 'Mar 1', remaining: 48, completed: 2, ideal: 50 },
-  { day: 'Mar 3', remaining: 44, completed: 6, ideal: 44 },
-  { day: 'Mar 5', remaining: 40, completed: 10, ideal: 38 },
-  { day: 'Mar 7', remaining: 38, completed: 12, ideal: 32 },
-  { day: 'Mar 9', remaining: 32, completed: 18, ideal: 26 },
-  { day: 'Mar 11', remaining: 30, completed: 20, ideal: 20 },
-  { day: 'Mar 13', remaining: 28, completed: 22, ideal: 14 },
-  { day: 'Mar 15', remaining: 24, completed: 26, ideal: 8 },
-  { day: 'Mar 17', remaining: null, completed: null, ideal: 2 },
-  { day: 'Mar 19', remaining: null, completed: null, ideal: 0 },
-];
+import { useProjectStore } from '../../store/projectStore';
+import { reportService } from '../../services/reportService';
+import type { ProgressPoint } from '../../types';
 
 export const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -32,17 +22,62 @@ export const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const ProgressTab: React.FC = () => {
-  const isAtRisk = progressData[5].remaining! > progressData[5].ideal!;
+  const currentProject = useProjectStore((s) => s.currentProject);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!currentProject?.id) {
+      setData([]);
+      return;
+    }
+
+    setLoading(true);
+    reportService
+      .getProgressReport(currentProject.id)
+      .then((res) => {
+        const list = res?.data || (res as any) || [];
+        setData(Array.isArray(list) ? list : []);
+      })
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, [currentProject?.id]);
+
+  const lastPoint = data.length > 0 ? data[data.length - 1] : null;
+  const firstPoint = data.length > 0 ? data[0] : null;
+  const totalIssues = firstPoint ? (firstPoint.remaining ?? firstPoint.actualRemaining ?? 0) + (firstPoint.completed ?? 0) : 0;
+  const completedIssues = lastPoint ? (lastPoint.completed ?? 0) : 0;
+  const remainingIssues = lastPoint ? (lastPoint.remaining ?? lastPoint.actualRemaining ?? 0) : 0;
+  const isAtRisk = lastPoint && remainingIssues > (lastPoint.ideal ?? lastPoint.idealRemaining ?? 0);
+
+  if (loading) {
+    return (
+      <div className="py-20 text-center text-xs text-[#9B9B9F]">
+        Đang tải dữ liệu tiến độ…
+      </div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="py-20 text-center border border-[#E5E5E7] rounded-xl p-8">
+        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">Chưa có đủ dữ liệu tiến độ</h3>
+        <p className="text-xs text-[#6B6B70]">
+          Dự án chưa có công việc nào hoặc mới khởi tạo. Hãy tạo và cập nhật công việc để hệ thống vẽ biểu đồ Burn-down.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
       {/* Status summary row */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Tổng số công việc', value: '50', sub: 'Phạm vi Sprint' },
-          { label: 'Đã hoàn thành', value: '20', sub: 'Đạt 40%' },
-          { label: 'Còn lại', value: '30', sub: isAtRisk ? '⚠ Có nguy cơ trễ' : '✓ Đúng tiến độ', atRisk: isAtRisk },
-        ].map(stat => (
+          { label: 'Tổng số công việc', value: totalIssues, sub: 'Phạm vi dự án' },
+          { label: 'Đã hoàn thành', value: completedIssues, sub: totalIssues > 0 ? `Đạt ${Math.round((completedIssues / totalIssues) * 100)}%` : '0%' },
+          { label: 'Còn lại', value: remainingIssues, sub: isAtRisk ? '⚠ Có nguy cơ trễ' : '✓ Đúng tiến độ', atRisk: isAtRisk },
+        ].map((stat) => (
           <div
             key={stat.label}
             className={`border rounded-xl p-5 ${
@@ -66,7 +101,7 @@ export const ProgressTab: React.FC = () => {
       <div className="border border-[#E5E5E7] rounded-xl p-5">
         <h3 className="text-sm font-semibold text-[#1A1A1A] mb-5">Biểu đồ tiến độ (Burn-down chart)</h3>
         <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={progressData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+          <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F1" />
             <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#9B9B9F' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: '#9B9B9F' }} axisLine={false} tickLine={false} />
