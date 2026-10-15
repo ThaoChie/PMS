@@ -65,7 +65,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({ isLoading: true });
     try {
       const res = await projectService.getProjects(params);
-      const rawList = res?.data?.content || res?.data?.items || (Array.isArray(res?.data) ? res.data : []);
+      const rawList = res?.data?.content || (res?.data as any)?.items || (Array.isArray(res?.data) ? res.data : []);
       const list = rawList.map(mapProjectResponseToProject);
       const cur = get().currentProject;
       set({

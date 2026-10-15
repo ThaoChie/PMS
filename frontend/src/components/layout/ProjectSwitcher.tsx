@@ -4,7 +4,7 @@ import type { Project } from '../../types';
 
 interface ProjectSwitcherProps {
   projects: Project[];
-  selectedProject: Project;
+  selectedProject: Project | null;
   onSelectProject: (project: Project) => void;
   onCreateProject?: () => void;
 }

@@ -60,7 +60,7 @@ export default function AppShell({
         projects={projects}
         selectedProject={selectedProject}
         onNavigate={onNavigate}
-        onSelectProject={setSelectedProject}
+        onSelectProject={setCurrentProject}
         onLogout={onLogout}
       />
 

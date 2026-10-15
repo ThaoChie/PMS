@@ -32,7 +32,7 @@ interface SidebarProps {
   role: Role;
   user: User;
   projects: Project[];
-  selectedProject: Project;
+  selectedProject: Project | null;
   onNavigate: (screen: Screen) => void;
   onSelectProject: (project: Project) => void;
   onLogout: () => void;
