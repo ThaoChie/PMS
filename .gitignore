@@ -14,12 +14,12 @@
 !*.env.production.example
 
 # Neon & Node CLI files (Root)
-.neon
-.agents/
-neon.ts
-package.json
-package-lock.json
-skills-lock.json
+/.neon
+/.agents/
+/neon.ts
+/package.json
+/package-lock.json
+/skills-lock.json
 node_modules/
 
 # Build artifacts
