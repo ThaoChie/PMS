@@ -1,12 +1,22 @@
 package com.pms.backend.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 public class UpdateProfileRequest {
 
-    @NotBlank(message = "Họ và tên không được để trống")
+    @JsonAlias({"name"})
     private String fullName;
 
-    public String getFullName() { return fullName; }
+    private String name;
+
+    public String getFullName() {
+        if (fullName != null && !fullName.isBlank()) {
+            return fullName;
+        }
+        return name;
+    }
+
     public void setFullName(String fullName) { this.fullName = fullName; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 }

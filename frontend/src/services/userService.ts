@@ -6,8 +6,12 @@ export const userService = {
     return axiosClient.get<any, ApiResponse<User>>('/users/me');
   },
 
-  async updateMe(data: Partial<User>): Promise<ApiResponse<User>> {
-    return axiosClient.put<any, ApiResponse<User>>('/users/me', data);
+  async updateMe(data: Partial<User> & { fullName?: string }): Promise<ApiResponse<User>> {
+    const payload = {
+      ...data,
+      fullName: data.name || data.fullName,
+    };
+    return axiosClient.put<any, ApiResponse<User>>('/users/me', payload);
   },
 
   async updateAvatar(file: File): Promise<ApiResponse<{ avatarUrl: string }>> {

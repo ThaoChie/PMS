@@ -73,7 +73,14 @@ public class AuthService {
         User user = new User();
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setFullName(request.getFullName().trim());
+        String rawName = request.getFullName();
+        if (rawName == null || rawName.isBlank()) {
+            rawName = request.getName();
+        }
+        if (rawName == null || rawName.isBlank()) {
+            rawName = email.contains("@") ? email.substring(0, email.indexOf("@")) : "Thành viên";
+        }
+        user.setFullName(rawName.trim());
         user.setProvider(AuthProvider.LOCAL);
         user.setSystemRole(RoleSystem.MEMBER);
         user.setStatus(UserStatus.ACTIVE);

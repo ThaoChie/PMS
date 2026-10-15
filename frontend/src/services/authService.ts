@@ -23,8 +23,13 @@ export const authService = {
     return res;
   },
 
-  async register(data: { name: string; email: string; password: string }): Promise<ApiResponse<User>> {
-    return axiosClient.post<any, ApiResponse<User>>('/auth/register', data);
+  async register(data: { name: string; email: string; password: string; fullName?: string }): Promise<ApiResponse<User>> {
+    const fullName = data.fullName || data.name;
+    return axiosClient.post<any, ApiResponse<User>>('/auth/register', {
+      ...data,
+      fullName,
+      name: fullName,
+    });
   },
 
   async forgotPassword(email: string): Promise<ApiResponse<void>> {
