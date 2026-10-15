@@ -45,11 +45,11 @@ export const SavedFiltersWidget: React.FC<SavedFiltersWidgetProps> = ({
                 {f.name}
               </p>
               <p className="text-[10px] text-[#9B9B9F]">
-                {f.isShared ? 'Shared with project' : 'Private'}
+                {(f as any).isShared || f.sharedWith?.length > 0 ? 'Shared with project' : 'Private'}
               </p>
             </div>
             <span className="text-[10px] text-[#9B9B9F] bg-[#F7F7F8] border border-[#E5E5E7] px-1.5 py-0.5 rounded">
-              {f.count}
+              {(f as any).count ?? 0}
             </span>
           </div>
         ))}
