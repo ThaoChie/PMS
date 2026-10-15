@@ -1,10 +1,10 @@
 # EPMS — Enterprise Project Management System
 
-Hệ thống Quản lý Dự án Doanh nghiệp (EPMS / PMS) là ứng dụng web quản lý công việc và tiến độ dự án dựa trên đơn vị **Issue** (mô hình tương tự Jira), được thiết kế tối ưu hóa cho các đội ngũ phát triển phần mềm trong doanh nghiệp.
+Hệ thống Quản lý Dự án Doanh nghiệp (EPMS / PMS) là ứng dụng web quản lý công việc và tiến độ dự án dựa trên đơn vị **Issue** được thiết kế tối ưu hóa cho các đội ngũ phát triển phần mềm trong doanh nghiệp.
 
 ---
 
-## 📌 1. Giới thiệu tổng quan về dự án
+##  1. Giới thiệu tổng quan về dự án
 
 ### 1.1. Mục tiêu
 - **Quản lý công việc tập trung:** Thay thế việc quản lý thủ công rời rạc qua email, bảng tính bằng hệ thống quản lý Issue, Task, Bug, Epic và Sub-task trực quan.
@@ -35,7 +35,7 @@ Hệ thống Quản lý Dự án Doanh nghiệp (EPMS / PMS) là ứng dụng we
 
 ---
 
-## 🚀 2. Hướng dẫn chạy dự án trên máy Local (Chỉ cần Docker & VS Code)
+## 2. Hướng dẫn chạy dự án trên máy Local 
 
 Dự án đã được cấu hình toàn bộ môi trường chạy thông qua **Docker Compose** và **Multi-stage Dockerfile**. Bạn **KHÔNG CẦN** phải cài đặt Java/JDK, Maven, Node.js, npm hay PostgreSQL trên máy tính cá nhân.
 
