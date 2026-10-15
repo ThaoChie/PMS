@@ -26,6 +26,13 @@ public class PageWrapper<T> {
         return new PageWrapper<>(content, page, size, totalElements);
     }
 
+    public static <T> PageWrapper<T> from(org.springframework.data.domain.Page<T> page) {
+        if (page == null) {
+            return empty(0, 0);
+        }
+        return new PageWrapper<>(page.getContent(), page.getNumber(), page.getSize(), page.getTotalElements());
+    }
+
     public static <T> PageWrapper<T> empty(int page, int size) {
         return new PageWrapper<>(Collections.emptyList(), page, size, 0);
     }

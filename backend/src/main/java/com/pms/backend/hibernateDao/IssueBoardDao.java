@@ -36,10 +36,9 @@ public class IssueBoardDao {
     }
 
     public List<Issue> findIssuesByProjectId(Long projectId) {
-        return issueRepository.findByProjectId(projectId);
+        return issueRepository.findByProjectIdAndDeletedAtIsNull(projectId);
     }
 
-    // Dynamic query with security scope: project IN (danh sách project user được phân quyền)
     public List<Issue> findIssuesForUserBoard(Long userId, Long projectId) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Issue> query = cb.createQuery(Issue.class);
@@ -51,15 +50,18 @@ public class IssueBoardDao {
         projectSubquery.select(memberRoot.get("project").get("id"))
                        .where(cb.equal(memberRoot.get("user").get("id"), userId));
 
-        // Basic security condition
+        // Security condition: project in user's projects AND issue not soft-deleted
         Predicate securityPredicate = issueRoot.get("project").get("id").in(projectSubquery);
+        Predicate notDeleted = cb.isNull(issueRoot.get("deletedAt"));
 
         if (projectId != null) {
             Predicate projectPredicate = cb.equal(issueRoot.get("project").get("id"), projectId);
-            query.where(cb.and(securityPredicate, projectPredicate));
+            query.where(cb.and(securityPredicate, notDeleted, projectPredicate));
         } else {
-            query.where(securityPredicate);
+            query.where(cb.and(securityPredicate, notDeleted));
         }
+
+        query.orderBy(cb.desc(issueRoot.get("updatedAt")));
 
         return entityManager.createQuery(query).getResultList();
     }

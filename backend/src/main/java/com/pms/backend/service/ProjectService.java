@@ -18,6 +18,7 @@ import com.pms.backend.hibernateDao.ProjectListHibernateDao;
 import com.pms.backend.model.Project;
 import com.pms.backend.model.ProjectMember;
 import com.pms.backend.model.User;
+import com.pms.backend.security.AuthUserPrincipal;
 import com.pms.backend.security.ProjectSecurity;
 import com.pms.backend.wrapper.PageWrapper;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Service
@@ -94,12 +96,36 @@ public class ProjectService {
             for (String rawEmail : request.getInitialEmails()) {
                 String email = rawEmail != null ? rawEmail.trim().toLowerCase() : "";
                 if (email.isEmpty()) continue;
+
+                // 1. Check if email is the creator themselves
+                if (creator.getEmail() != null && email.equalsIgnoreCase(creator.getEmail().trim().toLowerCase())) {
+                    inviteResults.put(email, "MEMBER_ALREADY_EXISTS");
+                    continue;
+                }
+
+                // 2. Check if user exists in the system
+                Optional<User> recipientOpt = userRepository.findByEmailIgnoreCase(email);
+                if (recipientOpt.isEmpty()) {
+                    inviteResults.put(email, "USER_NOT_FOUND");
+                    continue;
+                }
+
+                User recipient = recipientOpt.get();
+
+                // 3. Check if already a project member
+                if (projectMemberRepository.existsByProjectIdAndUserId(savedProject.getId(), recipient.getId())) {
+                    inviteResults.put(email, "MEMBER_ALREADY_EXISTS");
+                    continue;
+                }
+
                 try {
                     InviteMemberRequest inviteReq = new InviteMemberRequest();
                     inviteReq.setEmail(email);
                     inviteReq.setRole(ProjectRole.MEMBER);
                     invitationService.createInvitation(savedProject.getId(), inviteReq, creator);
-                    inviteResults.put(email, "Đã gửi lời mời thành công");
+                    inviteResults.put(email, "SUCCESS");
+                } catch (BusinessException be) {
+                    inviteResults.put(email, be.getErrorCode() != null ? be.getErrorCode().name() : be.getMessage());
                 } catch (Exception ex) {
                     inviteResults.put(email, ex.getMessage());
                 }

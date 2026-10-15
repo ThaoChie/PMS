@@ -12,6 +12,7 @@ import com.pms.backend.enu.NotificationType;
 import com.pms.backend.enu.ProjectRole;
 import com.pms.backend.exception.BusinessException;
 import com.pms.backend.exception.ResourceNotFoundException;
+import com.pms.backend.exception.ValidationException;
 import com.pms.backend.model.Invitation;
 import com.pms.backend.model.Project;
 import com.pms.backend.model.ProjectMember;
@@ -59,7 +60,7 @@ public class InvitationService {
         this.appProperties = appProperties;
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = {BusinessException.class, ResourceNotFoundException.class, ValidationException.class})
     public Invitation createInvitation(Long projectId, InviteMemberRequest request, User inviter) {
         projectSecurity.assertProjectWritable(projectId);
 

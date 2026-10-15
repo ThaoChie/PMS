@@ -19,7 +19,7 @@ public class ReportService {
     }
 
     public ReportResponse generateProjectReport(Long projectId) {
-        List<Issue> issues = issueRepository.findByProjectId(projectId);
+        List<Issue> issues = issueRepository.findByProjectIdAndDeletedAtIsNull(projectId);
         
         Map<String, Integer> statusCount = new HashMap<>();
         Map<String, Integer> assigneeCount = new HashMap<>();
