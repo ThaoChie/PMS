@@ -46,9 +46,14 @@ export default function ResetPassword({ token: propToken, onSuccess }: ResetPass
         onSuccess();
       }, 1500);
     } catch (err: any) {
-      setError(
-        err?.response?.data?.message || err?.message || 'Không thể đặt lại mật khẩu. Token có thể đã hết hạn.'
-      );
+      const rawMsg = err?.response?.data?.message || err?.message || '';
+      let msg = 'Không thể đặt lại mật khẩu. Token có thể đã hết hạn.';
+      if (err?.code === 'ECONNABORTED' || (typeof rawMsg === 'string' && rawMsg.toLowerCase().includes('timeout'))) {
+        msg = 'Máy chủ đang khởi động lại (Render Cold Start mất khoảng 30–45s). Hệ thống đã được đánh thức, bạn vui lòng bấm lại nhé!';
+      } else if (rawMsg) {
+        msg = rawMsg;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

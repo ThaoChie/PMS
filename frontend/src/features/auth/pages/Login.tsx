@@ -49,7 +49,15 @@ export default function Login({ onLogin, onRegister, onForgotPassword }: LoginPr
         setError(res?.message || 'Email và/hoặc mật khẩu chưa đúng');
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || 'Email và/hoặc mật khẩu chưa đúng';
+      const rawMsg = err?.response?.data?.message || err?.message || '';
+      let msg = 'Email và/hoặc mật khẩu chưa đúng';
+      if (err?.code === 'ECONNABORTED' || (typeof rawMsg === 'string' && rawMsg.toLowerCase().includes('timeout'))) {
+        msg = 'Máy chủ đang khởi động lại (Render Cold Start mất khoảng 30–45s). Hệ thống đã được đánh thức, bạn vui lòng nhấn "Đăng nhập" lại một lần nữa nhé!';
+      } else if (rawMsg === 'Network Error' || (err?.isAxiosError && !err.response)) {
+        msg = 'Không thể kết nối đến máy chủ backend (máy chủ Render đang khởi động). Vui lòng thử lại sau giây lát.';
+      } else if (rawMsg) {
+        msg = rawMsg;
+      }
       setError(msg);
     } finally {
       setLoading(false);
