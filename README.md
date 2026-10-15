@@ -50,12 +50,6 @@ Dự án đã được cấu hình toàn bộ môi trường chạy thông qua *
 ### 2.2. Các bước khởi chạy chi tiết
 
 #### Bước 1: Mở dự án trong VS Code
-1. Khởi động VS Code.
-2. Chọn menu **File** > **Open Folder...** và chọn thư mục `PMS`.
-3. Mở Terminal tích hợp của VS Code bằng tổ hợp phím:
-   - **macOS:** `Cmd + \``
-   - **Windows / Linux:** `Ctrl + \``
-   (Hoặc vào menu **Terminal** > **New Terminal**).
 
 #### Bước 2: Kiểm tra cấu hình Docker Compose
 Tệp `docker-compose.yml` ở thư mục gốc đã định nghĩa sẵn 3 dịch vụ chính:
