@@ -24,6 +24,7 @@ import com.pms.backend.wrapper.PageWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -213,5 +214,65 @@ public class ProjectService {
         req.setDescription(project.getDescription());
         createProject(req, creator);
         return projectRepository.findByProjectKeyIgnoreCase(project.getProjectKey()).orElse(project);
+    }
+
+    public String suggestProjectKey(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return "PRJ";
+        }
+
+        String base = generateBaseKey(name);
+        if (!projectRepository.existsByProjectKeyIgnoreCase(base)) {
+            return base;
+        }
+
+        for (int i = 1; i <= 999; i++) {
+            String suffix = String.valueOf(i);
+            int maxBaseLen = Math.max(2, 6 - suffix.length());
+            String candidateBase = base.length() > maxBaseLen ? base.substring(0, maxBaseLen) : base;
+            String candidate = candidateBase + suffix;
+            if (!projectRepository.existsByProjectKeyIgnoreCase(candidate)) {
+                return candidate;
+            }
+        }
+
+        return base.substring(0, Math.min(base.length(), 4)) + (System.currentTimeMillis() % 100);
+    }
+
+    public boolean isProjectKeyAvailable(String key) {
+        if (key == null || key.trim().isEmpty()) {
+            return false;
+        }
+        return !projectRepository.existsByProjectKeyIgnoreCase(key.trim());
+    }
+
+    private String generateBaseKey(String name) {
+        String clean = Normalizer.normalize(name, Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .replace("đ", "d")
+                .replace("Đ", "D")
+                .trim();
+
+        String[] words = clean.split("\\s+");
+        if (words.length >= 2) {
+            StringBuilder acronym = new StringBuilder();
+            for (String w : words) {
+                if (!w.isEmpty() && Character.isLetterOrDigit(w.charAt(0))) {
+                    acronym.append(Character.toUpperCase(w.charAt(0)));
+                }
+            }
+            String acr = acronym.toString().replaceAll("[^A-Z0-9]", "");
+            if (acr.length() >= 2 && acr.length() <= 6) {
+                return acr;
+            }
+        }
+
+        String raw = clean.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
+        if (raw.length() >= 2) {
+            return raw.substring(0, Math.min(raw.length(), 6));
+        } else if (raw.length() == 1) {
+            return raw + "P";
+        }
+        return "PRJ";
     }
 }
