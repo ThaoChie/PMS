@@ -16,6 +16,10 @@ public class IssueStatusHistory {
     private Issue issue;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id")
+    private Project project;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_status_id")
     private WorkflowStatus fromStatus;
 
@@ -37,6 +41,7 @@ public class IssueStatusHistory {
 
     public IssueStatusHistory(Issue issue, WorkflowStatus fromStatus, WorkflowStatus toStatus, User changedBy, String comment) {
         this.issue = issue;
+        this.project = (issue != null) ? issue.getProject() : null;
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
         this.changedBy = changedBy;
@@ -49,6 +54,9 @@ public class IssueStatusHistory {
 
     public Issue getIssue() { return issue; }
     public void setIssue(Issue issue) { this.issue = issue; }
+
+    public Project getProject() { return project; }
+    public void setProject(Project project) { this.project = project; }
 
     public WorkflowStatus getFromStatus() { return fromStatus; }
     public void setFromStatus(WorkflowStatus fromStatus) { this.fromStatus = fromStatus; }

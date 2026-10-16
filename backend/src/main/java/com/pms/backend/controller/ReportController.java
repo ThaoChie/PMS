@@ -1,14 +1,13 @@
 package com.pms.backend.controller;
 
 import com.pms.backend.common.ApiResponse;
-import com.pms.backend.dto.BugReportItemDto;
-import com.pms.backend.dto.ProductivityPointDto;
-import com.pms.backend.dto.ProgressPointDto;
-import com.pms.backend.dto.ReportResponse;
+import com.pms.backend.dto.*;
 import com.pms.backend.service.ReportService;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDate;
 
 @RestController
 public class ReportController {
@@ -20,22 +19,36 @@ public class ReportController {
     }
 
     @GetMapping({"/api/reports/project/{projectId}", "/reports/project/{projectId}"})
+    @PreAuthorize("@projectSecurity.isMember(#projectId)")
     public ApiResponse<ReportResponse> getProjectReport(@PathVariable Long projectId) {
         return ApiResponse.success(reportService.generateProjectReport(projectId));
     }
 
     @GetMapping({"/api/projects/{projectId}/reports/progress", "/projects/{projectId}/reports/progress"})
-    public ApiResponse<List<ProgressPointDto>> getProgressReport(@PathVariable Long projectId) {
-        return ApiResponse.success(reportService.getProgressReport(projectId));
+    @PreAuthorize("@projectSecurity.isMember(#projectId)")
+    public ApiResponse<ProgressReportResponse> getProgressReport(
+            @PathVariable Long projectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false, defaultValue = "issues") String metric) {
+        return ApiResponse.success(reportService.getProgressReport(projectId, from, to, metric));
     }
 
     @GetMapping({"/api/projects/{projectId}/reports/productivity", "/projects/{projectId}/reports/productivity"})
-    public ApiResponse<List<ProductivityPointDto>> getProductivityReport(@PathVariable Long projectId) {
-        return ApiResponse.success(reportService.getProductivityReport(projectId));
+    @PreAuthorize("@projectSecurity.isMember(#projectId)")
+    public ApiResponse<ProductivityReportResponse> getProductivityReport(
+            @PathVariable Long projectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ApiResponse.success(reportService.getProductivityReport(projectId, from, to));
     }
 
     @GetMapping({"/api/projects/{projectId}/reports/bugs", "/projects/{projectId}/reports/bugs"})
-    public ApiResponse<List<BugReportItemDto>> getBugReport(@PathVariable Long projectId) {
-        return ApiResponse.success(reportService.getBugReport(projectId));
+    @PreAuthorize("@projectSecurity.hasRole(#projectId, 'PM', 'QA')")
+    public ApiResponse<BugReportResponse> getBugReport(
+            @PathVariable Long projectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ApiResponse.success(reportService.getBugReport(projectId, from, to));
     }
 }

@@ -14,4 +14,7 @@ public interface WorklogRepository extends JpaRepository<Worklog, Long> {
 
     @Query("SELECT w FROM Worklog w LEFT JOIN FETCH w.user WHERE w.issue.issueKey = :issueKey ORDER BY w.workDate DESC, w.createdAt DESC")
     List<Worklog> findByIssueKeyOrderByWorkDateDesc(@Param("issueKey") String issueKey);
+
+    @Query("SELECT w FROM Worklog w LEFT JOIN FETCH w.user WHERE w.issue.project.id = :projectId AND w.workDate BETWEEN :from AND :to")
+    List<Worklog> findByProjectIdAndWorkDateBetween(@Param("projectId") Long projectId, @Param("from") java.time.LocalDate from, @Param("to") java.time.LocalDate to);
 }

@@ -12,6 +12,7 @@ import {
 import type { Role, Screen, Project, User } from '../../types';
 import ProjectSwitcher from './ProjectSwitcher';
 import UserMenu from './UserMenu';
+import { useUIStore } from '../../store/uiStore';
 
 const NAV_ITEMS = [
   { id: 'dashboard' as Screen, label: 'Tổng quan', icon: LayoutDashboard },
@@ -48,42 +49,62 @@ export default function Sidebar({
   onSelectProject,
   onLogout,
 }: SidebarProps) {
+  const isSidebarCollapsed = useUIStore((s) => s.isSidebarCollapsed);
   const canSeeSettings = role === 'admin' || role === 'pm';
 
   return (
     <aside
-      className="w-60 shrink-0 bg-[#F7F7F8] border-r border-[#E5E5E7] flex flex-col"
+      className={`shrink-0 bg-[#F7F7F8] border-r border-[#E5E5E7] flex flex-col transition-all duration-200 ${
+        isSidebarCollapsed ? 'w-16' : 'w-60'
+      }`}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Logo */}
-      <div className="h-14 flex items-center px-4 border-b border-[#E5E5E7]">
+      <div className={`h-14 flex items-center border-b border-[#E5E5E7] ${isSidebarCollapsed ? 'justify-center px-2' : 'px-4'}`}>
         <div className="flex items-center gap-2.5">
           <img
             src="/logoVJU.png"
             alt="VJU Logo"
-            className="w-7 h-7 object-contain select-none"
+            className="w-7 h-7 object-contain select-none shrink-0"
           />
-          <span className="font-bold text-[#1A1A1A] text-sm tracking-tight">EPMS</span>
+          {!isSidebarCollapsed && (
+            <span className="font-bold text-[#1A1A1A] text-sm tracking-tight truncate">EPMS</span>
+          )}
         </div>
       </div>
 
       {/* Project switcher */}
-      <div className="px-3 pt-3 pb-2">
-        <ProjectSwitcher
-          projects={projects}
-          selectedProject={selectedProject}
-          onSelectProject={onSelectProject}
-          onCreateProject={() => onNavigate('projects')}
-        />
-      </div>
+      {!isSidebarCollapsed ? (
+        <div className="px-3 pt-3 pb-2">
+          <ProjectSwitcher
+            projects={projects}
+            selectedProject={selectedProject}
+            onSelectProject={onSelectProject}
+            onCreateProject={() => onNavigate('projects')}
+          />
+        </div>
+      ) : (
+        <div className="p-2 flex justify-center">
+          <div
+            title={selectedProject ? `${selectedProject.name} (${selectedProject.key})` : 'Chọn dự án'}
+            className="w-9 h-9 rounded-lg bg-white border border-[#E5E5E7] flex items-center justify-center font-bold text-xs text-[#1A1A1A] cursor-pointer hover:border-[#1A1A1A]"
+            onClick={() => onNavigate('projects')}
+          >
+            {selectedProject ? selectedProject.key.substring(0, 2) : 'PR'}
+          </div>
+        </div>
+      )}
 
       {/* Main navigation */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-2.5 py-2 space-y-0.5 overflow-y-auto">
         {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
+            title={isSidebarCollapsed ? label : undefined}
+            className={`w-full flex items-center rounded-lg text-sm transition-colors text-left ${
+              isSidebarCollapsed ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'
+            } ${
               currentScreen === id
                 ? 'bg-white text-[#1A1A1A] font-medium border border-[#E5E5E7]'
                 : 'text-[#6B6B70] hover:bg-white/60 hover:text-[#1A1A1A]'
@@ -91,7 +112,7 @@ export default function Sidebar({
             onClick={() => onNavigate(id)}
           >
             <Icon className="w-4 h-4 shrink-0" />
-            {label}
+            {!isSidebarCollapsed && <span className="truncate">{label}</span>}
           </button>
         ))}
 
@@ -99,15 +120,20 @@ export default function Sidebar({
           <>
             <div className="pt-3 pb-1">
               <div className="h-px bg-[#E5E5E7] mx-1" />
-              <p className="text-[10px] font-medium text-[#9B9B9F] uppercase tracking-wider px-2 pt-3 pb-1">
-                Cài đặt dự án
-              </p>
+              {!isSidebarCollapsed && (
+                <p className="text-[10px] font-medium text-[#9B9B9F] uppercase tracking-wider px-2 pt-3 pb-1 truncate">
+                  Cài đặt dự án
+                </p>
+              )}
             </div>
             {SETTINGS_NAV.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 type="button"
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
+                title={isSidebarCollapsed ? label : undefined}
+                className={`w-full flex items-center rounded-lg text-sm transition-colors text-left ${
+                  isSidebarCollapsed ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'
+                } ${
                   currentScreen === id
                     ? 'bg-white text-[#1A1A1A] font-medium border border-[#E5E5E7]'
                     : 'text-[#6B6B70] hover:bg-white/60 hover:text-[#1A1A1A]'
@@ -115,7 +141,7 @@ export default function Sidebar({
                 onClick={() => onNavigate(id)}
               >
                 <Icon className="w-4 h-4 shrink-0" />
-                {label}
+                {!isSidebarCollapsed && <span className="truncate">{label}</span>}
               </button>
             ))}
           </>
@@ -123,13 +149,25 @@ export default function Sidebar({
       </nav>
 
       {/* Bottom user section */}
-      <div className="p-3 border-t border-[#E5E5E7]">
-        <UserMenu
-          user={user}
-          onNavigateProfile={() => onNavigate('profile')}
-          onNavigateInvitations={() => onNavigate('invitations')}
-          onLogout={onLogout}
-        />
+      <div className={`border-t border-[#E5E5E7] ${isSidebarCollapsed ? 'p-2 flex justify-center' : 'p-3'}`}>
+        {!isSidebarCollapsed ? (
+          <UserMenu
+            user={user}
+            onNavigateProfile={() => onNavigate('profile')}
+            onNavigateInvitations={() => onNavigate('invitations')}
+            onLogout={onLogout}
+          />
+        ) : (
+          <div
+            title={`${user.name} - Hồ sơ`}
+            className="cursor-pointer"
+            onClick={() => onNavigate('profile')}
+          >
+            <div className="w-8 h-8 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-xs font-semibold">
+              {user.initials || 'U'}
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );
