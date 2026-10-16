@@ -20,9 +20,8 @@ export default function ExportButton({ onExport, criteria }: ExportButtonProps) 
     setLoading(true);
     try {
       await exportService.exportIssues(criteria || {}, format);
-    } catch (err) {
-      // In mock prototype mode, alert
-      alert(`Đang chuẩn bị xuất tệp ${format.toUpperCase()}...`);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || `Lỗi khi xuất tệp ${format.toUpperCase()}`);
     } finally {
       setLoading(false);
     }
