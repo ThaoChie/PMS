@@ -156,7 +156,10 @@ export default function Topbar({
                       }`}
                       onClick={() => {
                         markAsRead(n.id);
-                        if (n.sourceId) {
+                        setNotifOpen(false);
+                        if (n.type === 'invite') {
+                          onNavigate('invitations');
+                        } else if (n.sourceId) {
                           onNavigate('board');
                         }
                       }}
