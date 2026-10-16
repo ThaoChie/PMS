@@ -16,7 +16,7 @@ export const AssignedIssuesWidget: React.FC<AssignedIssuesWidgetProps> = ({
   return (
     <div className="border border-[#E5E5E7] rounded-xl overflow-hidden">
       <div className="px-5 py-3 border-b border-[#E5E5E7] flex items-center justify-between">
-        <h2 className="text-xs font-semibold text-[#1A1A1A]">Công việc của tôi đang mở</h2>
+        <h2 className="text-xs font-semibold text-[#1A1A1A]">Công việc của tôi</h2>
         {onNavigate && (
           <button
             onClick={() => onNavigate('issues')}
