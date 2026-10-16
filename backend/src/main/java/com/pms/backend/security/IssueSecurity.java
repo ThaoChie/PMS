@@ -1,7 +1,6 @@
 package com.pms.backend.security;
 
 import com.pms.backend.dao.IssueRepository;
-import com.pms.backend.enu.RoleSystem;
 import com.pms.backend.model.Issue;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,7 +30,6 @@ public class IssueSecurity {
     public boolean canView(String issueKey) {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) return false;
-        if (user.getSystemRole() == RoleSystem.ADMIN) return true;
 
         Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
         if (issueOpt.isEmpty()) return false;
@@ -43,7 +41,6 @@ public class IssueSecurity {
     public boolean canEdit(String issueKey) {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) return false;
-        if (user.getSystemRole() == RoleSystem.ADMIN) return true;
 
         Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
         if (issueOpt.isEmpty()) return false;
@@ -71,7 +68,6 @@ public class IssueSecurity {
     public boolean canAssign(String issueKey) {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) return false;
-        if (user.getSystemRole() == RoleSystem.ADMIN) return true;
 
         Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
         if (issueOpt.isEmpty()) return false;
@@ -90,7 +86,6 @@ public class IssueSecurity {
     public boolean canApprove(String issueKey) {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) return false;
-        if (user.getSystemRole() == RoleSystem.ADMIN) return true;
 
         Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
         if (issueOpt.isEmpty()) return false;

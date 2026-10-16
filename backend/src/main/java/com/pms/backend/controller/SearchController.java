@@ -5,7 +5,6 @@ import com.pms.backend.dao.ProjectMemberRepository;
 import com.pms.backend.dao.RecentViewRepository;
 import com.pms.backend.dto.IssueResponse;
 import com.pms.backend.dto.IssueSearchRequest;
-import com.pms.backend.enu.RoleSystem;
 import com.pms.backend.hibernateDao.IssueSearchDao;
 import com.pms.backend.model.Issue;
 import com.pms.backend.model.ProjectMember;
@@ -100,9 +99,6 @@ public class SearchController {
     }
 
     private List<Long> getAccessibleProjectIds(User user) {
-        if (user.getSystemRole() == RoleSystem.ADMIN) {
-            return null; // Admin can see all projects
-        }
         return projectMemberRepository.findByUserId(user.getId())
                 .stream()
                 .map(pm -> pm.getProject().getId())

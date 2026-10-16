@@ -1,6 +1,5 @@
 package com.pms.backend.security;
 
-import com.pms.backend.enu.RoleSystem;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -38,17 +37,16 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(Long userId) {
-        return generateToken(userId, null, null);
+        return generateToken(userId, null);
     }
 
-    public String generateToken(Long userId, String email, RoleSystem systemRole) {
+    public String generateToken(Long userId, String email) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("email", email);
-        claims.put("systemRole", systemRole != null ? systemRole.name() : "MEMBER");
 
         return Jwts.builder()
                 .setClaims(claims)

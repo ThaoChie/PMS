@@ -2,7 +2,6 @@ package com.pms.backend.model;
 
 import com.pms.backend.common.BaseEntity;
 import com.pms.backend.enu.AuthProvider;
-import com.pms.backend.enu.RoleSystem;
 import com.pms.backend.enu.UserStatus;
 import jakarta.persistence.*;
 
@@ -26,10 +25,6 @@ public class User extends BaseEntity {
     @Column(name = "auth_provider")
     private AuthProvider provider = AuthProvider.LOCAL;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "system_role")
-    private RoleSystem systemRole = RoleSystem.MEMBER;
-
     @Column(name = "google_sub")
     private String googleSub;
 
@@ -47,8 +42,6 @@ public class User extends BaseEntity {
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public AuthProvider getProvider() { return provider; }
     public void setProvider(AuthProvider provider) { this.provider = provider; }
-    public RoleSystem getSystemRole() { return systemRole; }
-    public void setSystemRole(RoleSystem systemRole) { this.systemRole = systemRole; }
     public String getGoogleSub() { return googleSub; }
     public void setGoogleSub(String googleSub) { this.googleSub = googleSub; }
     public UserStatus getStatus() { return status; }

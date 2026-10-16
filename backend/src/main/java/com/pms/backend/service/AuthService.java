@@ -7,7 +7,6 @@ import com.pms.backend.dto.RegisterRequest;
 import com.pms.backend.dto.TokenResponse;
 import com.pms.backend.dto.UserResponse;
 import com.pms.backend.enu.AuthProvider;
-import com.pms.backend.enu.RoleSystem;
 import com.pms.backend.enu.UserStatus;
 import com.pms.backend.exception.BusinessException;
 import com.pms.backend.exception.UnauthorizedException;
@@ -60,7 +59,7 @@ public class AuthService {
 
         loginRateLimiter.recordSuccess(email);
 
-        String accessToken = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getSystemRole());
+        String accessToken = tokenProvider.generateToken(user.getId(), user.getEmail());
         String refreshToken = refreshTokenService.createRefreshToken(user);
 
         return new TokenResponse(
@@ -90,7 +89,6 @@ public class AuthService {
         }
         user.setFullName(rawName.trim());
         user.setProvider(AuthProvider.LOCAL);
-        user.setSystemRole(RoleSystem.PM);
         user.setStatus(UserStatus.ACTIVE);
 
         user = userRepository.save(user);

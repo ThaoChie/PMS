@@ -16,7 +16,7 @@ export function mapUserResponseToUser(raw: any): User {
         .slice(0, 2)
         .toUpperCase()
     : 'U';
-  const roleStr = (raw.systemRole || raw.role || 'member').toLowerCase();
+  const roleStr = (raw.role || 'member').toLowerCase();
   const role: Role = roleStr === 'admin' ? 'admin' : roleStr === 'pm' ? 'pm' : 'member';
   const status: MemberStatus =
     raw.status === 'ACTIVE' || raw.status === 'Active' ? 'Active' : 'Pending';

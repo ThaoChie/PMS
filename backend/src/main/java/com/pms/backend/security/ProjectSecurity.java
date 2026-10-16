@@ -5,7 +5,6 @@ import com.pms.backend.dao.ProjectRepository;
 import com.pms.backend.enu.ErrorCode;
 import com.pms.backend.enu.ProjectRole;
 import com.pms.backend.enu.ProjectStatus;
-import com.pms.backend.enu.RoleSystem;
 import com.pms.backend.exception.BusinessException;
 import com.pms.backend.exception.ResourceNotFoundException;
 import com.pms.backend.model.Project;
@@ -35,27 +34,22 @@ public class ProjectSecurity {
         }
         return null;
     }
-
+    // Kểm tra xem người dùng có phải là thành viên của dự án không
     public boolean isMember(Long projectId) {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) {
             return false;
-        }
-        // Superuser ADMIN bypasses membership check (A-01)
-        if (user.getSystemRole() == RoleSystem.ADMIN) {
-            return true;
-        }
+        } 
+        
         return projectMemberRepository.existsByProjectIdAndUserId(projectId, user.getId());
     }
-
+    // Kiem tra xem người dùng có vai trò cụ thể trong dự án không
     public boolean hasRole(Long projectId, String... roles) {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) {
             return false;
         }
-        if (user.getSystemRole() == RoleSystem.ADMIN) {
-            return true;
-        }
+        
 
         Optional<ProjectMember> memberOpt = projectMemberRepository.findByProjectIdAndUserId(projectId, user.getId());
         if (memberOpt.isEmpty()) {
@@ -65,7 +59,7 @@ public class ProjectSecurity {
         ProjectRole userRole = memberOpt.get().getRole();
         return Arrays.stream(roles).anyMatch(r -> r.equalsIgnoreCase(userRole.name()));
     }
-
+    // Kiem tra xem người dùng có vai trò PM
     public boolean isPmOrAdmin(Long projectId) {
         return hasRole(projectId, "PM");
     }

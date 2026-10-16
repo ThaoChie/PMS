@@ -87,7 +87,7 @@ public class RefreshTokenService {
 
         User user = refreshToken.getUser();
         String newRawToken = createRefreshToken(user);
-        String newAccessToken = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getSystemRole());
+        String newAccessToken = tokenProvider.generateToken(user.getId(), user.getEmail());
 
         return new TokenResponse(
                 newAccessToken,

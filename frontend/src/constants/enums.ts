@@ -1,8 +1,3 @@
-export enum SystemRole {
-  ADMIN = 'ADMIN',
-  USER = 'USER',
-}
-
 export enum ProjectRole {
   ADMIN = 'ADMIN',
   PM = 'PM',

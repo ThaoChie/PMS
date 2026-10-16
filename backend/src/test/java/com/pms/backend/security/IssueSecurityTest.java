@@ -1,7 +1,6 @@
 package com.pms.backend.security;
 
 import com.pms.backend.dao.IssueRepository;
-import com.pms.backend.enu.RoleSystem;
 import com.pms.backend.model.Issue;
 import com.pms.backend.model.Project;
 import com.pms.backend.model.User;
@@ -55,8 +54,8 @@ public class IssueSecurityTest {
         SecurityContextHolder.clearContext();
     }
 
-    private void authenticate(Long userId, RoleSystem systemRole) {
-        AuthUserPrincipal principal = new AuthUserPrincipal(userId, "user" + userId + "@test.com", "pass", systemRole, true, Collections.emptyList());
+    private void authenticate(Long userId) {
+        AuthUserPrincipal principal = new AuthUserPrincipal(userId, "user" + userId + "@test.com", "pass", true, Collections.emptyList());
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, Collections.emptyList())
         );
@@ -64,7 +63,7 @@ public class IssueSecurityTest {
 
     @Test
     public void testCanView_MemberOfProject_ReturnsTrue() {
-        authenticate(5L, RoleSystem.USER);
+        authenticate(5L);
         when(issueRepository.findByIssueKeyAndDeletedAtIsNull("PROJA-1")).thenReturn(Optional.of(issueA));
         when(projectSecurity.isMember(100L)).thenReturn(true);
 
@@ -73,7 +72,7 @@ public class IssueSecurityTest {
 
     @Test
     public void testCanView_NonMemberOfProject_IdorBlocked_ReturnsFalse() {
-        authenticate(6L, RoleSystem.USER);
+        authenticate(6L);
         when(issueRepository.findByIssueKeyAndDeletedAtIsNull("PROJA-1")).thenReturn(Optional.of(issueA));
         when(projectSecurity.isMember(100L)).thenReturn(false);
 
@@ -83,7 +82,7 @@ public class IssueSecurityTest {
 
     @Test
     public void testCanEdit_ReporterOrAssignee_ReturnsTrue() {
-        authenticate(5L, RoleSystem.USER);
+        authenticate(5L);
         issueA.setReporter(user);
 
         when(issueRepository.findByIssueKeyAndDeletedAtIsNull("PROJA-1")).thenReturn(Optional.of(issueA));
@@ -94,7 +93,7 @@ public class IssueSecurityTest {
 
     @Test
     public void testCanEdit_OtherMember_ReturnsFalse() {
-        authenticate(8L, RoleSystem.USER);
+        authenticate(8L);
         issueA.setReporter(user); // reporter is 5L, current user is 8L
 
         when(issueRepository.findByIssueKeyAndDeletedAtIsNull("PROJA-1")).thenReturn(Optional.of(issueA));

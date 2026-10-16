@@ -55,7 +55,7 @@ public class ProjectController {
             @RequestParam(defaultValue = "20") int size) {
         AuthUserPrincipal principal = getAuthPrincipal();
         PageWrapper<ProjectResponse> response = projectService.getProjects(
-                principal.getId(), principal.getSystemRole(), q, sort, page, size
+                principal.getId(), q, sort, page, size
         );
         return ApiResponse.success(response);
     }

@@ -4,7 +4,6 @@ import com.pms.backend.dao.ProjectMemberRepository;
 import com.pms.backend.dao.ProjectRepository;
 import com.pms.backend.enu.ProjectRole;
 import com.pms.backend.enu.ProjectStatus;
-import com.pms.backend.enu.RoleSystem;
 import com.pms.backend.exception.BusinessException;
 import com.pms.backend.model.Project;
 import com.pms.backend.model.ProjectMember;
@@ -36,15 +35,13 @@ public class RbacMatrixTest {
     @InjectMocks
     private ProjectSecurity projectSecurity;
 
-    private AuthUserPrincipal adminUser;
     private AuthUserPrincipal pmUser;
     private AuthUserPrincipal devUser;
 
     @BeforeEach
     public void setup() {
-        adminUser = new AuthUserPrincipal(1L, "admin@epms.com", "", RoleSystem.ADMIN, true, Collections.emptyList());
-        pmUser = new AuthUserPrincipal(2L, "pm@epms.com", "", RoleSystem.PM, true, Collections.emptyList());
-        devUser = new AuthUserPrincipal(3L, "dev@epms.com", "", RoleSystem.MEMBER, true, Collections.emptyList());
+        pmUser = new AuthUserPrincipal(2L, "pm@epms.com", "", true, Collections.emptyList());
+        devUser = new AuthUserPrincipal(3L, "dev@epms.com", "", true, Collections.emptyList());
     }
 
     @AfterEach
@@ -58,13 +55,6 @@ public class RbacMatrixTest {
     }
 
     @Test
-    public void testIsMember_Admin_AlwaysTrue() {
-        authenticate(adminUser);
-        assertTrue(projectSecurity.isMember(999L));
-        verify(projectMemberRepository, never()).existsByProjectIdAndUserId(anyLong(), anyLong());
-    }
-
-    @Test
     public void testIsMember_RegularUser_ChecksMembership() {
         authenticate(devUser);
         when(projectMemberRepository.existsByProjectIdAndUserId(1L, 3L)).thenReturn(true);
@@ -72,6 +62,12 @@ public class RbacMatrixTest {
 
         assertTrue(projectSecurity.isMember(1L));
         assertFalse(projectSecurity.isMember(2L));
+    }
+
+    @Test
+    public void testIsMember_Unauthenticated_ReturnsFalse() {
+        assertFalse(projectSecurity.isMember(1L));
+        verify(projectMemberRepository, never()).existsByProjectIdAndUserId(anyLong(), anyLong());
     }
 
     @Test
@@ -83,12 +79,13 @@ public class RbacMatrixTest {
         when(projectMemberRepository.findByProjectIdAndUserId(1L, 2L)).thenReturn(Optional.of(pmMember));
 
         assertTrue(projectSecurity.hasRole(1L, "PM"));
+        assertTrue(projectSecurity.isPmOrAdmin(1L));
         assertFalse(projectSecurity.hasRole(1L, "DEVELOPER"));
     }
 
     @Test
     public void testHasRole_Qa_MatchesRole() {
-        AuthUserPrincipal qaUser = new AuthUserPrincipal(4L, "qa@epms.com", "", RoleSystem.MEMBER, true, Collections.emptyList());
+        AuthUserPrincipal qaUser = new AuthUserPrincipal(4L, "qa@epms.com", "", true, Collections.emptyList());
         authenticate(qaUser);
         ProjectMember qaMember = new ProjectMember();
         qaMember.setRole(ProjectRole.QA);
@@ -98,6 +95,7 @@ public class RbacMatrixTest {
         assertTrue(projectSecurity.hasRole(1L, "QA"));
         assertTrue(projectSecurity.hasRole(1L, "PM", "QA"));
         assertFalse(projectSecurity.hasRole(1L, "PM"));
+        assertFalse(projectSecurity.isPmOrAdmin(1L));
         assertFalse(projectSecurity.hasRole(1L, "DEVELOPER"));
     }
 
@@ -110,13 +108,7 @@ public class RbacMatrixTest {
         when(projectMemberRepository.findByProjectIdAndUserId(1L, 3L)).thenReturn(Optional.of(devMember));
 
         assertFalse(projectSecurity.hasRole(1L, "PM", "QA"));
-    }
-
-    @Test
-    public void testHasRole_Admin_BypassesCheck() {
-        authenticate(adminUser);
-        assertTrue(projectSecurity.hasRole(1L, "PM", "QA"));
-        verify(projectMemberRepository, never()).findByProjectIdAndUserId(anyLong(), anyLong());
+        assertTrue(projectSecurity.hasRole(1L, "DEVELOPER"));
     }
 
     @Test
