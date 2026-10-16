@@ -50,4 +50,16 @@ export const projectService = {
   async closeProject(id: string): Promise<ApiResponse<void>> {
     return axiosClient.post<any, ApiResponse<void>>(`/projects/${id}/close`);
   },
+
+  async suggestProjectKey(name: string): Promise<ApiResponse<{ suggestedKey: string }>> {
+    return axiosClient.get<any, ApiResponse<{ suggestedKey: string }>>('/projects/suggest-key', {
+      params: { name },
+    });
+  },
+
+  async checkProjectKey(key: string): Promise<ApiResponse<{ available: boolean; suggestedKey: string }>> {
+    return axiosClient.get<any, ApiResponse<{ available: boolean; suggestedKey: string }>>('/projects/check-key', {
+      params: { key },
+    });
+  },
 };

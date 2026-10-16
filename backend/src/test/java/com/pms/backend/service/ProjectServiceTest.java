@@ -154,4 +154,27 @@ public class ProjectServiceTest {
         // Notice: invitationService.createInvitation should NOT be called for these invalid cases!
         verify(invitationService, never()).createInvitation(anyLong(), any(), any());
     }
+
+    @Test
+    public void testSuggestProjectKey_Unique() {
+        when(projectRepository.existsByProjectKeyIgnoreCase("TEST")).thenReturn(false);
+        String suggested = projectService.suggestProjectKey("Test");
+        assertEquals("TEST", suggested);
+    }
+
+    @Test
+    public void testSuggestProjectKey_Duplicate_AppendsNumber() {
+        when(projectRepository.existsByProjectKeyIgnoreCase("TEST")).thenReturn(true);
+        when(projectRepository.existsByProjectKeyIgnoreCase("TEST1")).thenReturn(false);
+
+        String suggested = projectService.suggestProjectKey("Test");
+        assertEquals("TEST1", suggested);
+    }
+
+    @Test
+    public void testSuggestProjectKey_VietnameseName_Acronym() {
+        when(projectRepository.existsByProjectKeyIgnoreCase("QLDA")).thenReturn(false);
+        String suggested = projectService.suggestProjectKey("Quản lý dự án");
+        assertEquals("QLDA", suggested);
+    }
 }
