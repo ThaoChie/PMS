@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import type { ProjectInvitation } from '../../../types';
+import type { ProjectInvitation, Screen } from '../../../types';
 import InvitationCard from '../components/InvitationCard';
 import { invitationService } from '../../../services/invitationService';
 import { useProjectStore } from '../../../store/projectStore';
 
-export default function Invitations() {
+interface InvitationsProps {
+  onNavigate?: (screen: Screen) => void;
+}
+
+export default function Invitations({ onNavigate }: InvitationsProps = {}) {
   const [invitations, setInvitations] = useState<ProjectInvitation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,12 +45,20 @@ export default function Invitations() {
   async function handleAccept(id: string) {
     setError(null);
     try {
+      const acceptedInv = invitations.find((inv) => inv.id === id);
       await invitationService.acceptInvitation(id);
-      setSuccessMsg('Đã chấp nhận lời mời tham gia dự án thành công!');
-      setTimeout(() => setSuccessMsg(null), 3000);
+      setSuccessMsg(`Đã chấp nhận lời mời tham gia dự án "${acceptedInv?.projectName || ''}" thành công!`);
       await loadInvitations();
-      // Refresh projects in store so new project is visible
-      useProjectStore.getState().fetchProjects();
+      
+      // Refresh projects in store so new project is visible and activated
+      const updatedProjects = await useProjectStore.getState().fetchProjects();
+      const target = updatedProjects.find(
+        (p) => String(p.id) === String(acceptedInv?.projectId) || (acceptedInv?.projectName && p.name === acceptedInv.projectName),
+      ) || updatedProjects[0];
+      
+      if (target) {
+        useProjectStore.getState().setCurrentProject(target);
+      }
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Không thể chấp nhận lời mời');
     }
@@ -81,8 +93,17 @@ export default function Invitations() {
         )}
 
         {successMsg && (
-          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-medium">
-            {successMsg}
+          <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-medium flex items-center justify-between gap-3">
+            <span>{successMsg}</span>
+            {onNavigate && (
+              <button
+                type="button"
+                onClick={() => onNavigate('board')}
+                className="px-3 py-1 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 transition-colors shrink-0 font-medium"
+              >
+                Vào bảng công việc ngay →
+              </button>
+            )}
           </div>
         )}
 

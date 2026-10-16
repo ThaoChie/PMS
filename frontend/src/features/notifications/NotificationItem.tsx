@@ -21,8 +21,14 @@ export function formatRelTime(iso: string) {
 interface NotificationItemProps {
   notification: NotificationModel;
   onRead?: (id: string) => void;
-  onAcceptInvite?: (id: string) => void;
-  onDeclineInvite?: (id: string) => void;
+  onAcceptInvite?: (invitationId: string, notifId: string) => void;
+  onDeclineInvite?: (invitationId: string, notifId: string) => void;
+  onNavigateInvitations?: () => void;
+  onOpenProject?: () => void;
+  isInvitePending?: boolean;
+  isInviteAccepted?: boolean;
+  isInviteDeclined?: boolean;
+  isActionLoading?: boolean;
   compact?: boolean;
 }
 
@@ -31,8 +37,16 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   onRead,
   onAcceptInvite,
   onDeclineInvite,
+  onNavigateInvitations,
+  onOpenProject,
+  isInvitePending,
+  isInviteAccepted = false,
+  isInviteDeclined = false,
+  isActionLoading = false,
   compact = false,
 }) => {
+  const invitationId = n.sourceId || (n as any).data || n.id;
+
   return (
     <div
       className={`flex items-start gap-4 px-5 py-4 cursor-pointer hover:bg-[#F7F7F8] transition-colors ${
@@ -56,26 +70,68 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           {n.description}
         </p>
 
-        {n.type === 'invite' && !n.isRead && (
-          <div className="flex gap-2 mt-2.5">
-            <button
-              className="px-3 py-1 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
-              onClick={e => {
-                e.stopPropagation();
-                onAcceptInvite ? onAcceptInvite(n.id) : onRead?.(n.id);
-              }}
-            >
-              Chấp nhận
-            </button>
-            <button
-              className="px-3 py-1 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
-              onClick={e => {
-                e.stopPropagation();
-                onDeclineInvite ? onDeclineInvite(n.id) : onRead?.(n.id);
-              }}
-            >
-              Từ chối
-            </button>
+        {n.type === 'invite' && (
+          <div className="mt-2.5">
+            {isInviteAccepted ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-lg border border-emerald-200">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Đã tham gia dự án
+                </span>
+                {onOpenProject && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenProject();
+                    }}
+                    className="px-3 py-1 bg-[#1A1A1A] text-white text-xs font-medium rounded-lg hover:bg-black transition-colors"
+                  >
+                    Vào dự án →
+                  </button>
+                )}
+              </div>
+            ) : isInviteDeclined ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
+                Đã từ chối lời mời
+              </span>
+            ) : isInvitePending !== false ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isActionLoading}
+                  className="px-3 py-1 bg-[#16A34A] text-white text-xs font-medium rounded-lg hover:bg-[#15803D] disabled:opacity-50 transition-colors flex items-center gap-1.5 shadow-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAcceptInvite?.(invitationId, n.id);
+                  }}
+                >
+                  {isActionLoading ? 'Đang xử lý…' : 'Chấp nhận'}
+                </button>
+                <button
+                  type="button"
+                  disabled={isActionLoading}
+                  className="px-3 py-1 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] disabled:opacity-50 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeclineInvite?.(invitationId, n.id);
+                  }}
+                >
+                  Từ chối
+                </button>
+                {onNavigateInvitations && (
+                  <button
+                    type="button"
+                    className="px-2 py-1 text-xs text-[#2563EB] hover:underline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNavigateInvitations();
+                    }}
+                  >
+                    Chi tiết lời mời →
+                  </button>
+                )}
+              </div>
+            ) : null}
           </div>
         )}
       </div>

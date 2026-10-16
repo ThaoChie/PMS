@@ -8,6 +8,7 @@ import {
   Settings,
   Users,
   GitBranch,
+  Mail,
 } from 'lucide-react';
 import type { Role, Screen, Project, User } from '../../types';
 import ProjectSwitcher from './ProjectSwitcher';
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { id: 'issues' as Screen, label: 'Danh sách công việc', icon: ListTodo },
   { id: 'saved-filters' as Screen, label: 'Bộ lọc đã lưu', icon: Bookmark },
   { id: 'reports' as Screen, label: 'Báo cáo', icon: BarChart3 },
+  { id: 'invitations' as Screen, label: 'Lời mời dự án', icon: Mail },
 ];
 
 const SETTINGS_NAV = [
