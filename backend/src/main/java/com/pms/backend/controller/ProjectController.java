@@ -15,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping({"/api/projects", "/projects"})
 public class ProjectController {
@@ -75,5 +77,23 @@ public class ProjectController {
     @PreAuthorize("@projectSecurity.isPmOrAdmin(#id)")
     public ApiResponse<ProjectResponse> closeProject(@PathVariable Long id) {
         return ApiResponse.success(projectService.closeProject(id));
+    }
+
+    @GetMapping("/suggest-key")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<Map<String, String>> suggestProjectKey(@RequestParam(defaultValue = "") String name) {
+        String key = projectService.suggestProjectKey(name);
+        return ApiResponse.success(Map.of("suggestedKey", key));
+    }
+
+    @GetMapping("/check-key")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<Map<String, Object>> checkProjectKey(@RequestParam(defaultValue = "") String key) {
+        boolean available = projectService.isProjectKeyAvailable(key);
+        String suggested = available ? key : projectService.suggestProjectKey(key);
+        return ApiResponse.success(Map.of(
+                "available", available,
+                "suggestedKey", suggested
+        ));
     }
 }
