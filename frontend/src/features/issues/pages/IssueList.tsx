@@ -9,7 +9,7 @@ import ExportButton from '../components/ExportButton';
 
 const QUICK_FILTERS = [
   { id: 'all', label: 'Tất cả công việc' },
-  { id: 'my-open', label: 'Việc của tôi đang mở' },
+  { id: 'my-open', label: 'Công việc của tôi' },
   { id: 'reported-by-me', label: 'Tôi đã báo cáo' },
   { id: 'done', label: 'Đã hoàn thành' },
 ];
