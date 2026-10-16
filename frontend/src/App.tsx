@@ -166,9 +166,9 @@ export default function App() {
       case 'profile':
         return <MyProfile />;
       case 'invitations':
-        return <Invitations />;
+        return <Invitations onNavigate={setCurrentScreen} />;
       case 'notifications':
-        return <NotificationCenter />;
+        return <NotificationCenter onNavigate={setCurrentScreen} />;
       case 'projects':
         return (
           <ProjectList
