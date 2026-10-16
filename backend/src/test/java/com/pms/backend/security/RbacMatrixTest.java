@@ -87,6 +87,39 @@ public class RbacMatrixTest {
     }
 
     @Test
+    public void testHasRole_Qa_MatchesRole() {
+        AuthUserPrincipal qaUser = new AuthUserPrincipal(4L, "qa@epms.com", "", RoleSystem.MEMBER, true, Collections.emptyList());
+        authenticate(qaUser);
+        ProjectMember qaMember = new ProjectMember();
+        qaMember.setRole(ProjectRole.QA);
+
+        when(projectMemberRepository.findByProjectIdAndUserId(1L, 4L)).thenReturn(Optional.of(qaMember));
+
+        assertTrue(projectSecurity.hasRole(1L, "QA"));
+        assertTrue(projectSecurity.hasRole(1L, "PM", "QA"));
+        assertFalse(projectSecurity.hasRole(1L, "PM"));
+        assertFalse(projectSecurity.hasRole(1L, "DEVELOPER"));
+    }
+
+    @Test
+    public void testHasRole_Developer_CannotAccessBugReportRoles() {
+        authenticate(devUser);
+        ProjectMember devMember = new ProjectMember();
+        devMember.setRole(ProjectRole.DEVELOPER);
+
+        when(projectMemberRepository.findByProjectIdAndUserId(1L, 3L)).thenReturn(Optional.of(devMember));
+
+        assertFalse(projectSecurity.hasRole(1L, "PM", "QA"));
+    }
+
+    @Test
+    public void testHasRole_Admin_BypassesCheck() {
+        authenticate(adminUser);
+        assertTrue(projectSecurity.hasRole(1L, "PM", "QA"));
+        verify(projectMemberRepository, never()).findByProjectIdAndUserId(anyLong(), anyLong());
+    }
+
+    @Test
     public void testAssertProjectWritable_ClosedProject_ThrowsConflict() {
         Project closedProject = new Project();
         closedProject.setId(10L);
