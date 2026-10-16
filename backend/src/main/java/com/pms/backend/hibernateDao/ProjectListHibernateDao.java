@@ -1,7 +1,6 @@
 package com.pms.backend.hibernateDao;
 
 import com.pms.backend.dto.ProjectResponse;
-import com.pms.backend.enu.RoleSystem;
 import com.pms.backend.model.Project;
 import com.pms.backend.model.ProjectMember;
 import com.pms.backend.wrapper.PageWrapper;
@@ -16,14 +15,14 @@ import java.util.stream.Collectors;
 @Repository
 public class ProjectListHibernateDao extends BaseHibernateDao {
 
-    public PageWrapper<ProjectResponse> findProjects(Long userId, RoleSystem systemRole, String q, String sort, int page, int size) {
+    public PageWrapper<ProjectResponse> findProjects(Long userId, String q, String sort, int page, int size) {
         CriteriaBuilder cb = em().getCriteriaBuilder();
 
         // 1. Data Query
         CriteriaQuery<Project> query = cb.createQuery(Project.class);
         Root<Project> root = query.from(Project.class);
 
-        List<Predicate> predicates = buildPredicates(cb, root, query, userId, systemRole, q);
+        List<Predicate> predicates = buildPredicates(cb, root, query, userId, q);
         query.where(cb.and(predicates.toArray(new Predicate[0])));
 
         // Sorting
@@ -38,7 +37,7 @@ public class ProjectListHibernateDao extends BaseHibernateDao {
         // 2. Count Query
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<Project> countRoot = countQuery.from(Project.class);
-        List<Predicate> countPredicates = buildPredicates(cb, countRoot, countQuery, userId, systemRole, q);
+        List<Predicate> countPredicates = buildPredicates(cb, countRoot, countQuery, userId, q);
         countQuery.select(cb.count(countRoot)).where(cb.and(countPredicates.toArray(new Predicate[0])));
 
         long total = em().createQuery(countQuery).getSingleResult();
@@ -59,11 +58,11 @@ public class ProjectListHibernateDao extends BaseHibernateDao {
     }
 
     private List<Predicate> buildPredicates(CriteriaBuilder cb, Root<Project> root, CriteriaQuery<?> query,
-                                            Long userId, RoleSystem systemRole, String q) {
+                                            Long userId, String q) {
         List<Predicate> predicates = new ArrayList<>();
 
-        // If not ADMIN, scope to projects user is a member of
-        if (systemRole != RoleSystem.ADMIN && userId != null) {
+        // Scope to projects user is a member of
+        if (userId != null) {
             Subquery<Long> memberSubquery = query.subquery(Long.class);
             Root<ProjectMember> pmRoot = memberSubquery.from(ProjectMember.class);
             memberSubquery.select(pmRoot.get("project").get("id"))

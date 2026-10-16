@@ -10,7 +10,6 @@ import com.pms.backend.dto.GoogleLoginRequest;
 import com.pms.backend.dto.TokenResponse;
 import com.pms.backend.dto.UserResponse;
 import com.pms.backend.enu.AuthProvider;
-import com.pms.backend.enu.RoleSystem;
 import com.pms.backend.enu.UserStatus;
 import com.pms.backend.exception.UnauthorizedException;
 import com.pms.backend.model.User;
@@ -81,7 +80,6 @@ public class GoogleAuthService {
                 user.setFullName(name != null ? name : email);
                 user.setAvatarUrl(pictureUrl);
                 user.setProvider(AuthProvider.GOOGLE);
-                user.setSystemRole(RoleSystem.PM);
                 user.setGoogleSub(sub);
                 user.setStatus(UserStatus.ACTIVE);
                 user = userRepository.save(user);
@@ -91,7 +89,7 @@ public class GoogleAuthService {
                 throw new UnauthorizedException("Tài khoản của bạn đã bị khóa");
             }
 
-            String accessToken = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getSystemRole());
+            String accessToken = tokenProvider.generateToken(user.getId(), user.getEmail());
             String refreshToken = refreshTokenService.createRefreshToken(user);
 
             return new TokenResponse(
