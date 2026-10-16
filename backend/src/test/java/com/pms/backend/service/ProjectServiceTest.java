@@ -6,7 +6,6 @@ import com.pms.backend.dao.UserRepository;
 import com.pms.backend.dto.CreateProjectRequest;
 import com.pms.backend.dto.ProjectResponse;
 import com.pms.backend.enu.ProjectStatus;
-import com.pms.backend.enu.RoleSystem;
 import com.pms.backend.exception.BusinessException;
 import com.pms.backend.exception.ForbiddenException;
 import com.pms.backend.hibernateDao.ProjectListHibernateDao;
@@ -64,12 +63,10 @@ public class ProjectServiceTest {
         pmUser = new User();
         pmUser.setId(1L);
         pmUser.setEmail("pm@epms.com");
-        pmUser.setSystemRole(RoleSystem.PM);
 
         memberUser = new User();
         memberUser.setId(2L);
         memberUser.setEmail("member@epms.com");
-        memberUser.setSystemRole(RoleSystem.MEMBER);
     }
 
     @Test

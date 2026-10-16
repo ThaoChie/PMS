@@ -10,7 +10,6 @@ import com.pms.backend.dto.UpdateProjectRequest;
 import com.pms.backend.enu.ErrorCode;
 import com.pms.backend.enu.ProjectRole;
 import com.pms.backend.enu.ProjectStatus;
-import com.pms.backend.enu.RoleSystem;
 import com.pms.backend.exception.BusinessException;
 import com.pms.backend.exception.ForbiddenException;
 import com.pms.backend.exception.ResourceNotFoundException;
@@ -141,8 +140,8 @@ public class ProjectService {
         return response;
     }
 
-    public PageWrapper<ProjectResponse> getProjects(Long userId, RoleSystem systemRole, String q, String sort, int page, int size) {
-        PageWrapper<ProjectResponse> pageWrapper = projectListHibernateDao.findProjects(userId, systemRole, q, sort, page, size);
+    public PageWrapper<ProjectResponse> getProjects(Long userId, String q, String sort, int page, int size) {
+        PageWrapper<ProjectResponse> pageWrapper = projectListHibernateDao.findProjects(userId, q, sort, page, size);
         for (ProjectResponse pr : pageWrapper.getContent()) {
             projectMemberRepository.findByProjectIdAndUserId(pr.getId(), userId)
                     .ifPresent(pm -> pr.setMyRole(pm.getRole().name()));

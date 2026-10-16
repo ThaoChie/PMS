@@ -1,18 +1,17 @@
 -- R__01_seed_dev_data.sql (Dev Seed Data - Only loaded in dev profile)
 
 -- Seed Users: password is Password123@
-INSERT INTO users (id, email, password_hash, full_name, avatar_url, system_role, auth_provider, status)
+INSERT INTO users (id, email, password_hash, full_name, avatar_url, auth_provider, status)
 VALUES
-    (1, 'admin@epms.com', '$2a$10$wN31Xj51kQO8MpvV0xX1k.E244L/h5n48HlT.E7m9uGvP5v9o9o2K', 'Admin System', NULL, 'ADMIN', 'LOCAL', 'ACTIVE'),
-    (2, 'pm@epms.com', '$2a$10$wN31Xj51kQO8MpvV0xX1k.E244L/h5n48HlT.E7m9uGvP5v9o9o2K', 'Alex Chen (PM)', NULL, 'PM', 'LOCAL', 'ACTIVE'),
-    (3, 'dev@epms.com', '$2a$10$wN31Xj51kQO8MpvV0xX1k.E244L/h5n48HlT.E7m9uGvP5v9o9o2K', 'Marcus Jones (Dev)', NULL, 'MEMBER', 'LOCAL', 'ACTIVE'),
-    (4, 'qa@epms.com', '$2a$10$wN31Xj51kQO8MpvV0xX1k.E244L/h5n48HlT.E7m9uGvP5v9o9o2K', 'Priya Patel (QA)', NULL, 'MEMBER', 'LOCAL', 'ACTIVE'),
-    (5, 'member@epms.com', '$2a$10$wN31Xj51kQO8MpvV0xX1k.E244L/h5n48HlT.E7m9uGvP5v9o9o2K', 'Tom Wright (Member)', NULL, 'MEMBER', 'LOCAL', 'ACTIVE')
+    (1, 'admin@epms.com', '$2a$10$wN31Xj51kQO8MpvV0xX1k.E244L/h5n48HlT.E7m9uGvP5v9o9o2K', 'Admin System', NULL, 'LOCAL', 'ACTIVE'),
+    (2, 'pm@epms.com', '$2a$10$wN31Xj51kQO8MpvV0xX1k.E244L/h5n48HlT.E7m9uGvP5v9o9o2K', 'Alex Chen (PM)', NULL, 'LOCAL', 'ACTIVE'),
+    (3, 'dev@epms.com', '$2a$10$wN31Xj51kQO8MpvV0xX1k.E244L/h5n48HlT.E7m9uGvP5v9o9o2K', 'Marcus Jones (Dev)', NULL, 'LOCAL', 'ACTIVE'),
+    (4, 'qa@epms.com', '$2a$10$wN31Xj51kQO8MpvV0xX1k.E244L/h5n48HlT.E7m9uGvP5v9o9o2K', 'Priya Patel (QA)', NULL, 'LOCAL', 'ACTIVE'),
+    (5, 'member@epms.com', '$2a$10$wN31Xj51kQO8MpvV0xX1k.E244L/h5n48HlT.E7m9uGvP5v9o9o2K', 'Tom Wright (Member)', NULL, 'LOCAL', 'ACTIVE')
 ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
     password_hash = EXCLUDED.password_hash,
-    full_name = EXCLUDED.full_name,
-    system_role = EXCLUDED.system_role;
+    full_name = EXCLUDED.full_name;
 
 SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
 
