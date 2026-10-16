@@ -25,32 +25,40 @@ public class AuthService {
     private final JwtTokenProvider tokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final AppProperties appProperties;
+    private final com.pms.backend.security.LoginRateLimiter loginRateLimiter;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider tokenProvider,
                        RefreshTokenService refreshTokenService,
-                       AppProperties appProperties) {
+                       AppProperties appProperties,
+                       com.pms.backend.security.LoginRateLimiter loginRateLimiter) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.refreshTokenService = refreshTokenService;
         this.appProperties = appProperties;
+        this.loginRateLimiter = loginRateLimiter;
     }
 
     @Transactional
     public TokenResponse login(LoginRequest request) {
         String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
+        loginRateLimiter.checkBlocked(email);
+
         User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new UnauthorizedException("Email và/hoặc mật khẩu chưa đúng"));
+                .orElse(null);
+
+        if (user == null || user.getPassword() == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            loginRateLimiter.recordFailedAttempt(email);
+            throw new UnauthorizedException("Email và/hoặc mật khẩu chưa đúng");
+        }
 
         if (user.getStatus() == UserStatus.LOCKED) {
             throw new UnauthorizedException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
         }
 
-        if (user.getPassword() == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new UnauthorizedException("Email và/hoặc mật khẩu chưa đúng");
-        }
+        loginRateLimiter.recordSuccess(email);
 
         String accessToken = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getSystemRole());
         String refreshToken = refreshTokenService.createRefreshToken(user);

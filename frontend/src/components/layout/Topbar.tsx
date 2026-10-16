@@ -9,11 +9,13 @@ import {
   FolderKanban,
   AlertCircle,
   Check,
+  Menu,
 } from 'lucide-react';
 import type { Role, Screen, User, Notification } from '../../types';
 import UserAvatar from '../common/UserAvatar';
 import { formatRelativeTime } from '../../utils/date';
 import { useNotificationStore } from '../../store/notificationStore';
+import { useUIStore } from '../../store/uiStore';
 
 interface TopbarProps {
   role?: Role;
@@ -39,6 +41,7 @@ export default function Topbar({
   const [notifOpen, setNotifOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { markAsRead, markAllAsRead } = useNotificationStore();
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -59,6 +62,19 @@ export default function Topbar({
         setUserDropdownOpen(false);
       }}
     >
+      {/* Toggle sidebar button for tablet & desktop */}
+      <button
+        type="button"
+        title="Thu gọn / Mở rộng menu"
+        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F7F7F8] text-[#6B6B70] transition-colors shrink-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleSidebar();
+        }}
+      >
+        <Menu className="w-4 h-4" />
+      </button>
+
       {/* Search trigger */}
       <button
         type="button"

@@ -26,6 +26,7 @@ public enum ErrorCode {
     INVALID_SUBSCRIPTION_FREQUENCY(HttpStatus.UNPROCESSABLE_ENTITY, "Subscription frequency must be DAILY or WEEKLY"),
     INVALID_TRANSITION(HttpStatus.BAD_REQUEST, "Invalid status transition"),
     INVITATION_EXPIRED(HttpStatus.UNPROCESSABLE_ENTITY, "Invitation has expired"),
+    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "Too many requests, please try again later"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
 
     private final HttpStatus status;

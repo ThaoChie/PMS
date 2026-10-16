@@ -183,7 +183,37 @@ Sau khi các container đã khởi động hoàn tất:
 
 ---
 
-## 📂 4. Cấu trúc thư mục dự án
+## 4. Triển khai Môi trường Sản xuất (Production Deployment)
+
+Hệ thống hỗ trợ chạy trọn gói bằng một lệnh duy nhất:
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+Dịch vụ Production bao gồm:
+- **Database**: PostgreSQL 16 có healthcheck và volume bền vững (`pgdata`).
+- **Backend**: Spring Boot 3 profile `prod` (tắt Swagger/Dev seed, cấu hình pooling HikariCP).
+- **Frontend**: Nginx phục vụ tĩnh bản build SPA có gzip và các security headers.
+- **Proxy**: Nginx Reverse Proxy điều hướng `/api` đến backend và `/` đến frontend.
+
+### Sao lưu và Phục hồi (Backup & Restore)
+- **Sao lưu**: `./scripts/backup-db.sh ./backups`
+- **Phục hồi**: `./scripts/restore-db.sh ./backups/<thư_mục_timestamp>`
+
+---
+
+## 5. Tài liệu dự án liên quan
+
+- 📖 **Sổ tay vận hành (Runbook)**: [`docs/runbook.md`](docs/runbook.md)
+- 🛡️ **Biên bản kiểm tra bảo mật**: [`docs/security-audit.md`](docs/security-audit.md)
+- 👤 **Hướng dẫn sử dụng cho Thành viên**: [`docs/user-guide-member.md`](docs/user-guide-member.md)
+- 👔 **Hướng dẫn dành cho Quản lý dự án (PM)**: [`docs/user-guide-pm.md`](docs/user-guide-pm.md)
+- 👑 **Hướng dẫn dành cho Quản trị viên (Admin)**: [`docs/user-guide-admin.md`](docs/user-guide-admin.md)
+- 📋 **Kế hoạch triển khai & DoD**: [`task.md`](task.md)
+- 🧠 **Bối cảnh & Quy tắc nghiệp vụ**: [`context.md`](context.md)
+
+---
+
+## 📂 6. Cấu trúc thư mục dự án
 
 ```text
 PMS/
@@ -196,9 +226,12 @@ PMS/
 │   ├── package.json          # Cấu hình NPM dependencies
 │   ├── nginx.conf            # Cấu hình Nginx phục vụ web & reverse proxy
 │   └── Dockerfile            # Multi-stage Dockerfile cho Frontend
-├── docs/                     # Tài liệu thiết kế và đặc tả dự án
-├── docker-compose.yml        # Orchestration cấu hình chạy toàn bộ hệ thống
-├── API_DOCUMENTATION.md      # Đặc tả chi tiết các RESTful API endpoints
-├── context.md                # Tài liệu bối cảnh và nghiệp vụ tổng quan
+├── docker/                   # Cấu hình Nginx proxy sản xuất
+├── docs/                     # Tài liệu thiết kế, bảo mật và hướng dẫn
+├── scripts/                  # Script sao lưu/phục hồi CSDL
+├── docker-compose.yml        # Orchestration môi trường dev
+├── docker-compose.prod.yml   # Orchestration môi trường prod
+├── task.md                   # Checklist Sprint 1 - 4
+├── context.md                # Bối cảnh & nghiệp vụ
 └── README.md                 # Hướng dẫn dự án & cài đặt
 ```
