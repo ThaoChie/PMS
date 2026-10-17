@@ -41,7 +41,7 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
       const res = await issueService.getIssues(currentProject.id, {
         page: 1,
         size: 100,
-        sort: `${sortField},${sortDir}`,
+        sort: `${sortField === 'key' ? 'issueKey' : sortField},${sortDir}`,
       });
       const data = res?.data?.content || (res?.data as any) || [];
       const list: Issue[] = Array.isArray(data)

@@ -15,11 +15,13 @@ export const issueService = {
     },
   ): Promise<ApiResponse<PageWrapper<Issue>>> {
     const page0 = params?.page ? Math.max(0, params.page - 1) : 0;
+    const normalizedSort = params?.sort?.replace(/^key,/, 'issueKey,');
     const res = await axiosClient.get<any, ApiResponse<PageWrapper<Issue>>>(
       `/projects/${projectId}/issues`,
       {
         params: {
           ...params,
+          ...(normalizedSort ? { sort: normalizedSort } : {}),
           page: page0,
         },
       },
