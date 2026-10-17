@@ -82,6 +82,17 @@ public class IssueController {
         Sort.Direction direction = sortParts.length > 1 && sortParts[1].equalsIgnoreCase("asc")
                 ? Sort.Direction.ASC : Sort.Direction.DESC;
         String sortProp = sortParts[0];
+        if ("key".equalsIgnoreCase(sortProp)) {
+            sortProp = "issueKey";
+        } else if ("status".equalsIgnoreCase(sortProp)) {
+            sortProp = "status.position";
+        } else if ("assignee".equalsIgnoreCase(sortProp)) {
+            sortProp = "assignee.fullName";
+        } else if ("reporter".equalsIgnoreCase(sortProp)) {
+            sortProp = "reporter.fullName";
+        } else if (!java.util.List.of("id", "issueKey", "summary", "priority", "type", "dueDate", "createdAt", "updatedAt").contains(sortProp)) {
+            sortProp = "updatedAt";
+        }
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortProp));
         Page<IssueResponse> resultPage = issueService.getProjectIssues(projectId, type, priority, statusId, assigneeId, pageable);
