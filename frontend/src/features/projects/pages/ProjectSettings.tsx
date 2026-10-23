@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import type { Role } from '../../../types';
+import { Sliders, ArrowRight } from 'lucide-react';
+import type { Role, Screen } from '../../../types';
 import EditProjectForm from '../components/EditProjectForm';
 import CloseProjectPanel from '../components/CloseProjectPanel';
-import CustomFieldsManager from '../components/CustomFieldsManager';
 import { useProjectStore } from '../../../store/projectStore';
 import { projectService } from '../../../services/projectService';
 
 interface ProjectSettingsProps {
   role: Role;
+  onNavigate?: (screen: Screen) => void;
 }
 
-export default function ProjectSettings({ role }: ProjectSettingsProps) {
+export default function ProjectSettings({ role, onNavigate }: ProjectSettingsProps) {
   const { currentProject, updateProject } = useProjectStore();
   const [error, setError] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
@@ -74,8 +74,30 @@ export default function ProjectSettings({ role }: ProjectSettingsProps) {
         {/* Edit project general info */}
         <EditProjectForm project={currentProject} canEdit={canEdit} onSave={handleSave} />
 
-        {/* Custom fields management (PM / Admin) */}
-        <CustomFieldsManager projectId={currentProject.id} canEdit={canEdit} />
+        {/* Dedicated Custom Fields Screen Link (PM / Admin) */}
+        {canEdit && (
+          <div className="bg-white border border-[#E5E5E7] rounded-xl p-5 shadow-sm mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#FAF9F8] border border-[#E5E5E7] flex items-center justify-center text-[#1A1A1A]">
+                <Sliders className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[#1A1A1A]">Quản lý trường tùy chỉnh</h3>
+                <p className="text-xs text-[#6B6B70] mt-0.5">
+                  Cấu hình các trường dữ liệu mở rộng cho công việc (Sprint, Module, Release,...)
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNavigate?.('custom-fields')}
+              className="flex items-center gap-1.5 px-4 py-2 border border-[#E5E5E7] rounded-lg text-xs font-medium text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors shadow-sm"
+            >
+              <span>Vào màn quản lý</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#6B6B70]" />
+            </button>
+          </div>
+        )}
 
         {/* Danger zone */}
         {canEdit && currentProject.status !== 'Closed' && (

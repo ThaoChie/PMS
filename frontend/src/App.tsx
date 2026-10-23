@@ -20,6 +20,8 @@ import CreateIssueModal from './components/shared/CreateIssueModal';
 import CreateProjectModal from './components/shared/CreateProjectModal';
 import QuickSearch from './components/shared/QuickSearch';
 import Invitations from './features/members/pages/Invitations';
+import CustomFieldsConfig from './components/admin/CustomFieldsConfig';
+import IssueDetailPage from './features/issues/pages/IssueDetailPage';
 
 import ForgotPassword from './features/auth/pages/ForgotPassword';
 import ResetPassword from './features/auth/pages/ResetPassword';
@@ -39,8 +41,9 @@ export default function App() {
   const [showCreateIssue, setShowCreateIssue] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [showQuickSearch, setShowQuickSearch] = useState(false);
+  const [activeIssueKey, setActiveIssueKey] = useState<string | null>(null);
 
-  // Restore session & check query params
+  // Restore session & check query params and deep links
   useEffect(() => {
     bootstrap();
 
@@ -48,7 +51,28 @@ export default function App() {
     if (searchParams.get('token')) {
       setAuthView('reset-password');
     }
+
+    const pathMatch = window.location.pathname.match(/\/issues\/([A-Za-z0-9_-]+)/);
+    const issueKeyParam = pathMatch ? pathMatch[1] : searchParams.get('issue');
+    if (issueKeyParam) {
+      setActiveIssueKey(issueKeyParam);
+      setCurrentScreen('issue-detail');
+    }
   }, [bootstrap]);
+
+  useEffect(() => {
+    function handleLocation() {
+      const searchParams = new URLSearchParams(window.location.search);
+      const pathMatch = window.location.pathname.match(/\/issues\/([A-Za-z0-9_-]+)/);
+      const issueKeyParam = pathMatch ? pathMatch[1] : searchParams.get('issue');
+      if (issueKeyParam) {
+        setActiveIssueKey(issueKeyParam);
+        setCurrentScreen('issue-detail');
+      }
+    }
+    window.addEventListener('popstate', handleLocation);
+    return () => window.removeEventListener('popstate', handleLocation);
+  }, []);
 
   // Sync projects when authenticated
   useEffect(() => {
@@ -179,7 +203,25 @@ export default function App() {
           />
         );
       case 'project-settings':
-        return <ProjectSettings role={role} />;
+        return <ProjectSettings role={role} onNavigate={setCurrentScreen} />;
+      case 'custom-fields':
+        return <CustomFieldsConfig role={role} />;
+      case 'issue-detail':
+        return (
+          <IssueDetailPage
+            issueKey={activeIssueKey || ''}
+            role={role}
+            onBack={() => {
+              window.history.pushState({}, '', '/');
+              setCurrentScreen('issues');
+              setActiveIssueKey(null);
+            }}
+            onSelectSubtask={(key) => {
+              window.history.pushState({}, '', `/issues/${key}`);
+              setActiveIssueKey(key);
+            }}
+          />
+        );
       case 'members-roles':
         return <MembersRoles role={role} />;
       case 'workflow':

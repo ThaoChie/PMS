@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, ChevronDown, AlertTriangle, Share2, Trash2, CheckCircle2, RefreshCw, Pencil } from 'lucide-react';
+import { X, ChevronDown, AlertTriangle, Share2, Trash2, CheckCircle2, RefreshCw, Pencil, Copy, Check, ExternalLink } from 'lucide-react';
 import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
 import { memberService } from '../../../services/memberService';
@@ -44,6 +44,7 @@ export default function IssueDetailDrawer({
   const [concurrentConflict, setConcurrentConflict] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Edit form state (for full form toggle)
   const [isEditing, setIsEditing] = useState(false);
@@ -113,8 +114,18 @@ export default function IssueDetailDrawer({
         comments: raw.comments || [],
         projectId: String(raw.projectId || ''),
         createdAt: raw.createdAt || '',
-        updatedAt: raw.updatedAt || '',
         version: raw.version,
+        customFields: (raw.customFields || []).map((cf: any) => ({
+          id: cf.id || cf.fieldId,
+          fieldId: cf.fieldId || cf.id,
+          fieldKey: cf.fieldKey,
+          name: cf.name || cf.fieldName || cf.fieldKey,
+          fieldName: cf.fieldName || cf.name || cf.fieldKey,
+          type: cf.type,
+          required: cf.required,
+          options: cf.options,
+          value: cf.value,
+        })),
       };
 
       setIssue(loaded);
@@ -463,6 +474,33 @@ export default function IssueDetailDrawer({
               title={isEditing ? 'Hủy chỉnh sửa đầy đủ' : 'Mở biểu mẫu chỉnh sửa đầy đủ'}
             >
               <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const url = `${window.location.origin}/issues/${issue.key}`;
+                navigator.clipboard.writeText(url);
+                setCopiedLink(true);
+                setTimeout(() => setCopiedLink(false), 2000);
+              }}
+              className={`p-1 rounded transition-colors ${
+                copiedLink
+                  ? 'text-emerald-600 bg-emerald-50'
+                  : 'text-[#9B9B9F] hover:text-[#1A1A1A] hover:bg-[#F7F7F8]'
+              }`}
+              title={copiedLink ? 'Đã sao chép liên kết!' : 'Sao chép liên kết công việc'}
+            >
+              {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                window.open(`/issues/${issue.key}`, '_blank');
+              }}
+              className="text-[#9B9B9F] hover:text-[#1A1A1A] p-1 rounded hover:bg-[#F7F7F8] transition-colors"
+              title="Mở trong trang riêng"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"

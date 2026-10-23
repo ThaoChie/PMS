@@ -16,10 +16,12 @@ export type Screen =
   | 'notifications'
   | 'projects'
   | 'project-settings'
+  | 'custom-fields'
   | 'members-roles'
   | 'workflow'
   | 'dashboard'
-  | 'invitations';
+  | 'invitations'
+  | 'issue-detail';
 
 export interface SavedFilter {
   id: string;
