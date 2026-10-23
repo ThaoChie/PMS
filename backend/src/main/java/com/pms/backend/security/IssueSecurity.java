@@ -74,6 +74,57 @@ public class IssueSecurity {
     }
 
     public boolean canDelete(String issueKey) {
+        AuthUserPrincipal user = getCurrentUser();
+        if (user == null) return false;
+
+        Optional<Issue> issueOpt = findIssue(issueKey);
+        if (issueOpt.isEmpty()) return false;
+
+        Issue issue = issueOpt.get();
+        com.pms.backend.model.Project project = issue.getProject();
+        Long projectId = project.getId();
+
+        // PM of project can always delete
+        if (projectSecurity.isPmOrAdmin(projectId)) {
+            return true;
+        }
+
+        boolean isSubtask = issue.getType() == com.pms.backend.enu.IssueType.SUB_TASK || issue.getParent() != null;
+        if (isSubtask) {
+            if (!Boolean.TRUE.equals(project.getAllowMemberDeleteSubtask())) {
+                return false;
+            }
+        } else {
+            if (!Boolean.TRUE.equals(project.getAllowMemberDeleteIssue())) {
+                return false;
+            }
+        }
+
+        Long userId = user.getId();
+        boolean isReporter = issue.getReporter() != null && userId.equals(issue.getReporter().getId());
+        boolean isAssignee = issue.getAssignee() != null && userId.equals(issue.getAssignee().getId());
+        return isReporter || isAssignee;
+    }
+
+    public boolean canConvert(String issueKey) {
+        AuthUserPrincipal user = getCurrentUser();
+        if (user == null) return false;
+
+        Optional<Issue> issueOpt = findIssue(issueKey);
+        if (issueOpt.isEmpty()) return false;
+
+        Issue issue = issueOpt.get();
+        com.pms.backend.model.Project project = issue.getProject();
+        Long projectId = project.getId();
+
+        if (projectSecurity.isPmOrAdmin(projectId)) {
+            return true;
+        }
+
+        if (!Boolean.TRUE.equals(project.getAllowMemberConvertSubtask())) {
+            return false;
+        }
+
         return canEdit(issueKey);
     }
 

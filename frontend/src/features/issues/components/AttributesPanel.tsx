@@ -20,10 +20,21 @@ export default function AttributesPanel({
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editingCustomField, setEditingCustomField] = useState<string | null>(null);
 
-  function AttrRow({ label, children }: { label: string; children: React.ReactNode }) {
+  function AttrRow({
+    label,
+    required = false,
+    children,
+  }: {
+    label: React.ReactNode;
+    required?: boolean;
+    children: React.ReactNode;
+  }) {
     return (
       <div className="flex items-center gap-3 py-2 px-3 border-b border-[#F0F0F1] last:border-0 hover:bg-[#FAF9F8] transition-colors">
-        <span className="text-xs text-[#9B9B9F] w-28 shrink-0">{label}</span>
+        <span className="text-xs text-[#9B9B9F] w-28 shrink-0 flex items-center gap-1">
+          <span>{label}</span>
+          {required && <span className="text-[#E53E3E] font-bold">*</span>}
+        </span>
         <div className="flex-1 text-xs text-[#1A1A1A] min-w-0">{children}</div>
       </div>
     );
@@ -301,7 +312,7 @@ export default function AttributesPanel({
         const optionsList = cf.options ? cf.options.split(',').map((s) => s.trim()).filter(Boolean) : [];
 
         return (
-          <AttrRow key={cf.fieldKey} label={fieldName + (cf.required ? ' *' : '')}>
+          <AttrRow key={cf.fieldKey} label={fieldName} required={cf.required}>
             {isEditing && canEdit && onUpdateField ? (
               cf.type === 'DROPDOWN' ? (
                 <select

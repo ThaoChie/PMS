@@ -29,7 +29,9 @@ export default function EditProjectForm({ project, canEdit, onSave }: EditProjec
       <h2 className="text-sm font-semibold text-[#1A1A1A] mb-5">Thông tin chung</h2>
       <form onSubmit={handleSave} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Tên dự án</label>
+          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
+            Tên dự án <span className="text-[#E53E3E] font-bold">*</span>
+          </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}

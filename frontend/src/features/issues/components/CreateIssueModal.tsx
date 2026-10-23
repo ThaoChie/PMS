@@ -15,16 +15,19 @@ function Field({
   label,
   children,
   optional = false,
+  required = false,
 }: {
   label: string;
   children: React.ReactNode;
   optional?: boolean;
+  required?: boolean;
 }) {
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-xs font-medium text-[#1A1A1A] mb-1.5">
-        {label}
-        {optional && <span className="text-[10px] text-[#9B9B9F] font-normal">tùy chọn</span>}
+      <label className="flex items-center gap-1 text-xs font-medium text-[#1A1A1A] mb-1.5">
+        <span>{label}</span>
+        {required && <span className="text-[#E53E3E] font-bold">*</span>}
+        {optional && <span className="text-[10px] text-[#9B9B9F] font-normal ml-1">tùy chọn</span>}
       </label>
       {children}
     </div>
@@ -180,7 +183,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <div className="overflow-y-auto flex-1 px-6 py-5">
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <Field label="Dự án">
+              <Field label="Dự án" required>
                 <select
                   value={form.projectId}
                   onChange={(e) => set('projectId', e.target.value)}
@@ -193,7 +196,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   ))}
                 </select>
               </Field>
-              <Field label="Loại công việc">
+              <Field label="Loại công việc" required>
                 <select
                   value={form.type}
                   onChange={(e) => set('type', e.target.value)}
@@ -208,7 +211,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
             </div>
 
             <div className="mb-4">
-              <Field label="Tóm tắt công việc">
+              <Field label="Tóm tắt công việc" required>
                 <input
                   value={form.summary}
                   onChange={(e) => set('summary', e.target.value)}
@@ -311,7 +314,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                     const val = customFieldValues[cf.fieldKey] || '';
 
                     return (
-                      <Field key={cf.fieldKey} label={cf.name} optional={!cf.required}>
+                      <Field key={cf.fieldKey} label={cf.name} required={cf.required} optional={!cf.required}>
                         {cf.type === 'DROPDOWN' ? (
                           <select
                             value={val}

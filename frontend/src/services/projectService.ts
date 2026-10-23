@@ -47,6 +47,13 @@ export const projectService = {
     return axiosClient.put<any, ApiResponse<Project>>(`/projects/${id}`, data);
   },
 
+  async updateProjectPermissions(
+    id: string,
+    permissions: import('../types').ProjectPermissions,
+  ): Promise<ApiResponse<Project>> {
+    return axiosClient.put<any, ApiResponse<Project>>(`/projects/${id}/permissions`, permissions);
+  },
+
   async closeProject(id: string): Promise<ApiResponse<void>> {
     return axiosClient.post<any, ApiResponse<void>>(`/projects/${id}/close`);
   },

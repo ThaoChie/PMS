@@ -38,7 +38,7 @@ public class CustomFieldController {
     }
 
     @PostMapping({"/api/projects/{projectId}/custom-fields", "/projects/{projectId}/custom-fields"})
-    @PreAuthorize("@projectSecurity.hasRole(#projectId, 'PM')")
+    @PreAuthorize("@projectSecurity.canManageCustomFields(#projectId)")
     public ApiResponse<CustomFieldDto> createCustomField(
             @PathVariable Long projectId,
             @Valid @RequestBody CreateCustomFieldRequest request
@@ -47,7 +47,7 @@ public class CustomFieldController {
     }
 
     @PutMapping({"/api/projects/{projectId}/custom-fields/{fieldId}", "/projects/{projectId}/custom-fields/{fieldId}"})
-    @PreAuthorize("@projectSecurity.hasRole(#projectId, 'PM')")
+    @PreAuthorize("@projectSecurity.canManageCustomFields(#projectId)")
     public ApiResponse<CustomFieldDto> updateCustomField(
             @PathVariable Long projectId,
             @PathVariable Long fieldId,
@@ -57,7 +57,7 @@ public class CustomFieldController {
     }
 
     @DeleteMapping({"/api/projects/{projectId}/custom-fields/{fieldId}", "/projects/{projectId}/custom-fields/{fieldId}"})
-    @PreAuthorize("@projectSecurity.hasRole(#projectId, 'PM')")
+    @PreAuthorize("@projectSecurity.canManageCustomFields(#projectId)")
     public ApiResponse<Void> deleteCustomField(
             @PathVariable Long projectId,
             @PathVariable Long fieldId

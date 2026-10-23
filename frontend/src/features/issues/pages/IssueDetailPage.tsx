@@ -49,6 +49,26 @@ export default function IssueDetailPage({
   const [showTypeMenu, setShowTypeMenu] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
+  const isSubtask = issue?.type?.toUpperCase() === 'SUB_TASK' || issue?.type === 'Sub-task' || !!issue?.parentId;
+  const isPmOrAdmin = role === 'pm' || role === 'admin';
+  const canDelete =
+    isPmOrAdmin ||
+    (isSubtask
+      ? Boolean(currentProject?.allowMemberDeleteSubtask)
+      : Boolean(currentProject?.allowMemberDeleteIssue));
+
+  async function handleDelete() {
+    if (!issue) return;
+    if (confirm(`Bạn có chắc chắn muốn xóa ${isSubtask ? 'subtask' : 'công việc'} "${issue.summary}"?`)) {
+      try {
+        await issueService.deleteIssue(issue.key);
+        onBack?.();
+      } catch (err: any) {
+        setErrorMessage(err?.response?.data?.message || err?.message || 'Xóa công việc thất bại');
+      }
+    }
+  }
+
   // Inline editing
   const [editingSummary, setEditingSummary] = useState(false);
   const [summaryValue, setSummaryValue] = useState('');
@@ -311,6 +331,17 @@ export default function IssueDetailPage({
             >
               <Share2 className="w-4 h-4" />
             </button>
+
+            {canDelete && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="p-1.5 border border-[#E5E5E7] text-[#9B9B9F] hover:text-[#E53E3E] hover:bg-red-50 rounded-lg transition-colors"
+                title={isSubtask ? "Xóa subtask" : "Xóa công việc"}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -507,6 +538,7 @@ export default function IssueDetailPage({
                 issueType={issue.type}
                 projectMembers={projectMembers}
                 canEdit={true}
+                canDeleteSubtask={isPmOrAdmin || Boolean(currentProject?.allowMemberDeleteSubtask)}
                 onSelectSubtask={onSelectSubtask}
                 onSubtaskCreated={fetchDetail}
               />

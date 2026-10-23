@@ -15,6 +15,10 @@ export function mapProjectResponseToProject(raw: any): Project {
     members: raw.members || [],
     createdAt: raw.createdAt || new Date().toISOString(),
     myRole,
+    allowMemberDeleteIssue: raw.allowMemberDeleteIssue ?? false,
+    allowMemberDeleteSubtask: raw.allowMemberDeleteSubtask ?? false,
+    allowMemberConvertSubtask: raw.allowMemberConvertSubtask ?? true,
+    allowMemberManageCustomFields: raw.allowMemberManageCustomFields ?? false,
   };
 }
 
