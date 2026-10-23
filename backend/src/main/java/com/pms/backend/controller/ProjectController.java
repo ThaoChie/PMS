@@ -73,6 +73,13 @@ public class ProjectController {
         return ApiResponse.success(projectService.updateProject(id, request));
     }
 
+    @PutMapping("/{id}/permissions")
+    @PreAuthorize("@projectSecurity.isPmOrAdmin(#id)")
+    public ApiResponse<ProjectResponse> updateProjectPermissions(@PathVariable Long id,
+                                                                 @RequestBody com.pms.backend.dto.ProjectPermissionsRequest request) {
+        return ApiResponse.success(projectService.updateProjectPermissions(id, request));
+    }
+
     @PostMapping("/{id}/close")
     @PreAuthorize("@projectSecurity.isPmOrAdmin(#id)")
     public ApiResponse<ProjectResponse> closeProject(@PathVariable Long id) {

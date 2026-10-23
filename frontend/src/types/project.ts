@@ -23,7 +23,14 @@ export interface ProjectInvitation {
   expiresAt?: string;
 }
 
-export interface Project {
+export interface ProjectPermissions {
+  allowMemberDeleteIssue?: boolean;
+  allowMemberDeleteSubtask?: boolean;
+  allowMemberConvertSubtask?: boolean;
+  allowMemberManageCustomFields?: boolean;
+}
+
+export interface Project extends ProjectPermissions {
   id: string;
   name: string;
   key: string;

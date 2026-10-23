@@ -12,6 +12,7 @@ public interface IProjectService {
     PageWrapper<ProjectResponse> getProjects(Long userId, String q, String sort, int page, int size);
     ProjectResponse getProjectById(Long projectId);
     ProjectResponse updateProject(Long projectId, UpdateProjectRequest request);
+    ProjectResponse updateProjectPermissions(Long projectId, com.pms.backend.dto.ProjectPermissionsRequest request);
     ProjectResponse closeProject(Long projectId);
     Project createProject(Project project, String creatorEmail);
     String suggestProjectKey(String name);

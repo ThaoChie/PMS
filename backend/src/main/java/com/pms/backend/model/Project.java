@@ -31,6 +31,18 @@ public class Project extends BaseEntity {
     @JoinColumn(name = "created_by")
     private User createdBy;
 
+    @Column(name = "allow_member_delete_issue", nullable = false)
+    private Boolean allowMemberDeleteIssue = false;
+
+    @Column(name = "allow_member_delete_subtask", nullable = false)
+    private Boolean allowMemberDeleteSubtask = false;
+
+    @Column(name = "allow_member_convert_subtask", nullable = false)
+    private Boolean allowMemberConvertSubtask = true;
+
+    @Column(name = "allow_member_manage_custom_fields", nullable = false)
+    private Boolean allowMemberManageCustomFields = false;
+
     @JsonIgnore
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectMember> members = new ArrayList<>();
@@ -47,6 +59,14 @@ public class Project extends BaseEntity {
     public void setIssueSeq(Integer issueSeq) { this.issueSeq = issueSeq; }
     public User getCreatedBy() { return createdBy; }
     public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
+    public Boolean getAllowMemberDeleteIssue() { return allowMemberDeleteIssue; }
+    public void setAllowMemberDeleteIssue(Boolean allowMemberDeleteIssue) { this.allowMemberDeleteIssue = allowMemberDeleteIssue != null ? allowMemberDeleteIssue : false; }
+    public Boolean getAllowMemberDeleteSubtask() { return allowMemberDeleteSubtask; }
+    public void setAllowMemberDeleteSubtask(Boolean allowMemberDeleteSubtask) { this.allowMemberDeleteSubtask = allowMemberDeleteSubtask != null ? allowMemberDeleteSubtask : false; }
+    public Boolean getAllowMemberConvertSubtask() { return allowMemberConvertSubtask; }
+    public void setAllowMemberConvertSubtask(Boolean allowMemberConvertSubtask) { this.allowMemberConvertSubtask = allowMemberConvertSubtask != null ? allowMemberConvertSubtask : true; }
+    public Boolean getAllowMemberManageCustomFields() { return allowMemberManageCustomFields; }
+    public void setAllowMemberManageCustomFields(Boolean allowMemberManageCustomFields) { this.allowMemberManageCustomFields = allowMemberManageCustomFields != null ? allowMemberManageCustomFields : false; }
     public List<ProjectMember> getMembers() { return members; }
     public void setMembers(List<ProjectMember> members) { this.members = members; }
 }

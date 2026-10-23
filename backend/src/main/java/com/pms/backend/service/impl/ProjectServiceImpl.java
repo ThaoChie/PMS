@@ -198,6 +198,39 @@ public class ProjectServiceImpl implements IProjectService {
     }
 
     @Transactional
+    public ProjectResponse updateProjectPermissions(Long projectId, com.pms.backend.dto.ProjectPermissionsRequest request) {
+        projectSecurity.assertProjectWritable(projectId);
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + projectId));
+
+        if (request.getAllowMemberDeleteIssue() != null) {
+            project.setAllowMemberDeleteIssue(request.getAllowMemberDeleteIssue());
+        }
+        if (request.getAllowMemberDeleteSubtask() != null) {
+            project.setAllowMemberDeleteSubtask(request.getAllowMemberDeleteSubtask());
+        }
+        if (request.getAllowMemberConvertSubtask() != null) {
+            project.setAllowMemberConvertSubtask(request.getAllowMemberConvertSubtask());
+        }
+        if (request.getAllowMemberManageCustomFields() != null) {
+            project.setAllowMemberManageCustomFields(request.getAllowMemberManageCustomFields());
+        }
+
+        project = projectRepository.save(project);
+        auditService.log("UPDATE_PROJECT_PERMISSIONS", "PROJECT", project.getId(), project.getId(),
+                "Updated project permissions", "Permissions updated");
+
+        ProjectResponse res = ProjectResponse.from(project);
+        AuthUserPrincipal principal = projectSecurity.getCurrentUser();
+        if (principal != null) {
+            projectMemberRepository.findByProjectIdAndUserId(projectId, principal.getId())
+                    .ifPresent(pm -> res.setMyRole(pm.getRole().name()));
+        }
+        return res;
+    }
+
+    @Transactional
     public ProjectResponse closeProject(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + projectId));

@@ -42,7 +42,9 @@ export default function InviteMemberPanel({ onClose, onInvite }: InviteMemberPan
       </div>
       <form onSubmit={handleSubmit} className="flex items-end gap-3">
         <div className="flex-1">
-          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Địa chỉ email</label>
+          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
+            Địa chỉ email <span className="text-[#E53E3E] font-bold">*</span>
+          </label>
           <input
             type="email"
             value={inviteEmail}
@@ -53,7 +55,9 @@ export default function InviteMemberPanel({ onClose, onInvite }: InviteMemberPan
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Vai trò trong dự án</label>
+          <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
+            Vai trò trong dự án <span className="text-[#E53E3E] font-bold">*</span>
+          </label>
           <select
             value={inviteRole}
             onChange={(e) => setInviteRole(e.target.value as Role)}

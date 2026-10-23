@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckSquare, Plus, Loader2, UserMinus } from 'lucide-react';
+import { CheckSquare, Plus, Loader2, UserMinus, Trash2 } from 'lucide-react';
 import type { SubTask } from '../../../types';
 import UserAvatar from '../../../components/common/UserAvatar';
 import { issueService } from '../../../services/issueService';
@@ -10,6 +10,7 @@ interface SubtaskSectionProps {
   issueType?: string;
   projectMembers?: Array<{ id: string; name: string }>;
   canEdit?: boolean;
+  canDeleteSubtask?: boolean;
   onSelectSubtask?: (key: string) => void;
   onSubtaskCreated?: () => void;
 }
@@ -20,6 +21,7 @@ export default function SubtaskSection({
   issueType,
   projectMembers = [],
   canEdit = true,
+  canDeleteSubtask = false,
   onSelectSubtask,
   onSubtaskCreated,
 }: SubtaskSectionProps) {
@@ -84,7 +86,7 @@ export default function SubtaskSection({
             <div
               key={st.id}
               onClick={() => onSelectSubtask?.(st.key)}
-              className="flex items-center gap-3 px-3 py-2.5 hover:bg-[#F7F7F8] cursor-pointer transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 hover:bg-[#F7F7F8] cursor-pointer transition-colors group"
             >
               <CheckSquare
                 className={`w-3.5 h-3.5 shrink-0 ${
@@ -106,6 +108,26 @@ export default function SubtaskSection({
                 <div title={st.assignee.name || st.assignee.email}>
                   <UserAvatar initials={st.assignee.initials} size="xs" />
                 </div>
+              )}
+              {canDeleteSubtask && (
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (confirm(`Bạn có chắc muốn xóa subtask ${st.key}?`)) {
+                      try {
+                        await issueService.deleteIssue(st.key);
+                        onSubtaskCreated?.();
+                      } catch (err: any) {
+                        alert(err?.response?.data?.message || err?.message || 'Xóa subtask thất bại');
+                      }
+                    }
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-[#9B9B9F] hover:text-[#E53E3E] rounded transition-opacity"
+                  title="Xóa subtask"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               )}
             </div>
           ))}
