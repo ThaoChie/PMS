@@ -18,6 +18,7 @@ export default function AttributesPanel({
   onUpdateField,
 }: AttributesPanelProps) {
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingCustomField, setEditingCustomField] = useState<string | null>(null);
 
   function AttrRow({ label, children }: { label: string; children: React.ReactNode }) {
     return (
@@ -292,6 +293,110 @@ export default function AttributesPanel({
           </button>
         )}
       </AttrRow>
+
+      {/* Custom Fields */}
+      {issue.customFields && issue.customFields.map((cf) => {
+        const isEditing = editingCustomField === cf.fieldKey;
+        const optionsList = cf.options ? cf.options.split(',').map((s) => s.trim()).filter(Boolean) : [];
+
+        return (
+          <AttrRow key={cf.fieldKey} label={cf.name + (cf.required ? ' *' : '')}>
+            {isEditing && canEdit && onUpdateField ? (
+              cf.type === 'DROPDOWN' ? (
+                <select
+                  autoFocus
+                  defaultValue={cf.value || ''}
+                  onChange={async (e) => {
+                    const val = e.target.value;
+                    setEditingCustomField(null);
+                    await onUpdateField('customFields', { [cf.fieldKey]: val });
+                  }}
+                  onBlur={() => setEditingCustomField(null)}
+                  className="w-full text-xs text-[#1A1A1A] bg-white border border-[#1A1A1A] rounded px-2 py-1 focus:outline-none"
+                >
+                  <option value="">-- Chọn {cf.name} --</option>
+                  {optionsList.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              ) : cf.type === 'CHECKBOX' ? (
+                <div className="flex items-center gap-2 py-1">
+                  <input
+                    type="checkbox"
+                    autoFocus
+                    defaultChecked={cf.value === 'true'}
+                    onChange={async (e) => {
+                      const checked = e.target.checked;
+                      setEditingCustomField(null);
+                      await onUpdateField('customFields', { [cf.fieldKey]: String(checked) });
+                    }}
+                    onBlur={() => setEditingCustomField(null)}
+                    className="rounded border-[#C5C5C8] text-[#1A1A1A] focus:ring-0"
+                  />
+                  <span className="text-xs text-[#6B6B70]">{cf.value === 'true' ? 'Đã bật' : 'Chưa bật'}</span>
+                </div>
+              ) : (
+                <input
+                  type={cf.type === 'NUMBER' ? 'number' : cf.type === 'DATE' ? 'date' : 'text'}
+                  autoFocus
+                  defaultValue={cf.value || ''}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter') {
+                      const val = (e.target as HTMLInputElement).value;
+                      setEditingCustomField(null);
+                      await onUpdateField('customFields', { [cf.fieldKey]: val });
+                    } else if (e.key === 'Escape') {
+                      setEditingCustomField(null);
+                    }
+                  }}
+                  onBlur={async (e) => {
+                    const val = e.target.value;
+                    setEditingCustomField(null);
+                    if (val !== (cf.value || '')) {
+                      await onUpdateField('customFields', { [cf.fieldKey]: val });
+                    }
+                  }}
+                  placeholder={`Nhập ${cf.name}...`}
+                  className="w-full text-xs text-[#1A1A1A] bg-white border border-[#1A1A1A] rounded px-2 py-1 focus:outline-none"
+                />
+              )
+            ) : (
+              <button
+                type="button"
+                disabled={!canEdit}
+                onClick={() => {
+                  if (canEdit && onUpdateField) {
+                    setEditingCustomField(cf.fieldKey);
+                  }
+                }}
+                className={`flex items-center justify-between w-full text-left py-1 px-1.5 -mx-1.5 rounded transition-colors group ${
+                  canEdit && onUpdateField ? 'hover:bg-[#F0F0F1] cursor-pointer' : 'cursor-default'
+                }`}
+                title={canEdit ? `Nhấp để sửa ${cf.name}` : undefined}
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  {cf.value ? (
+                    cf.type === 'CHECKBOX' ? (
+                      <span className={`text-xs font-medium ${cf.value === 'true' ? 'text-emerald-600' : 'text-[#9B9B9F]'}`}>
+                        {cf.value === 'true' ? '✓ Có' : '✗ Không'}
+                      </span>
+                    ) : (
+                      <span className="truncate">{cf.value}</span>
+                    )
+                  ) : (
+                    <span className="text-[#9B9B9F] italic">+ Thêm {cf.name}</span>
+                  )}
+                </div>
+                {canEdit && onUpdateField && (
+                  <Pencil className="w-3 h-3 text-[#9B9B9F] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1" />
+                )}
+              </button>
+            )}
+          </AttrRow>
+        );
+      })}
 
       {/* Labels */}
       {issue.labels && issue.labels.length > 0 && (

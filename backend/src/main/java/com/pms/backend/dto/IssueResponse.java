@@ -44,6 +44,7 @@ public class IssueResponse {
     private List<LinkedIssueResponse> linkedIssues = new ArrayList<>();
     private List<AttachmentResponse> attachments = new ArrayList<>();
     private List<TransitionOptionResponse> availableTransitions = new ArrayList<>();
+    private List<CustomFieldValueDto> customFields = new ArrayList<>();
     private Boolean isWatching;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -219,4 +220,7 @@ public class IssueResponse {
 
     public Boolean getIsWatching() { return isWatching; }
     public void setIsWatching(Boolean isWatching) { this.isWatching = isWatching; }
+
+    public List<CustomFieldValueDto> getCustomFields() { return customFields; }
+    public void setCustomFields(List<CustomFieldValueDto> customFields) { this.customFields = customFields; }
 }
