@@ -27,7 +27,7 @@ if lsof -Pi :8080 -sTCP:LISTEN -t >/dev/null ; then
     echo "✅ Backend đã đang chạy tại port 8080."
 else
     echo "☕ Đang khởi động Backend Spring Boot..."
-    nohup java -jar backend/target/backend-0.0.1-SNAPSHOT.jar \
+    nohup java -Duse.local.db=true -jar backend/target/backend-0.0.1-SNAPSHOT.jar \
         --spring.profiles.active=dev \
         > backend.log 2>&1 &
     
