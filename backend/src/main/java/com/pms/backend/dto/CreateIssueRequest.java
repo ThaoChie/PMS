@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public class CreateIssueRequest {
 
@@ -39,6 +40,8 @@ public class CreateIssueRequest {
     private Long parentId;
 
     private Long epicId;
+
+    private Map<String, String> customFields;
 
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }
@@ -78,4 +81,7 @@ public class CreateIssueRequest {
 
     public Long getEpicId() { return epicId; }
     public void setEpicId(Long epicId) { this.epicId = epicId; }
+
+    public Map<String, String> getCustomFields() { return customFields; }
+    public void setCustomFields(Map<String, String> customFields) { this.customFields = customFields; }
 }

@@ -58,9 +58,36 @@ export interface Issue {
   comments: Comment[];
   projectId: string;
   epicLink?: string;
+  customFields?: CustomFieldValue[];
   createdAt: string;
   updatedAt: string;
   version?: number;
 }
 
+export type CustomFieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'DROPDOWN' | 'CHECKBOX';
+
+export interface CustomField {
+  id: number;
+  projectId: number;
+  name: string;
+  fieldKey: string;
+  type: CustomFieldType;
+  required: boolean;
+  options?: string;
+  defaultValue?: string;
+  description?: string;
+  position?: number;
+}
+
+export interface CustomFieldValue {
+  id: number;
+  fieldKey: string;
+  name: string;
+  type: CustomFieldType;
+  required?: boolean;
+  options?: string;
+  value?: string;
+}
+
 export type QuickFilter = 'my-issues' | 'recently-updated' | 'reported-by-me' | 'critical' | string;
+

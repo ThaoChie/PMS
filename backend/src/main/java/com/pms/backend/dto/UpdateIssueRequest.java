@@ -5,6 +5,7 @@ import com.pms.backend.enu.Priority;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public class UpdateIssueRequest {
 
@@ -23,6 +24,7 @@ public class UpdateIssueRequest {
     private Boolean clearDueDate;
     private Boolean clearAssignee;
     private Integer version; // Required for optimistic concurrency check
+    private Map<String, String> customFields;
 
     public Boolean getClearDueDate() { return clearDueDate; }
     public void setClearDueDate(Boolean clearDueDate) { this.clearDueDate = clearDueDate; }
@@ -68,4 +70,7 @@ public class UpdateIssueRequest {
 
     public Integer getVersion() { return version; }
     public void setVersion(Integer version) { this.version = version; }
+
+    public Map<String, String> getCustomFields() { return customFields; }
+    public void setCustomFields(Map<String, String> customFields) { this.customFields = customFields; }
 }

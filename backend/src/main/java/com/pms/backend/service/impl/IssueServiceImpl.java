@@ -53,6 +53,9 @@ public class IssueServiceImpl implements IIssueService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private IMailService mailService;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ICustomFieldService customFieldService;
+
     public IssueServiceImpl(IssueRepository issueRepository,
                         ProjectRepository projectRepository,
                         UserRepository userRepository,
@@ -215,7 +218,15 @@ public class IssueServiceImpl implements IIssueService {
             watcherService.watchIssue(saved, currentUser);
         }
 
-        return IssueResponse.from(saved);
+        if (customFieldService != null && request.getCustomFields() != null) {
+            customFieldService.validateAndSaveIssueCustomFields(saved, request.getCustomFields());
+        }
+
+        IssueResponse res = IssueResponse.from(saved);
+        if (customFieldService != null) {
+            res.setCustomFields(customFieldService.getIssueCustomFields(saved.getId(), project.getId()));
+        }
+        return res;
     }
 
     @Transactional(readOnly = true)
@@ -261,6 +272,10 @@ public class IssueServiceImpl implements IIssueService {
         // Available transitions for this user
         List<TransitionOptionResponse> transitions = workflowService.getTransitionsForIssue(issue.getIssueKey(), currentUser);
         res.setAvailableTransitions(transitions);
+
+        if (customFieldService != null) {
+            res.setCustomFields(customFieldService.getIssueCustomFields(issue.getId(), issue.getProject().getId()));
+        }
 
         return res;
     }
@@ -359,10 +374,18 @@ public class IssueServiceImpl implements IIssueService {
             issue.setLabels(labelSet);
         }
 
+        if (customFieldService != null && request.getCustomFields() != null) {
+            customFieldService.validateAndSaveIssueCustomFields(issue, request.getCustomFields());
+        }
+
         Issue saved = issueRepository.save(issue);
         auditService.log("UPDATE_ISSUE", "ISSUE", saved.getId(), saved.getProject().getId(), null, "Updated issue " + saved.getIssueKey());
 
-        return IssueResponse.from(saved);
+        IssueResponse res = IssueResponse.from(saved);
+        if (customFieldService != null) {
+            res.setCustomFields(customFieldService.getIssueCustomFields(saved.getId(), saved.getProject().getId()));
+        }
+        return res;
     }
 
     @Transactional

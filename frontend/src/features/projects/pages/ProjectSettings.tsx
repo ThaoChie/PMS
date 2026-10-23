@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Role } from '../../../types';
 import EditProjectForm from '../components/EditProjectForm';
 import CloseProjectPanel from '../components/CloseProjectPanel';
+import CustomFieldsManager from '../components/CustomFieldsManager';
 import { useProjectStore } from '../../../store/projectStore';
 import { projectService } from '../../../services/projectService';
 
@@ -72,6 +73,9 @@ export default function ProjectSettings({ role }: ProjectSettingsProps) {
 
         {/* Edit project general info */}
         <EditProjectForm project={currentProject} canEdit={canEdit} onSave={handleSave} />
+
+        {/* Custom fields management (PM / Admin) */}
+        <CustomFieldsManager projectId={currentProject.id} canEdit={canEdit} />
 
         {/* Danger zone */}
         {canEdit && currentProject.status !== 'Closed' && (

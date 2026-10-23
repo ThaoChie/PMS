@@ -3,7 +3,8 @@ import { X, AlertCircle } from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
 import { memberService } from '../../../services/memberService';
 import { issueService } from '../../../services/issueService';
-import type { IssueType, Priority } from '../../../types';
+import { customFieldService } from '../../../services/customFieldService';
+import type { IssueType, Priority, CustomField } from '../../../types';
 
 interface CreateIssueModalProps {
   onClose: () => void;
@@ -47,10 +48,12 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
   });
 
   const [members, setMembers] = useState<Array<{ id: string; name: string }>>([]);
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Sync members when selected project changes
+  // Sync members & custom fields when selected project changes
   useEffect(() => {
     if (form.projectId) {
       memberService.getMembers(form.projectId)
@@ -65,11 +68,30 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
           );
         })
         .catch(() => setMembers([]));
+
+      customFieldService.getCustomFields(form.projectId)
+        .then((res) => {
+          const list = res?.data || [];
+          setCustomFields(list);
+          const initialValues: Record<string, string> = {};
+          list.forEach((f) => {
+            if (f.defaultValue) {
+              initialValues[f.fieldKey] = f.defaultValue;
+            }
+          });
+          setCustomFieldValues(initialValues);
+        })
+        .catch(() => setCustomFields([]));
     }
   }, [form.projectId]);
 
   function set<K extends keyof typeof form>(key: K, val: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: val }));
+    if (errorMsg) setErrorMsg(null);
+  }
+
+  function setCustomFieldValue(key: string, val: string) {
+    setCustomFieldValues((prev) => ({ ...prev, [key]: val }));
     if (errorMsg) setErrorMsg(null);
   }
 
@@ -84,6 +106,18 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
       ? form.labels.split(',').map((l) => l.trim()).filter(Boolean)
       : undefined;
 
+    // Validate required custom fields
+    for (const cf of customFields) {
+      if (cf.required) {
+        const val = customFieldValues[cf.fieldKey];
+        if (!val || !val.trim()) {
+          setErrorMsg(`Trường "${cf.name}" là bắt buộc.`);
+          setSaving(false);
+          return;
+        }
+      }
+    }
+
     try {
       const payload: any = {
         summary: form.summary.trim(),
@@ -95,6 +129,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
         estimates: form.estimates.trim() || undefined,
         dueDate: form.dueDate || undefined,
         environment: form.environment.trim() || undefined,
+        customFields: Object.keys(customFieldValues).length > 0 ? customFieldValues : undefined,
       };
 
       await issueService.createIssue(form.projectId, payload);
@@ -263,6 +298,61 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                 />
               </Field>
             </div>
+
+            {/* Custom Fields section */}
+            {customFields.length > 0 && (
+              <div className="pt-2 border-t border-[#E5E5E7] mb-4">
+                <p className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider mb-3">
+                  Thông tin bổ sung dự án ({customFields.length})
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  {customFields.map((cf) => {
+                    const optionsList = cf.options ? cf.options.split(',').map((s) => s.trim()).filter(Boolean) : [];
+                    const val = customFieldValues[cf.fieldKey] || '';
+
+                    return (
+                      <Field key={cf.fieldKey} label={cf.name} optional={!cf.required}>
+                        {cf.type === 'DROPDOWN' ? (
+                          <select
+                            value={val}
+                            onChange={(e) => setCustomFieldValue(cf.fieldKey, e.target.value)}
+                            className={selectCls}
+                          >
+                            <option value="">-- Chọn {cf.name} --</option>
+                            {optionsList.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        ) : cf.type === 'CHECKBOX' ? (
+                          <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={val === 'true'}
+                              onChange={(e) => setCustomFieldValue(cf.fieldKey, String(e.target.checked))}
+                              className="rounded border-[#C5C5C8] text-[#1A1A1A] focus:ring-0"
+                            />
+                            <span className="text-xs text-[#1A1A1A]">Đã bật / Đồng ý</span>
+                          </label>
+                        ) : (
+                          <input
+                            type={cf.type === 'NUMBER' ? 'number' : cf.type === 'DATE' ? 'date' : 'text'}
+                            value={val}
+                            onChange={(e) => setCustomFieldValue(cf.fieldKey, e.target.value)}
+                            placeholder={cf.defaultValue || `Nhập ${cf.name}...`}
+                            className={inputCls}
+                          />
+                        )}
+                        {cf.description && (
+                          <p className="text-[10px] text-[#9B9B9F] mt-1">{cf.description}</p>
+                        )}
+                      </Field>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
