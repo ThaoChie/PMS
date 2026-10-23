@@ -1,5 +1,8 @@
 package com.pms.backend.service;
 
+import com.pms.backend.service.impl.*;
+import com.pms.backend.service.interfaces.*;
+
 import com.pms.backend.enu.ErrorCode;
 import com.pms.backend.exception.BusinessException;
 import com.pms.backend.model.Issue;
@@ -15,11 +18,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ExportServiceTest {
 
-    private ExportService exportService;
+    private ExportServiceImpl exportService;
 
     @BeforeEach
     public void setup() {
-        exportService = new ExportService();
+        exportService = new ExportServiceImpl();
         ReflectionTestUtils.setField(exportService, "maxExportRows", 100);
     }
 
@@ -52,13 +55,13 @@ public class ExportServiceTest {
     @Test
     public void testExport_CsvInjectionProtection() {
         // Cells starting with =, +, -, @ must be prefixed with '
-        assertEquals("'=1+2", ExportService.sanitizeForSpreadsheet("=1+2"));
-        assertEquals("'+SUM(A1:A5)", ExportService.sanitizeForSpreadsheet("+SUM(A1:A5)"));
-        assertEquals("'-5+10", ExportService.sanitizeForSpreadsheet("-5+10"));
-        assertEquals("'@evil", ExportService.sanitizeForSpreadsheet("@evil"));
-        assertEquals("Safe text", ExportService.sanitizeForSpreadsheet("Safe text"));
-        assertEquals("", ExportService.sanitizeForSpreadsheet(""));
-        assertEquals("", ExportService.sanitizeForSpreadsheet(null));
+        assertEquals("'=1+2", ExportServiceImpl.sanitizeForSpreadsheet("=1+2"));
+        assertEquals("'+SUM(A1:A5)", ExportServiceImpl.sanitizeForSpreadsheet("+SUM(A1:A5)"));
+        assertEquals("'-5+10", ExportServiceImpl.sanitizeForSpreadsheet("-5+10"));
+        assertEquals("'@evil", ExportServiceImpl.sanitizeForSpreadsheet("@evil"));
+        assertEquals("Safe text", ExportServiceImpl.sanitizeForSpreadsheet("Safe text"));
+        assertEquals("", ExportServiceImpl.sanitizeForSpreadsheet(""));
+        assertEquals("", ExportServiceImpl.sanitizeForSpreadsheet(null));
 
         Issue issue = new Issue();
         issue.setIssueKey("TEST-1");

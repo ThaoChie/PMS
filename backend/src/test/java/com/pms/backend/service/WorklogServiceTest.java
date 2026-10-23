@@ -1,5 +1,8 @@
 package com.pms.backend.service;
 
+import com.pms.backend.service.impl.*;
+import com.pms.backend.service.interfaces.*;
+
 import com.pms.backend.dao.IssueRepository;
 import com.pms.backend.dao.WorklogRepository;
 import com.pms.backend.dto.CreateWorklogRequest;
@@ -33,11 +36,11 @@ public class WorklogServiceTest {
     @Mock private IssueRepository issueRepository;
     @Mock private IssueBoardDao issueBoardDao;
     @Mock private ProjectSecurity projectSecurity;
-    @Mock private WatcherService watcherService;
-    @Mock private AuditService auditService;
+    @Mock private IWatcherService watcherService;
+    @Mock private IAuditService auditService;
 
     @InjectMocks
-    private WorklogService worklogService;
+    private WorklogServiceImpl worklogService;
 
     private Issue issue;
     private Worklog worklog;

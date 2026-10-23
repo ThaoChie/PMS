@@ -6,8 +6,8 @@ import com.pms.backend.dto.ProjectResponse;
 import com.pms.backend.dto.UpdateProjectRequest;
 import com.pms.backend.model.User;
 import com.pms.backend.security.AuthUserPrincipal;
-import com.pms.backend.service.ProjectService;
-import com.pms.backend.service.UserService;
+import com.pms.backend.service.interfaces.IProjectService;
+import com.pms.backend.service.interfaces.IUserService;
 import com.pms.backend.wrapper.PageWrapper;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,10 +21,10 @@ import java.util.Map;
 @RequestMapping({"/api/projects", "/projects"})
 public class ProjectController {
 
-    private final ProjectService projectService;
-    private final UserService userService;
+    private final IProjectService projectService;
+    private final IUserService userService;
 
-    public ProjectController(ProjectService projectService, UserService userService) {
+    public ProjectController(IProjectService projectService, IUserService userService) {
         this.projectService = projectService;
         this.userService = userService;
     }

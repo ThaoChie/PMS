@@ -1,5 +1,8 @@
 package com.pms.backend.service;
 
+import com.pms.backend.service.impl.*;
+import com.pms.backend.service.interfaces.*;
+
 import com.pms.backend.dao.ProjectMemberRepository;
 import com.pms.backend.dao.ProjectRepository;
 import com.pms.backend.dao.UserRepository;
@@ -41,19 +44,19 @@ public class ProjectServiceTest {
     private ProjectListHibernateDao projectListHibernateDao;
 
     @Mock
-    private DefaultWorkflowSeeder defaultWorkflowSeeder;
+    private IDefaultWorkflowSeeder defaultWorkflowSeeder;
 
     @Mock
-    private InvitationService invitationService;
+    private IInvitationService invitationService;
 
     @Mock
-    private AuditService auditService;
+    private IAuditService auditService;
 
     @Mock
     private ProjectSecurity projectSecurity;
 
     @InjectMocks
-    private ProjectService projectService;
+    private ProjectServiceImpl projectService;
 
     private User pmUser;
     private User memberUser;

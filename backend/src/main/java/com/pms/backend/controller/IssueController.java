@@ -6,12 +6,12 @@ import com.pms.backend.enu.IssueType;
 import com.pms.backend.enu.Priority;
 import com.pms.backend.model.Issue;
 import com.pms.backend.model.User;
-import com.pms.backend.service.IssueService;
-import com.pms.backend.service.UserService;
-import com.pms.backend.service.WorkflowService;
-import com.pms.backend.service.CommentService;
-import com.pms.backend.service.WorklogService;
-import com.pms.backend.service.WatcherService;
+import com.pms.backend.service.interfaces.IIssueService;
+import com.pms.backend.service.interfaces.IUserService;
+import com.pms.backend.service.interfaces.IWorkflowService;
+import com.pms.backend.service.interfaces.ICommentService;
+import com.pms.backend.service.interfaces.IWorklogService;
+import com.pms.backend.service.interfaces.IWatcherService;
 import com.pms.backend.wrapper.PageWrapper;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -29,19 +29,19 @@ import java.util.List;
 @RestController
 public class IssueController {
 
-    private final IssueService issueService;
-    private final WorkflowService workflowService;
-    private final UserService userService;
-    private final CommentService commentService;
-    private final WorklogService worklogService;
-    private final WatcherService watcherService;
+    private final IIssueService issueService;
+    private final IWorkflowService workflowService;
+    private final IUserService userService;
+    private final ICommentService commentService;
+    private final IWorklogService worklogService;
+    private final IWatcherService watcherService;
 
-    public IssueController(IssueService issueService,
-                           WorkflowService workflowService,
-                           UserService userService,
-                           CommentService commentService,
-                           WorklogService worklogService,
-                           WatcherService watcherService) {
+    public IssueController(IIssueService issueService,
+                           IWorkflowService workflowService,
+                           IUserService userService,
+                           ICommentService commentService,
+                           IWorklogService worklogService,
+                           IWatcherService watcherService) {
         this.issueService = issueService;
         this.workflowService = workflowService;
         this.userService = userService;

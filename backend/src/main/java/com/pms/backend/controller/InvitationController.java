@@ -6,8 +6,8 @@ import com.pms.backend.dto.InvitationResponse;
 import com.pms.backend.model.Invitation;
 import com.pms.backend.model.User;
 import com.pms.backend.security.AuthUserPrincipal;
-import com.pms.backend.service.InvitationService;
-import com.pms.backend.service.UserService;
+import com.pms.backend.service.interfaces.IInvitationService;
+import com.pms.backend.service.interfaces.IUserService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -20,10 +20,10 @@ import java.util.stream.Collectors;
 @RestController
 public class InvitationController {
 
-    private final InvitationService invitationService;
-    private final UserService userService;
+    private final IInvitationService invitationService;
+    private final IUserService userService;
 
-    public InvitationController(InvitationService invitationService, UserService userService) {
+    public InvitationController(IInvitationService invitationService, IUserService userService) {
         this.invitationService = invitationService;
         this.userService = userService;
     }

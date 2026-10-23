@@ -6,8 +6,8 @@ import com.pms.backend.dto.SavedFilterResponse;
 import com.pms.backend.dto.ShareFilterRequest;
 import com.pms.backend.dto.SubscriptionRequest;
 import com.pms.backend.model.User;
-import com.pms.backend.service.SavedFilterService;
-import com.pms.backend.service.UserService;
+import com.pms.backend.service.interfaces.ISavedFilterService;
+import com.pms.backend.service.interfaces.IUserService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -21,10 +21,10 @@ import java.util.List;
 @PreAuthorize("isAuthenticated()")
 public class SavedFilterController {
 
-    private final SavedFilterService savedFilterService;
-    private final UserService userService;
+    private final ISavedFilterService savedFilterService;
+    private final IUserService userService;
 
-    public SavedFilterController(SavedFilterService savedFilterService, UserService userService) {
+    public SavedFilterController(ISavedFilterService savedFilterService, IUserService userService) {
         this.savedFilterService = savedFilterService;
         this.userService = userService;
     }

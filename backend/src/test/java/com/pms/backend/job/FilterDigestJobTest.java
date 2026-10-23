@@ -5,7 +5,7 @@ import com.pms.backend.dao.FilterSubscriptionRepository;
 import com.pms.backend.dao.ProjectMemberRepository;
 import com.pms.backend.hibernateDao.IssueSearchDao;
 import com.pms.backend.model.*;
-import com.pms.backend.service.MailService;
+import com.pms.backend.service.interfaces.IMailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +28,7 @@ public class FilterDigestJobTest {
     @Mock private FilterSubscriptionRepository subscriptionRepository;
     @Mock private IssueSearchDao issueSearchDao;
     @Mock private ProjectMemberRepository projectMemberRepository;
-    @Mock private MailService mailService;
+    @Mock private IMailService mailService;
     @Spy private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks

@@ -1,5 +1,8 @@
 package com.pms.backend.service;
 
+import com.pms.backend.service.impl.*;
+import com.pms.backend.service.interfaces.*;
+
 import com.pms.backend.dao.CommentRepository;
 import com.pms.backend.dao.IssueRepository;
 import com.pms.backend.dao.ProjectMemberRepository;
@@ -34,12 +37,12 @@ public class CommentServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private ProjectMemberRepository projectMemberRepository;
     @Mock private ProjectSecurity projectSecurity;
-    @Mock private NotificationService notificationService;
-    @Mock private WatcherService watcherService;
-    @Mock private AuditService auditService;
+    @Mock private INotificationService notificationService;
+    @Mock private IWatcherService watcherService;
+    @Mock private IAuditService auditService;
 
     @InjectMocks
-    private CommentService commentService;
+    private CommentServiceImpl commentService;
 
     private Project project;
     private Issue issue;

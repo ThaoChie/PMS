@@ -1,5 +1,8 @@
 package com.pms.backend.service;
 
+import com.pms.backend.service.impl.*;
+import com.pms.backend.service.interfaces.*;
+
 import com.pms.backend.dao.ProjectMemberRepository;
 import com.pms.backend.dao.ProjectRepository;
 import com.pms.backend.enu.ProjectRole;
@@ -30,13 +33,13 @@ public class MembershipServiceTest {
     private ProjectRepository projectRepository;
 
     @Mock
-    private AuditService auditService;
+    private IAuditService auditService;
 
     @Mock
     private ProjectSecurity projectSecurity;
 
     @InjectMocks
-    private MembershipService membershipService;
+    private MembershipServiceImpl membershipService;
 
     private Project project;
     private User pmUser;

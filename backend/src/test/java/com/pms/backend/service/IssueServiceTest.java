@@ -1,5 +1,8 @@
 package com.pms.backend.service;
 
+import com.pms.backend.service.impl.*;
+import com.pms.backend.service.interfaces.*;
+
 import com.pms.backend.config.AppProperties;
 import com.pms.backend.dao.*;
 import com.pms.backend.dto.CreateIssueRequest;
@@ -41,16 +44,16 @@ public class IssueServiceTest {
     @Mock private IssueLinkRepository linkRepository;
     @Mock private IssueAttachmentRepository attachmentRepository;
     @Mock private IssueStatusHistoryRepository historyRepository;
-    @Mock private IssueKeyGenerator keyGenerator;
-    @Mock private WorkflowService workflowService;
+    @Mock private IIssueKeyGenerator keyGenerator;
+    @Mock private IWorkflowService workflowService;
     @Mock private ProjectSecurity projectSecurity;
-    @Mock private NotificationService notificationService;
-    @Mock private AuditService auditService;
-    @Mock private FileStorageService fileStorageService;
+    @Mock private INotificationService notificationService;
+    @Mock private IAuditService auditService;
+    @Mock private IFileStorageService fileStorageService;
     @Mock private AppProperties appProperties;
 
     @InjectMocks
-    private IssueService issueService;
+    private IssueServiceImpl issueService;
 
     private Project project;
     private User user;

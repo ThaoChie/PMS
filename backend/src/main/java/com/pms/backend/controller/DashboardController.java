@@ -3,8 +3,8 @@ package com.pms.backend.controller;
 import com.pms.backend.common.ApiResponse;
 import com.pms.backend.dto.DashboardResponse;
 import com.pms.backend.model.User;
-import com.pms.backend.service.DashboardService;
-import com.pms.backend.service.UserService;
+import com.pms.backend.service.interfaces.IDashboardService;
+import com.pms.backend.service.interfaces.IUserService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,10 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("isAuthenticated()")
 public class DashboardController {
 
-    private final DashboardService dashboardService;
-    private final UserService userService;
+    private final IDashboardService dashboardService;
+    private final IUserService userService;
 
-    public DashboardController(DashboardService dashboardService, UserService userService) {
+    public DashboardController(IDashboardService dashboardService, IUserService userService) {
         this.dashboardService = dashboardService;
         this.userService = userService;
     }

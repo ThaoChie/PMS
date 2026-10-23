@@ -1,5 +1,8 @@
 package com.pms.backend.service;
 
+import com.pms.backend.service.impl.*;
+import com.pms.backend.service.interfaces.*;
+
 import com.pms.backend.dao.IssueRepository;
 import com.pms.backend.dto.*;
 import com.pms.backend.hibernateDao.BugReportHibernateDao;
@@ -41,7 +44,7 @@ public class ReportServiceTest {
     private ProjectSecurity projectSecurity;
 
     @InjectMocks
-    private ReportService reportService;
+    private ReportServiceImpl reportService;
 
     @Test
     public void testGetProgressReport_DelegatesToDao() {
