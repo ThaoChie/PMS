@@ -223,6 +223,7 @@ export default function IssueDetailDrawer({
       dueDate: string | null;
       estimates: string | null;
       environment: string | null;
+      customFields: Record<string, string>;
     }>
   ) {
     if (!issue) return;
@@ -251,6 +252,9 @@ export default function IssueDetailDrawer({
       }
       if (updates.dueDate === null) {
         payload.clearDueDate = true;
+      }
+      if (updates.customFields !== undefined) {
+        payload.customFields = updates.customFields;
       }
 
       await issueService.updateIssue(issue.key, payload, issue.version);
@@ -285,7 +289,11 @@ export default function IssueDetailDrawer({
   }
 
   async function handleUpdateField(field: string, value: any) {
-    await handleInlineUpdate({ [field]: value });
+    if (field === 'customFields') {
+      await handleInlineUpdate({ customFields: value });
+    } else {
+      await handleInlineUpdate({ [field]: value });
+    }
   }
 
   function handleStartEdit() {
@@ -832,7 +840,18 @@ export default function IssueDetailDrawer({
             </div>
 
             {/* Subtasks */}
-            <SubtaskSection subtasks={issue.subtasks} onSelectSubtask={onSelectSubtask} />
+            <SubtaskSection
+              subtasks={issue.subtasks}
+              issueKey={issue.key}
+              issueType={issue.type}
+              projectMembers={projectMembers}
+              canEdit={true}
+              onSelectSubtask={onSelectSubtask}
+              onSubtaskCreated={async () => {
+                await fetchDetail();
+                onUpdated?.();
+              }}
+            />
 
             {/* Linked issues */}
             <LinkedIssuesSection
