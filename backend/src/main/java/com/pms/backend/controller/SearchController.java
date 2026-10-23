@@ -10,8 +10,8 @@ import com.pms.backend.model.Issue;
 import com.pms.backend.model.ProjectMember;
 import com.pms.backend.model.RecentView;
 import com.pms.backend.model.User;
-import com.pms.backend.service.ExportService;
-import com.pms.backend.service.UserService;
+import com.pms.backend.service.interfaces.IExportService;
+import com.pms.backend.service.interfaces.IUserService;
 import com.pms.backend.wrapper.PageWrapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,16 +33,16 @@ import java.util.stream.Collectors;
 public class SearchController {
 
     private final IssueSearchDao issueSearchDao;
-    private final ExportService exportService;
+    private final IExportService exportService;
     private final ProjectMemberRepository projectMemberRepository;
     private final RecentViewRepository recentViewRepository;
-    private final UserService userService;
+    private final IUserService userService;
 
     public SearchController(IssueSearchDao issueSearchDao,
-                            ExportService exportService,
+                            IExportService exportService,
                             ProjectMemberRepository projectMemberRepository,
                             RecentViewRepository recentViewRepository,
-                            UserService userService) {
+                            IUserService userService) {
         this.issueSearchDao = issueSearchDao;
         this.exportService = exportService;
         this.projectMemberRepository = projectMemberRepository;

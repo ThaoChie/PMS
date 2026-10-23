@@ -4,10 +4,10 @@ import com.pms.backend.common.ApiResponse;
 import com.pms.backend.config.AppProperties;
 import com.pms.backend.dto.*;
 import com.pms.backend.security.RefreshCookieUtil;
-import com.pms.backend.service.AuthService;
-import com.pms.backend.service.GoogleAuthService;
-import com.pms.backend.service.PasswordResetService;
-import com.pms.backend.service.RefreshTokenService;
+import com.pms.backend.service.interfaces.IAuthService;
+import com.pms.backend.service.interfaces.IGoogleAuthService;
+import com.pms.backend.service.interfaces.IPasswordResetService;
+import com.pms.backend.service.interfaces.IRefreshTokenService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,17 +20,17 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping({"/api/auth", "/auth"})
 public class AuthController {
 
-    private final AuthService authService;
-    private final GoogleAuthService googleAuthService;
-    private final RefreshTokenService refreshTokenService;
-    private final PasswordResetService passwordResetService;
+    private final IAuthService authService;
+    private final IGoogleAuthService googleAuthService;
+    private final IRefreshTokenService refreshTokenService;
+    private final IPasswordResetService passwordResetService;
     private final RefreshCookieUtil refreshCookieUtil;
     private final AppProperties appProperties;
 
-    public AuthController(AuthService authService,
-                          GoogleAuthService googleAuthService,
-                          RefreshTokenService refreshTokenService,
-                          PasswordResetService passwordResetService,
+    public AuthController(IAuthService authService,
+                          IGoogleAuthService googleAuthService,
+                          IRefreshTokenService refreshTokenService,
+                          IPasswordResetService passwordResetService,
                           RefreshCookieUtil refreshCookieUtil,
                           AppProperties appProperties) {
         this.authService = authService;

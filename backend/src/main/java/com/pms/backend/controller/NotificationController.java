@@ -6,7 +6,7 @@ import com.pms.backend.dto.NotificationResponse;
 import com.pms.backend.enu.NotificationGroup;
 import com.pms.backend.model.Notification;
 import com.pms.backend.model.User;
-import com.pms.backend.service.UserService;
+import com.pms.backend.service.interfaces.IUserService;
 import com.pms.backend.wrapper.PageWrapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,9 +25,9 @@ import java.util.Map;
 public class NotificationController {
 
     private final NotificationRepository notificationRepository;
-    private final UserService userService;
+    private final IUserService userService;
 
-    public NotificationController(NotificationRepository notificationRepository, UserService userService) {
+    public NotificationController(NotificationRepository notificationRepository, IUserService userService) {
         this.notificationRepository = notificationRepository;
         this.userService = userService;
     }

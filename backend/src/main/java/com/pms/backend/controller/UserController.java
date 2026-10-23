@@ -6,7 +6,7 @@ import com.pms.backend.dto.UpdateProfileRequest;
 import com.pms.backend.dto.UserResponse;
 import com.pms.backend.model.User;
 import com.pms.backend.security.AuthUserPrincipal;
-import com.pms.backend.service.UserService;
+import com.pms.backend.service.interfaces.IUserService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,9 +21,9 @@ import java.util.stream.Collectors;
 @RequestMapping({"/api/users", "/users"})
 public class UserController {
 
-    private final UserService userService;
+    private final IUserService userService;
 
-    public UserController(UserService userService) {
+    public UserController(IUserService userService) {
         this.userService = userService;
     }
 

@@ -3,7 +3,7 @@ package com.pms.backend.controller;
 import com.pms.backend.common.ApiResponse;
 import com.pms.backend.dto.SaveWorkflowRequest;
 import com.pms.backend.dto.WorkflowResponse;
-import com.pms.backend.service.WorkflowService;
+import com.pms.backend.service.interfaces.IWorkflowService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping({"/api/projects/{projectId}/workflow", "/projects/{projectId}/workflow"})
 public class WorkflowController {
 
-    private final WorkflowService workflowService;
+    private final IWorkflowService workflowService;
 
-    public WorkflowController(WorkflowService workflowService) {
+    public WorkflowController(IWorkflowService workflowService) {
         this.workflowService = workflowService;
     }
 

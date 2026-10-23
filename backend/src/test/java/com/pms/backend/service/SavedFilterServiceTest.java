@@ -1,5 +1,8 @@
 package com.pms.backend.service;
 
+import com.pms.backend.service.impl.*;
+import com.pms.backend.service.interfaces.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pms.backend.dao.FilterSubscriptionRepository;
 import com.pms.backend.dao.ProjectMemberRepository;
@@ -36,7 +39,7 @@ public class SavedFilterServiceTest {
     @Spy private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks
-    private SavedFilterService savedFilterService;
+    private SavedFilterServiceImpl savedFilterService;
 
     private User owner;
     private User authorizedUser;

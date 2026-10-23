@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 public class AuditLogAspect {
     private static final Logger logger = LoggerFactory.getLogger(AuditLogAspect.class);
 
-    @AfterReturning(pointcut = "execution(* com.pms.backend.service.*.create*(..)) || execution(* com.pms.backend.service.*.update*(..)) || execution(* com.pms.backend.service.*.delete*(..)) || execution(* com.pms.backend.service.*.change*(..))", returning = "result")
+    @AfterReturning(pointcut = "execution(* com.pms.backend.service..*.create*(..)) || execution(* com.pms.backend.service..*.update*(..)) || execution(* com.pms.backend.service..*.delete*(..)) || execution(* com.pms.backend.service..*.change*(..))", returning = "result")
     public void logAfterReturning(JoinPoint joinPoint, Object result) {
         String methodName = joinPoint.getSignature().getName();
         String username = "system";

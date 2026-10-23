@@ -9,7 +9,7 @@ import com.pms.backend.model.FilterSubscription;
 import com.pms.backend.model.Issue;
 import com.pms.backend.model.ProjectMember;
 import com.pms.backend.model.User;
-import com.pms.backend.service.MailService;
+import com.pms.backend.service.interfaces.IMailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -29,13 +29,13 @@ public class FilterDigestJob {
     private final FilterSubscriptionRepository subscriptionRepository;
     private final IssueSearchDao issueSearchDao;
     private final ProjectMemberRepository projectMemberRepository;
-    private final MailService mailService;
+    private final IMailService mailService;
     private final ObjectMapper objectMapper;
 
     public FilterDigestJob(FilterSubscriptionRepository subscriptionRepository,
                            IssueSearchDao issueSearchDao,
                            ProjectMemberRepository projectMemberRepository,
-                           MailService mailService,
+                           IMailService mailService,
                            ObjectMapper objectMapper) {
         this.subscriptionRepository = subscriptionRepository;
         this.issueSearchDao = issueSearchDao;
