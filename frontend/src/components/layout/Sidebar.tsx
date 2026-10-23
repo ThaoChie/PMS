@@ -8,6 +8,7 @@ import {
   Settings,
   Users,
   GitBranch,
+  Sliders,
   Mail,
 } from 'lucide-react';
 import type { Role, Screen, Project, User } from '../../types';
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
 const SETTINGS_NAV = [
   { id: 'members-roles' as Screen, label: 'Thành viên & Vai trò', icon: Users },
   { id: 'workflow' as Screen, label: 'Quy trình làm việc', icon: GitBranch },
+  { id: 'custom-fields' as Screen, label: 'Trường tùy chỉnh', icon: Sliders },
   { id: 'project-settings' as Screen, label: 'Cài đặt dự án', icon: Settings },
 ];
 
