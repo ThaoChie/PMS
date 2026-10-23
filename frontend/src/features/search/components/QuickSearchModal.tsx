@@ -188,7 +188,7 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
                     key={i.id}
                     className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left hover:bg-[#F7F7F8] transition-colors group"
                     onClick={() => {
-                      onSelectIssue(i.id);
+                      onSelectIssue(i.key || i.id);
                       onClose();
                     }}
                   >

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, ChevronDown, AlertTriangle, Share2, Trash2, CheckCircle2, RefreshCw } from 'lucide-react';
+import { X, ChevronDown, AlertTriangle, Share2, Trash2, CheckCircle2, RefreshCw, Pencil } from 'lucide-react';
 import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
-import type { Role, Issue, WorkflowTransition } from '../../../types';
+import { memberService } from '../../../services/memberService';
+import type { Role, Issue } from '../../../types';
 import AttributesPanel from './AttributesPanel';
 import SubtaskSection from './SubtaskSection';
 import LinkedIssuesSection from './LinkedIssuesSection';
@@ -21,6 +22,7 @@ interface IssueDetailDrawerProps {
   role: Role;
   onClose: () => void;
   onSelectSubtask?: (key: string) => void;
+  onUpdated?: () => void;
 }
 
 export default function IssueDetailDrawer({
@@ -28,7 +30,9 @@ export default function IssueDetailDrawer({
   role,
   onClose,
   onSelectSubtask,
+  onUpdated,
 }: IssueDetailDrawerProps) {
+  // All hooks must be declared before any conditional return statements!
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
   const [transitions, setTransitions] = useState<any[]>([]);
@@ -40,6 +44,27 @@ export default function IssueDetailDrawer({
   const [concurrentConflict, setConcurrentConflict] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Edit form state (for full form toggle)
+  const [isEditing, setIsEditing] = useState(false);
+  const [projectMembers, setProjectMembers] = useState<Array<{ id: string; name: string }>>([]);
+  const [editForm, setEditForm] = useState({
+    summary: '',
+    description: '',
+    type: 'TASK' as any,
+    priority: 'MEDIUM' as any,
+    assigneeId: '',
+    dueDate: '',
+    estimates: '',
+    environment: '',
+  });
+
+  // Direct inline editing states
+  const [editingSummary, setEditingSummary] = useState(false);
+  const [summaryValue, setSummaryValue] = useState('');
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [descriptionValue, setDescriptionValue] = useState('');
+  const [showTypeMenu, setShowTypeMenu] = useState(false);
 
   const fetchDetail = useCallback(async () => {
     if (!issueId) return;
@@ -60,20 +85,24 @@ export default function IssueDetailDrawer({
         type: raw.type,
         status: raw.status,
         priority: raw.priority,
-        assignee: raw.assignee ? {
-          id: String(raw.assignee.id),
-          name: raw.assignee.fullName || raw.assignee.name || raw.assignee.email,
-          email: raw.assignee.email,
-          avatarUrl: raw.assignee.avatarUrl,
-          role: 'member'
-        } : undefined,
-        reporter: raw.reporter ? {
-          id: String(raw.reporter.id),
-          name: raw.reporter.fullName || raw.reporter.name || raw.reporter.email,
-          email: raw.reporter.email,
-          avatarUrl: raw.reporter.avatarUrl,
-          role: 'member'
-        } : { id: '0', name: 'Unknown', email: '', role: 'member' },
+        assignee: raw.assignee
+          ? {
+              id: String(raw.assignee.id),
+              name: raw.assignee.fullName || raw.assignee.name || raw.assignee.email,
+              email: raw.assignee.email,
+              avatarUrl: raw.assignee.avatarUrl,
+              role: 'member',
+            }
+          : undefined,
+        reporter: raw.reporter
+          ? {
+              id: String(raw.reporter.id),
+              name: raw.reporter.fullName || raw.reporter.name || raw.reporter.email,
+              email: raw.reporter.email,
+              avatarUrl: raw.reporter.avatarUrl,
+              role: 'member',
+            }
+          : { id: '0', name: 'Unknown', email: '', role: 'member' },
         labels: raw.labels || [],
         estimates: raw.estimates,
         dueDate: raw.dueDate,
@@ -89,6 +118,8 @@ export default function IssueDetailDrawer({
       };
 
       setIssue(loaded);
+      setSummaryValue(loaded.summary);
+      setDescriptionValue(loaded.description || '');
 
       // Load available transitions
       const transRes = await workflowService.getTransitions(loaded.key);
@@ -104,6 +135,25 @@ export default function IssueDetailDrawer({
     fetchDetail();
   }, [fetchDetail]);
 
+  useEffect(() => {
+    if (issue?.projectId) {
+      memberService
+        .getMembers(issue.projectId)
+        .then((res) => {
+          const raw = res?.data || [];
+          const list = Array.isArray(raw) ? raw : (raw as any).content || [];
+          setProjectMembers(
+            list.map((m: any) => ({
+              id: String(m.user?.id || m.userId || m.id),
+              name: m.user?.fullName || m.fullName || m.user?.email || m.email || 'Thành viên',
+            }))
+          );
+        })
+        .catch(() => setProjectMembers([]));
+    }
+  }, [issue?.projectId]);
+
+  // Loading spinner view
   if (!issue && loading) {
     return (
       <div className="fixed right-0 top-14 bottom-0 w-[440px] bg-white border-l border-[#E5E5E7] z-40 flex items-center justify-center shadow-xl">
@@ -163,6 +213,132 @@ export default function IssueDetailDrawer({
     }
   }
 
+  async function handleInlineUpdate(
+    updates: Partial<{
+      summary: string;
+      description: string;
+      type: any;
+      priority: any;
+      assigneeId: number | null;
+      dueDate: string | null;
+      estimates: string | null;
+      environment: string | null;
+    }>
+  ) {
+    if (!issue) return;
+    setActionLoading(true);
+    setErrorMessage(null);
+    try {
+      const payload: any = {
+        summary: updates.summary !== undefined ? updates.summary : issue.summary,
+        description: updates.description !== undefined ? updates.description : (issue.description || ''),
+        type: updates.type !== undefined ? updates.type : issue.type,
+        priority: updates.priority !== undefined ? updates.priority : issue.priority,
+        assigneeId:
+          updates.assigneeId !== undefined
+            ? updates.assigneeId
+            : issue.assignee?.id
+            ? Number(issue.assignee.id)
+            : null,
+        dueDate: updates.dueDate !== undefined ? updates.dueDate : (issue.dueDate || null),
+        environment: updates.environment !== undefined ? updates.environment : (issue.environment || null),
+        estimates: updates.estimates !== undefined ? updates.estimates : (issue.estimates || null),
+        version: issue.version,
+      };
+
+      if (updates.assigneeId === null) {
+        payload.clearAssignee = true;
+      }
+      if (updates.dueDate === null) {
+        payload.clearDueDate = true;
+      }
+
+      await issueService.updateIssue(issue.key, payload, issue.version);
+      await fetchDetail();
+      onUpdated?.();
+    } catch (err: any) {
+      if (err?.status === 409 || err?.response?.status === 409) {
+        setConcurrentConflict(true);
+      } else {
+        setErrorMessage(err?.response?.data?.message || err?.message || 'Cập nhật công việc thất bại');
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleSaveSummary() {
+    setEditingSummary(false);
+    if (!issue || !summaryValue.trim() || summaryValue.trim() === issue.summary) {
+      setSummaryValue(issue?.summary || '');
+      return;
+    }
+    await handleInlineUpdate({ summary: summaryValue.trim() });
+  }
+
+  async function handleSaveDescription() {
+    setEditingDescription(false);
+    if (!issue || descriptionValue === (issue.description || '')) {
+      return;
+    }
+    await handleInlineUpdate({ description: descriptionValue });
+  }
+
+  async function handleUpdateField(field: string, value: any) {
+    await handleInlineUpdate({ [field]: value });
+  }
+
+  function handleStartEdit() {
+    if (!issue) return;
+    setEditForm({
+      summary: issue.summary || '',
+      description: issue.description || '',
+      type: issue.type || 'TASK',
+      priority: issue.priority || 'MEDIUM',
+      assigneeId: issue.assignee?.id || '',
+      dueDate: issue.dueDate || '',
+      estimates: issue.estimates || '',
+      environment: issue.environment || '',
+    });
+    setIsEditing(true);
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!issue || !editForm.summary.trim()) return;
+
+    setActionLoading(true);
+    setErrorMessage(null);
+    try {
+      const payload: any = {
+        summary: editForm.summary.trim(),
+        description: editForm.description || '',
+        type: editForm.type,
+        priority: editForm.priority,
+        assigneeId: editForm.assigneeId ? Number(editForm.assigneeId) : null,
+        clearAssignee: !editForm.assigneeId,
+        dueDate: editForm.dueDate || null,
+        clearDueDate: !editForm.dueDate,
+        environment: editForm.environment ? editForm.environment.trim() : null,
+        estimates: editForm.estimates ? editForm.estimates.trim() : null,
+        version: issue.version,
+      };
+
+      await issueService.updateIssue(issue.key, payload, issue.version);
+      setIsEditing(false);
+      await fetchDetail();
+      onUpdated?.();
+    } catch (err: any) {
+      if (err?.status === 409 || err?.response?.status === 409) {
+        setConcurrentConflict(true);
+      } else {
+        setErrorMessage(err?.response?.data?.message || err?.message || 'Cập nhật công việc thất bại');
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   async function handleDelete() {
     if (!issue) return;
     setActionLoading(true);
@@ -187,21 +363,99 @@ export default function IssueDetailDrawer({
         {/* Header */}
         <div className="px-5 py-3 border-b border-[#E5E5E7] flex items-start gap-3 shrink-0">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1.5">
               <span className="text-[11px] font-mono text-[#9B9B9F] font-semibold">{issue.key}</span>
-              <span
-                className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${
-                  issue.type === 'Bug' || issue.type === 'BUG'
-                    ? 'text-[#E53E3E] bg-[#FDECEC] border-[#E53E3E]/20'
-                    : 'text-[#6B6B70] bg-[#F7F7F8] border-[#E5E5E7]'
-                }`}
-              >
-                {issue.type}
-              </span>
+
+              {/* Interactive Type Selector */}
+              <div className="relative inline-block">
+                <button
+                  type="button"
+                  onClick={() => setShowTypeMenu((s) => !s)}
+                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded border flex items-center gap-1 transition-colors cursor-pointer hover:border-[#1A1A1A] ${
+                    issue.type === 'Bug' || issue.type === 'BUG'
+                      ? 'text-[#E53E3E] bg-[#FDECEC] border-[#E53E3E]/20'
+                      : 'text-[#6B6B70] bg-[#F7F7F8] border-[#E5E5E7]'
+                  }`}
+                  title="Nhấp để đổi loại công việc"
+                >
+                  <span>{issue.type}</span>
+                  <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                </button>
+
+                {showTypeMenu && (
+                  <div className="absolute top-6 left-0 bg-white border border-[#E5E5E7] rounded-lg shadow-lg z-30 py-1 min-w-[120px]">
+                    {(['TASK', 'BUG', 'STORY', 'EPIC'] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={async () => {
+                          setShowTypeMenu(false);
+                          if (t !== issue.type) {
+                            await handleInlineUpdate({ type: t });
+                          }
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F8] transition-colors ${
+                          issue.type === t ? 'font-semibold text-[#1A1A1A] bg-[#F0F0F1]' : 'text-[#6B6B70]'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <h3 className="text-sm font-semibold text-[#1A1A1A] leading-snug">{issue.summary}</h3>
+
+            {/* Interactive Summary Input / Display */}
+            {editingSummary ? (
+              <input
+                type="text"
+                autoFocus
+                value={summaryValue}
+                onChange={(e) => setSummaryValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveSummary();
+                  } else if (e.key === 'Escape') {
+                    setSummaryValue(issue.summary);
+                    setEditingSummary(false);
+                  }
+                }}
+                onBlur={handleSaveSummary}
+                className="text-sm font-semibold text-[#1A1A1A] w-full border border-[#1A1A1A] rounded px-2 py-1 focus:outline-none bg-white shadow-inner"
+              />
+            ) : (
+              <h3
+                onClick={() => {
+                  setSummaryValue(issue.summary);
+                  setEditingSummary(true);
+                }}
+                className="text-sm font-semibold text-[#1A1A1A] leading-snug hover:bg-[#F0F0F1] -mx-1 px-1 py-0.5 rounded cursor-pointer transition-colors group flex items-start justify-between gap-2"
+                title="Nhấp để sửa tóm tắt công việc"
+              >
+                <span className="flex-1">{issue.summary}</span>
+                <Pencil className="w-3.5 h-3.5 text-[#9B9B9F] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
+              </h3>
+            )}
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
+
+          <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                if (isEditing) {
+                  setIsEditing(false);
+                } else {
+                  handleStartEdit();
+                }
+              }}
+              className={`p-1 rounded transition-colors ${
+                isEditing ? 'bg-[#1A1A1A] text-white' : 'text-[#9B9B9F] hover:text-[#1A1A1A] hover:bg-[#F7F7F8]'
+              }`}
+              title={isEditing ? 'Hủy chỉnh sửa đầy đủ' : 'Mở biểu mẫu chỉnh sửa đầy đủ'}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
             <button
               type="button"
               onClick={() => setShowShareModal(true)}
@@ -350,39 +604,246 @@ export default function IssueDetailDrawer({
         )}
 
         {/* Drawer Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          {/* Description */}
-          <div>
-            <h4 className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider mb-2">
-              Mô tả
-            </h4>
-            <div className="text-xs text-[#1A1A1A] leading-relaxed whitespace-pre-wrap bg-[#F7F7F8] rounded-lg p-3 border border-[#E5E5E7]">
-              {issue.description || (
-                <span className="text-[#9B9B9F] italic">Chưa có thông tin mô tả.</span>
+        {isEditing ? (
+          <form onSubmit={handleSaveEdit} className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">
+                Tóm tắt công việc *
+              </label>
+              <input
+                type="text"
+                required
+                value={editForm.summary}
+                onChange={(e) => setEditForm((f) => ({ ...f, summary: e.target.value }))}
+                className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">Mô tả</label>
+              <textarea
+                rows={4}
+                value={editForm.description}
+                onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] resize-y"
+                placeholder="Nhập mô tả chi tiết công việc..."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">
+                  Loại công việc
+                </label>
+                <select
+                  value={editForm.type}
+                  onChange={(e) => setEditForm((f) => ({ ...f, type: e.target.value as any }))}
+                  className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] bg-white focus:outline-none focus:border-[#1A1A1A]"
+                >
+                  <option value="TASK">Task</option>
+                  <option value="BUG">Bug</option>
+                  <option value="STORY">Story</option>
+                  <option value="EPIC">Epic</option>
+                  <option value="SUB_TASK">Sub-task</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">
+                  Mức ưu tiên
+                </label>
+                <select
+                  value={editForm.priority}
+                  onChange={(e) => setEditForm((f) => ({ ...f, priority: e.target.value as any }))}
+                  className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] bg-white focus:outline-none focus:border-[#1A1A1A]"
+                >
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                  <option value="CRITICAL">Critical</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">
+                  Người thực hiện
+                </label>
+                <select
+                  value={editForm.assigneeId}
+                  onChange={(e) => setEditForm((f) => ({ ...f, assigneeId: e.target.value }))}
+                  className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] bg-white focus:outline-none focus:border-[#1A1A1A]"
+                >
+                  <option value="">Chưa phân công</option>
+                  {projectMembers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">
+                  Hạn chót
+                </label>
+                <input
+                  type="date"
+                  value={editForm.dueDate}
+                  onChange={(e) => setEditForm((f) => ({ ...f, dueDate: e.target.value }))}
+                  className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] bg-white focus:outline-none focus:border-[#1A1A1A]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">
+                  Ước tính
+                </label>
+                <input
+                  type="text"
+                  value={editForm.estimates}
+                  onChange={(e) => setEditForm((f) => ({ ...f, estimates: e.target.value }))}
+                  className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
+                  placeholder="2d 4h, 30m..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">
+                  Môi trường
+                </label>
+                <input
+                  type="text"
+                  value={editForm.environment}
+                  onChange={(e) => setEditForm((f) => ({ ...f, environment: e.target.value }))}
+                  className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
+                  placeholder="Staging, Production..."
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#E5E5E7]">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="px-3.5 py-1.5 border border-[#E5E5E7] rounded-lg text-xs text-[#6B6B70] hover:bg-[#F7F7F8]"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={actionLoading}
+                className="px-4 py-1.5 bg-[#1A1A1A] text-white rounded-lg text-xs font-medium hover:bg-black transition-colors disabled:opacity-50"
+              >
+                {actionLoading ? 'Đang lưu…' : 'Lưu thay đổi'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+            {/* Description (Interactive Click-to-Edit) */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
+                  Mô tả
+                </h4>
+                {!editingDescription && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDescriptionValue(issue.description || '');
+                      setEditingDescription(true);
+                    }}
+                    className="text-[11px] text-[#6B6B70] hover:text-[#1A1A1A] flex items-center gap-1 hover:underline"
+                  >
+                    <Pencil className="w-3 h-3" />
+                    <span>Chỉnh sửa</span>
+                  </button>
+                )}
+              </div>
+
+              {editingDescription ? (
+                <div className="space-y-2">
+                  <textarea
+                    autoFocus
+                    rows={5}
+                    value={descriptionValue}
+                    onChange={(e) => setDescriptionValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                        handleSaveDescription();
+                      } else if (e.key === 'Escape') {
+                        setEditingDescription(false);
+                      }
+                    }}
+                    placeholder="Nhập mô tả chi tiết công việc..."
+                    className="w-full text-xs text-[#1A1A1A] leading-relaxed p-3 border border-[#1A1A1A] rounded-lg focus:outline-none bg-white resize-y shadow-inner"
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingDescription(false)}
+                      className="px-3 py-1 border border-[#E5E5E7] rounded-lg text-xs text-[#6B6B70] hover:bg-[#F7F7F8]"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      disabled={actionLoading}
+                      onClick={handleSaveDescription}
+                      className="px-3.5 py-1 bg-[#1A1A1A] text-white rounded-lg text-xs font-medium hover:bg-black transition-colors disabled:opacity-50"
+                    >
+                      {actionLoading ? 'Đang lưu…' : 'Lưu mô tả'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => {
+                    setDescriptionValue(issue.description || '');
+                    setEditingDescription(true);
+                  }}
+                  className="text-xs text-[#1A1A1A] leading-relaxed whitespace-pre-wrap bg-[#F7F7F8] hover:bg-[#F0F0F1] cursor-pointer rounded-lg p-3 border border-[#E5E5E7] transition-colors"
+                  title="Nhấp để chỉnh sửa mô tả"
+                >
+                  {issue.description ? (
+                    issue.description
+                  ) : (
+                    <span className="text-[#9B9B9F] italic">+ Thêm mô tả chi tiết cho công việc này...</span>
+                  )}
+                </div>
               )}
             </div>
+
+            {/* Details / Attributes (Interactive Panel) */}
+            <div>
+              <h4 className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider mb-2">
+                Chi tiết công việc
+              </h4>
+              <AttributesPanel
+                issue={issue}
+                projectMembers={projectMembers}
+                canEdit={true}
+                onUpdateField={handleUpdateField}
+              />
+            </div>
+
+            {/* Subtasks */}
+            <SubtaskSection subtasks={issue.subtasks} onSelectSubtask={onSelectSubtask} />
+
+            {/* Linked issues */}
+            <LinkedIssuesSection
+              linkedIssues={issue.linkedIssues}
+              onSelectIssue={onSelectSubtask}
+            />
+
+            {/* Comments & Activity Timeline */}
+            <ActivityTimeline comments={issue.comments} status={issue.status} />
           </div>
-
-          {/* Details / Attributes */}
-          <div>
-            <h4 className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider mb-2">
-              Chi tiết công việc
-            </h4>
-            <AttributesPanel issue={issue} />
-          </div>
-
-          {/* Subtasks */}
-          <SubtaskSection subtasks={issue.subtasks} onSelectSubtask={onSelectSubtask} />
-
-          {/* Linked issues */}
-          <LinkedIssuesSection
-            linkedIssues={issue.linkedIssues}
-            onSelectIssue={onSelectSubtask}
-          />
-
-          {/* Comments & Activity Timeline */}
-          <ActivityTimeline comments={issue.comments} status={issue.status} />
-        </div>
+        )}
       </div>
 
       {/* Share Modal */}

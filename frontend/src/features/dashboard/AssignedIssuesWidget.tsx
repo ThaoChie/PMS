@@ -36,7 +36,7 @@ export const AssignedIssuesWidget: React.FC<AssignedIssuesWidgetProps> = ({
             <button
               key={issue.id}
               className="w-full flex items-start gap-3 px-5 py-3 text-left hover:bg-[#F7F7F8] transition-colors group"
-              onClick={() => onSelectIssue(issue.id)}
+              onClick={() => onSelectIssue(issue.key || issue.id)}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">

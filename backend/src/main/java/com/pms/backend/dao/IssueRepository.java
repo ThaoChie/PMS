@@ -16,6 +16,17 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
 
     Optional<Issue> findByIssueKeyAndDeletedAtIsNull(String key);
 
+    default Optional<Issue> findByKeyOrId(String keyOrId) {
+        if (keyOrId == null || keyOrId.isBlank()) return Optional.empty();
+        Optional<Issue> opt = findByIssueKeyAndDeletedAtIsNull(keyOrId);
+        if (opt.isEmpty() && keyOrId.matches("^\\d+$")) {
+            try {
+                opt = findById(Long.parseLong(keyOrId)).filter(i -> i.getDeletedAt() == null);
+            } catch (Exception ignored) {}
+        }
+        return opt;
+    }
+
     List<Issue> findByProjectIdAndDeletedAtIsNull(Long projectId);
 
     Page<Issue> findByProjectIdAndDeletedAtIsNull(Long projectId, Pageable pageable);
