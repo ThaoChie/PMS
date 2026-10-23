@@ -296,11 +296,12 @@ export default function AttributesPanel({
 
       {/* Custom Fields */}
       {issue.customFields && issue.customFields.map((cf) => {
+        const fieldName = cf.name || cf.fieldName || cf.fieldKey;
         const isEditing = editingCustomField === cf.fieldKey;
         const optionsList = cf.options ? cf.options.split(',').map((s) => s.trim()).filter(Boolean) : [];
 
         return (
-          <AttrRow key={cf.fieldKey} label={cf.name + (cf.required ? ' *' : '')}>
+          <AttrRow key={cf.fieldKey} label={fieldName + (cf.required ? ' *' : '')}>
             {isEditing && canEdit && onUpdateField ? (
               cf.type === 'DROPDOWN' ? (
                 <select
@@ -314,7 +315,7 @@ export default function AttributesPanel({
                   onBlur={() => setEditingCustomField(null)}
                   className="w-full text-xs text-[#1A1A1A] bg-white border border-[#1A1A1A] rounded px-2 py-1 focus:outline-none"
                 >
-                  <option value="">-- Chọn {cf.name} --</option>
+                  <option value="">-- Chọn {fieldName} --</option>
                   {optionsList.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
@@ -358,7 +359,7 @@ export default function AttributesPanel({
                       await onUpdateField('customFields', { [cf.fieldKey]: val });
                     }
                   }}
-                  placeholder={`Nhập ${cf.name}...`}
+                  placeholder={`Nhập ${fieldName}...`}
                   className="w-full text-xs text-[#1A1A1A] bg-white border border-[#1A1A1A] rounded px-2 py-1 focus:outline-none"
                 />
               )
@@ -374,7 +375,7 @@ export default function AttributesPanel({
                 className={`flex items-center justify-between w-full text-left py-1 px-1.5 -mx-1.5 rounded transition-colors group ${
                   canEdit && onUpdateField ? 'hover:bg-[#F0F0F1] cursor-pointer' : 'cursor-default'
                 }`}
-                title={canEdit ? `Nhấp để sửa ${cf.name}` : undefined}
+                title={canEdit ? `Nhấp để sửa ${fieldName}` : undefined}
               >
                 <div className="flex items-center gap-1.5 truncate">
                   {cf.value ? (
@@ -386,7 +387,7 @@ export default function AttributesPanel({
                       <span className="truncate">{cf.value}</span>
                     )
                   ) : (
-                    <span className="text-[#9B9B9F] italic">+ Thêm {cf.name}</span>
+                    <span className="text-[#9B9B9F] italic">+ Thêm {fieldName}</span>
                   )}
                 </div>
                 {canEdit && onUpdateField && (

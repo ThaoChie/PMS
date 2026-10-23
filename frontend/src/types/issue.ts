@@ -80,9 +80,11 @@ export interface CustomField {
 }
 
 export interface CustomFieldValue {
-  id: number;
+  id?: number;
+  fieldId?: number;
   fieldKey: string;
-  name: string;
+  name?: string;
+  fieldName?: string;
   type: CustomFieldType;
   required?: boolean;
   options?: string;

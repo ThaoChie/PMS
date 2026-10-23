@@ -41,4 +41,10 @@ public class CustomFieldValueDto {
 
     public String getValue() { return value; }
     public void setValue(String value) { this.value = value; }
+
+    public String getName() { return fieldName; }
+    public void setName(String name) { this.fieldName = name; }
+
+    public Long getId() { return fieldId; }
+    public void setId(Long id) { this.fieldId = id; }
 }
