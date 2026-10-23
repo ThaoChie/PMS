@@ -15,6 +15,12 @@ public interface IssueWatcherRepository extends JpaRepository<IssueWatcher, Issu
 
     List<IssueWatcher> findByIssueId(Long issueId);
 
-    @Query("SELECT w FROM IssueWatcher w JOIN FETCH w.issue WHERE w.user.id = :userId")
+    @Query("SELECT w FROM IssueWatcher w " +
+           "JOIN FETCH w.issue i " +
+           "JOIN FETCH i.project " +
+           "LEFT JOIN FETCH i.status " +
+           "LEFT JOIN FETCH i.assignee " +
+           "LEFT JOIN FETCH i.reporter " +
+           "WHERE w.user.id = :userId")
     List<IssueWatcher> findByUserId(@Param("userId") Long userId);
 }

@@ -58,18 +58,12 @@ public class DashboardServiceImpl implements IDashboardService {
 
         // 2. Assigned Issues (not DONE, limit 10)
         if (!userProjectIds.isEmpty()) {
-            List<Issue> userIssues = issueRepository.findByProjectIdAndDeletedAtIsNull(userProjectIds.get(0)); // We can query all issues in user's projects assigned to user
-            // Query issues assigned to user across their projects
-            List<Issue> assigned = issueRepository.findAll().stream()
-                    .filter(i -> i.getDeletedAt() == null &&
-                            i.getAssignee() != null &&
-                            i.getAssignee().getId().equals(currentUser.getId()) &&
-                            userProjectIds.contains(i.getProject().getId()) &&
-                            (i.getStatus() == null || i.getStatus().getCategory() != StatusCategory.DONE))
-                    .sorted((a, b) -> b.getUpdatedAt().compareTo(a.getUpdatedAt()))
-                    .limit(10)
-                    .collect(Collectors.toList());
-
+            List<Issue> assigned = issueRepository.findTopAssignedIssues(
+                    currentUser.getId(),
+                    userProjectIds,
+                    StatusCategory.DONE,
+                    PageRequest.of(0, 10)
+            );
             response.setAssignedIssues(assigned.stream().map(IssueResponse::from).collect(Collectors.toList()));
         }
 

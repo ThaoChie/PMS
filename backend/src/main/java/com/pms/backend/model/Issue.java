@@ -4,6 +4,7 @@ import com.pms.backend.common.BaseEntity;
 import com.pms.backend.enu.IssueType;
 import com.pms.backend.enu.Priority;
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "issues")
+@BatchSize(size = 50)
 public class Issue extends BaseEntity {
 
     @Column(name = "issue_key", nullable = false, unique = true, length = 50)
@@ -57,6 +59,7 @@ public class Issue extends BaseEntity {
     @JoinColumn(name = "epic_id")
     private Issue epic;
 
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
     private List<Issue> subtasks = new ArrayList<>();
 
@@ -85,6 +88,7 @@ public class Issue extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @BatchSize(size = 50)
     @ManyToMany
     @JoinTable(
             name = "issue_labels",
@@ -93,6 +97,7 @@ public class Issue extends BaseEntity {
     )
     private Set<Label> labels = new HashSet<>();
 
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<IssueAttachment> attachments = new ArrayList<>();
 

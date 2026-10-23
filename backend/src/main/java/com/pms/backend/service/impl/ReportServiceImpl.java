@@ -51,17 +51,20 @@ public class ReportServiceImpl implements IReportService {
     }
 
     public ReportResponse generateProjectReport(Long projectId) {
-        List<Issue> issues = issueRepository.findByProjectIdAndDeletedAtIsNull(projectId);
-
+        List<Object[]> statusRows = issueRepository.countIssuesByStatusGrouped(projectId);
         Map<String, Integer> statusCount = new HashMap<>();
+        for (Object[] row : statusRows) {
+            String statusName = (String) row[0];
+            Number count = (Number) row[1];
+            statusCount.put(statusName, count.intValue());
+        }
+
+        List<Object[]> assigneeRows = issueRepository.countIssuesByAssigneeGrouped(projectId);
         Map<String, Integer> assigneeCount = new HashMap<>();
-
-        for (Issue issue : issues) {
-            String statusName = issue.getStatus() != null ? issue.getStatus().getName() : "Unassigned Status";
-            statusCount.put(statusName, statusCount.getOrDefault(statusName, 0) + 1);
-
-            String assigneeName = issue.getAssignee() != null ? issue.getAssignee().getFullName() : "Unassigned";
-            assigneeCount.put(assigneeName, assigneeCount.getOrDefault(assigneeName, 0) + 1);
+        for (Object[] row : assigneeRows) {
+            String assigneeName = (String) row[0];
+            Number count = (Number) row[1];
+            assigneeCount.put(assigneeName, count.intValue());
         }
 
         ReportResponse report = new ReportResponse();

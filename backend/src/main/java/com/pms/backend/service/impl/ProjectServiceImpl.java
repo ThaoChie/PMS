@@ -27,9 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectServiceImpl implements IProjectService {
@@ -144,9 +146,17 @@ public class ProjectServiceImpl implements IProjectService {
 
     public PageWrapper<ProjectResponse> getProjects(Long userId, String q, String sort, int page, int size) {
         PageWrapper<ProjectResponse> pageWrapper = projectListHibernateDao.findProjects(userId, q, sort, page, size);
-        for (ProjectResponse pr : pageWrapper.getContent()) {
-            projectMemberRepository.findByProjectIdAndUserId(pr.getId(), userId)
-                    .ifPresent(pm -> pr.setMyRole(pm.getRole().name()));
+        if (!pageWrapper.getContent().isEmpty() && userId != null) {
+            List<ProjectMember> memberships = projectMemberRepository.findByUserId(userId);
+            Map<Long, String> roleByProjectId = memberships.stream()
+                    .filter(pm -> pm.getProject() != null && pm.getProject().getId() != null)
+                    .collect(Collectors.toMap(pm -> pm.getProject().getId(), pm -> pm.getRole().name(), (r1, r2) -> r1));
+            for (ProjectResponse pr : pageWrapper.getContent()) {
+                String role = roleByProjectId.get(pr.getId());
+                if (role != null) {
+                    pr.setMyRole(role);
+                }
+            }
         }
         return pageWrapper;
     }
