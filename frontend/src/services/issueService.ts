@@ -48,6 +48,8 @@ export const issueService = {
       estimates?: string;
       dueDate?: string;
       environment?: string;
+      parentId?: number | string;
+      epicId?: number | string;
     },
   ): Promise<ApiResponse<Issue>> {
     return axiosClient.post<any, ApiResponse<Issue>>(`/projects/${projectId}/issues`, data);

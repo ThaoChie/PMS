@@ -1,8 +1,8 @@
 import type { User } from './auth';
 
-export type IssueType = 'Story' | 'Bug' | 'Task' | 'Epic' | 'Sub-task';
+export type IssueType = 'Story' | 'Bug' | 'Task' | 'Epic' | 'Sub-task' | 'EPIC' | 'TASK' | 'BUG' | 'SUB_TASK';
 export type IssueStatus = 'To Do' | 'In Progress' | 'Pending Approval' | 'Done';
-export type Priority = 'Critical' | 'High' | 'Medium' | 'Low';
+export type Priority = 'Critical' | 'High' | 'Medium' | 'Low' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'HIGHEST' | 'LOWEST';
 
 export interface SubTask {
   id: string;
@@ -58,6 +58,9 @@ export interface Issue {
   comments: Comment[];
   projectId: string;
   epicLink?: string;
+  epicId?: number | string;
+  parentId?: number | string;
+  parentKey?: string;
   customFields?: CustomFieldValue[];
   createdAt: string;
   updatedAt: string;
