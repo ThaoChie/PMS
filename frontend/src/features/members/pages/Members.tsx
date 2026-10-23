@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, AlertTriangle, AlertCircle } from 'lucide-react';
-import type { Role, User } from '../../../types';
+import { Plus, AlertTriangle, AlertCircle, ShieldAlert, Check, Loader2 } from 'lucide-react';
+import type { Role, User, ProjectPermissions } from '../../../types';
 import MemberTable from '../components/MemberTable';
 import InviteMemberPanel from '../components/InviteMemberPanel';
 import { useProjectStore } from '../../../store/projectStore';
 import { memberService } from '../../../services/memberService';
 import { invitationService } from '../../../services/invitationService';
+import { projectService } from '../../../services/projectService';
 
 interface MembersProps {
   role: Role;
 }
 
 export default function Members({ role }: MembersProps) {
-  const { currentProject } = useProjectStore();
+  const { currentProject, updateProject } = useProjectStore();
   const [members, setMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +21,47 @@ export default function Members({ role }: MembersProps) {
   const [removeTarget, setRemoveTarget] = useState<User | null>(null);
   const [confirmText, setConfirmText] = useState('');
 
+  const [permissions, setPermissions] = useState<ProjectPermissions>({
+    allowMemberDeleteIssue: currentProject?.allowMemberDeleteIssue ?? false,
+    allowMemberDeleteSubtask: currentProject?.allowMemberDeleteSubtask ?? false,
+    allowMemberConvertSubtask: currentProject?.allowMemberConvertSubtask ?? true,
+    allowMemberManageCustomFields: currentProject?.allowMemberManageCustomFields ?? false,
+  });
+  const [savingPermission, setSavingPermission] = useState(false);
+  const [savedPermission, setSavedPermission] = useState(false);
+
+  useEffect(() => {
+    if (currentProject) {
+      setPermissions({
+        allowMemberDeleteIssue: currentProject.allowMemberDeleteIssue ?? false,
+        allowMemberDeleteSubtask: currentProject.allowMemberDeleteSubtask ?? false,
+        allowMemberConvertSubtask: currentProject.allowMemberConvertSubtask ?? true,
+        allowMemberManageCustomFields: currentProject.allowMemberManageCustomFields ?? false,
+      });
+    }
+  }, [currentProject?.id]);
+
   const canManage = role === 'pm' || role === 'admin';
+
+  async function handleTogglePermission(key: keyof ProjectPermissions, val: boolean) {
+    if (!currentProject || !canManage) return;
+    const nextPermissions: ProjectPermissions = { ...permissions, [key]: val };
+    setPermissions(nextPermissions);
+    setSavingPermission(true);
+    try {
+      const res = await projectService.updateProjectPermissions(currentProject.id, nextPermissions);
+      if (res?.data) {
+        updateProject(currentProject.id, nextPermissions);
+      }
+      setSavedPermission(true);
+      setTimeout(() => setSavedPermission(false), 2500);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Không thể cập nhật quyền hạn dự án');
+      setPermissions(permissions);
+    } finally {
+      setSavingPermission(false);
+    }
+  }
 
   async function loadData() {
     if (!currentProject) return;
@@ -180,6 +221,139 @@ export default function Members({ role }: MembersProps) {
             onRemoveMember={(m) => setRemoveTarget(m)}
           />
         )}
+
+        {/* High-Impact Project Permissions (Phân quyền tác động lớn - GitHub style) */}
+        <div className="mt-12 pt-8 border-t border-[#E5E5E7]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-[#1A1A1A] flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-[#1A1A1A]" />
+                Quyền thao tác dự án (Project Permissions)
+              </h2>
+              <p className="text-xs text-[#6B6B70] mt-1">
+                Cấu hình các quyền hạn có mức độ ảnh hưởng lớn đến dữ liệu dự án. Quản lý dự án (PM/Admin) luôn có toàn quyền thực hiện.
+              </p>
+            </div>
+            {savedPermission && (
+              <span className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full font-medium">
+                <Check className="w-3.5 h-3.5" /> Đã lưu quyền
+              </span>
+            )}
+            {savingPermission && (
+              <span className="flex items-center gap-1.5 text-xs text-[#6B6B70]">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang lưu…
+              </span>
+            )}
+          </div>
+
+          <div className="border border-[#E5E5E7] rounded-xl overflow-hidden bg-white divide-y divide-[#E5E5E7] shadow-sm">
+            {/* Item 1: Allow delete issues */}
+            <div className="p-4 flex items-start gap-3 hover:bg-[#F9FAFB] transition-colors">
+              <input
+                type="checkbox"
+                id="perm-delete-issue"
+                disabled={!canManage || savingPermission}
+                checked={Boolean(permissions.allowMemberDeleteIssue)}
+                onChange={(e) => handleTogglePermission('allowMemberDeleteIssue', e.target.checked)}
+                className="mt-0.5 rounded border-[#C5C5C8] text-[#1A1A1A] focus:ring-0 disabled:opacity-50 cursor-pointer"
+              />
+              <div className="flex-1">
+                <label
+                  htmlFor="perm-delete-issue"
+                  className={`text-xs font-semibold text-[#1A1A1A] block ${
+                    canManage ? 'cursor-pointer' : 'cursor-not-allowed'
+                  }`}
+                >
+                  Cho phép thành viên xóa công việc (Allow members to delete issues)
+                </label>
+                <p className="text-[11px] text-[#6B6B70] mt-0.5 leading-relaxed">
+                  Khi bật, người tạo (Reporter) hoặc người thực hiện (Assignee) có thể xóa công việc vĩnh viễn khỏi dự án. Khi tắt, chỉ Quản lý dự án (PM/Admin) mới có quyền xóa.
+                </p>
+              </div>
+            </div>
+
+            {/* Item 2: Allow delete subtasks */}
+            <div className="p-4 flex items-start gap-3 hover:bg-[#F9FAFB] transition-colors">
+              <input
+                type="checkbox"
+                id="perm-delete-subtask"
+                disabled={!canManage || savingPermission}
+                checked={Boolean(permissions.allowMemberDeleteSubtask)}
+                onChange={(e) => handleTogglePermission('allowMemberDeleteSubtask', e.target.checked)}
+                className="mt-0.5 rounded border-[#C5C5C8] text-[#1A1A1A] focus:ring-0 disabled:opacity-50 cursor-pointer"
+              />
+              <div className="flex-1">
+                <label
+                  htmlFor="perm-delete-subtask"
+                  className={`text-xs font-semibold text-[#1A1A1A] block ${
+                    canManage ? 'cursor-pointer' : 'cursor-not-allowed'
+                  }`}
+                >
+                  Cho phép thành viên xóa công việc con (Allow members to delete subtasks)
+                </label>
+                <p className="text-[11px] text-[#6B6B70] mt-0.5 leading-relaxed">
+                  Khi bật, thành viên có thể xóa các công việc con (subtask) khỏi công việc cha. Khi tắt, chỉ Quản lý dự án (PM/Admin) mới có thể xóa subtask.
+                </p>
+              </div>
+            </div>
+
+            {/* Item 3: Allow convert to subtask */}
+            <div className="p-4 flex items-start gap-3 hover:bg-[#F9FAFB] transition-colors">
+              <input
+                type="checkbox"
+                id="perm-convert-subtask"
+                disabled={!canManage || savingPermission}
+                checked={Boolean(permissions.allowMemberConvertSubtask)}
+                onChange={(e) => handleTogglePermission('allowMemberConvertSubtask', e.target.checked)}
+                className="mt-0.5 rounded border-[#C5C5C8] text-[#1A1A1A] focus:ring-0 disabled:opacity-50 cursor-pointer"
+              />
+              <div className="flex-1">
+                <label
+                  htmlFor="perm-convert-subtask"
+                  className={`text-xs font-semibold text-[#1A1A1A] block ${
+                    canManage ? 'cursor-pointer' : 'cursor-not-allowed'
+                  }`}
+                >
+                  Cho phép thành viên chuyển đổi công việc thành subtask (Allow convert to subtask)
+                </label>
+                <p className="text-[11px] text-[#6B6B70] mt-0.5 leading-relaxed">
+                  Cho phép thành viên thay đổi loại công việc và chuyển thành subtask lồng dưới một công việc khác.
+                </p>
+              </div>
+            </div>
+
+            {/* Item 4: Allow manage custom fields */}
+            <div className="p-4 flex items-start gap-3 hover:bg-[#F9FAFB] transition-colors">
+              <input
+                type="checkbox"
+                id="perm-manage-cf"
+                disabled={!canManage || savingPermission}
+                checked={Boolean(permissions.allowMemberManageCustomFields)}
+                onChange={(e) => handleTogglePermission('allowMemberManageCustomFields', e.target.checked)}
+                className="mt-0.5 rounded border-[#C5C5C8] text-[#1A1A1A] focus:ring-0 disabled:opacity-50 cursor-pointer"
+              />
+              <div className="flex-1">
+                <label
+                  htmlFor="perm-manage-cf"
+                  className={`text-xs font-semibold text-[#1A1A1A] block ${
+                    canManage ? 'cursor-pointer' : 'cursor-not-allowed'
+                  }`}
+                >
+                  Cho phép thành viên tạo & quản lý trường tùy chỉnh (Allow manage custom fields)
+                </label>
+                <p className="text-[11px] text-[#6B6B70] mt-0.5 leading-relaxed">
+                  Cho phép thành viên dự án tạo mới, chỉnh sửa và xóa các trường thông tin tùy chỉnh trong dự án.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {!canManage && (
+            <p className="text-[11px] text-[#9B9B9F] mt-2.5 italic">
+              * Bạn đang truy cập với vai trò thành viên thông thường. Chỉ Quản lý dự án (PM/Admin) mới có quyền thay đổi các cài đặt này.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Remove confirm dialog */}

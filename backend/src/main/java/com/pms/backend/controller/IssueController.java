@@ -238,7 +238,7 @@ public class IssueController {
     // --- Subtask Conversion ---
 
     @PostMapping({"/api/issues/{issueKey}/convert-to-subtask", "/issues/{issueKey}/convert-to-subtask"})
-    @PreAuthorize("@issueSecurity.canEdit(#issueKey)")
+    @PreAuthorize("@issueSecurity.canConvert(#issueKey)")
     public ApiResponse<Void> convertToSubtask(
             @PathVariable String issueKey,
             @Valid @RequestBody ConvertToSubtaskRequest request

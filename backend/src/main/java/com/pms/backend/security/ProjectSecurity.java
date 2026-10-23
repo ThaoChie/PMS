@@ -64,6 +64,14 @@ public class ProjectSecurity {
         return hasRole(projectId, "PM");
     }
 
+    public boolean canManageCustomFields(Long projectId) {
+        if (isPmOrAdmin(projectId)) return true;
+        if (!isMember(projectId)) return false;
+        return projectRepository.findById(projectId)
+                .map(p -> Boolean.TRUE.equals(p.getAllowMemberManageCustomFields()))
+                .orElse(false);
+    }
+
     public void assertProjectWritable(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + projectId));

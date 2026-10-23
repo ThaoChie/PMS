@@ -3,6 +3,7 @@ import { X, ChevronDown, AlertTriangle, Share2, Trash2, CheckCircle2, RefreshCw,
 import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
 import { memberService } from '../../../services/memberService';
+import { useProjectStore } from '../../../store/projectStore';
 import type { Role, Issue } from '../../../types';
 import AttributesPanel from './AttributesPanel';
 import SubtaskSection from './SubtaskSection';
@@ -32,6 +33,7 @@ export default function IssueDetailDrawer({
   onSelectSubtask,
   onUpdated,
 }: IssueDetailDrawerProps) {
+  const { currentProject } = useProjectStore();
   // All hooks must be declared before any conditional return statements!
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +47,14 @@ export default function IssueDetailDrawer({
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const isSubtask = issue?.type?.toUpperCase() === 'SUB_TASK' || issue?.type === 'Sub-task' || !!issue?.parentId;
+  const isPmOrAdmin = role === 'pm' || role === 'admin';
+  const canDelete =
+    isPmOrAdmin ||
+    (isSubtask
+      ? Boolean(currentProject?.allowMemberDeleteSubtask)
+      : Boolean(currentProject?.allowMemberDeleteIssue));
 
   // Edit form state (for full form toggle)
   const [isEditing, setIsEditing] = useState(false);
@@ -510,14 +520,16 @@ export default function IssueDetailDrawer({
             >
               <Share2 className="w-3.5 h-3.5" />
             </button>
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(true)}
-              className="text-[#9B9B9F] hover:text-[#E53E3E] p-1 rounded hover:bg-[#F7F7F8] transition-colors"
-              title="Xóa công việc"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            {canDelete && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-[#9B9B9F] hover:text-[#E53E3E] p-1 rounded hover:bg-[#F7F7F8] transition-colors"
+                title={isSubtask ? "Xóa subtask" : "Xóa công việc"}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}
@@ -654,7 +666,7 @@ export default function IssueDetailDrawer({
           <form onSubmit={handleSaveEdit} className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             <div>
               <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">
-                Tóm tắt công việc *
+                Tóm tắt công việc <span className="text-[#E53E3E] font-bold">*</span>
               </label>
               <input
                 type="text"
@@ -884,6 +896,7 @@ export default function IssueDetailDrawer({
               issueType={issue.type}
               projectMembers={projectMembers}
               canEdit={true}
+              canDeleteSubtask={isPmOrAdmin || Boolean(currentProject?.allowMemberDeleteSubtask)}
               onSelectSubtask={onSelectSubtask}
               onSubtaskCreated={async () => {
                 await fetchDetail();

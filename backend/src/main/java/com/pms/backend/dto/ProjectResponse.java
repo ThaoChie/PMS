@@ -17,6 +17,10 @@ public class ProjectResponse {
     private LocalDateTime updatedAt;
     private Map<String, String> inviteResults;
     private String myRole;
+    private Boolean allowMemberDeleteIssue = false;
+    private Boolean allowMemberDeleteSubtask = false;
+    private Boolean allowMemberConvertSubtask = true;
+    private Boolean allowMemberManageCustomFields = false;
 
     public ProjectResponse() {}
 
@@ -30,6 +34,10 @@ public class ProjectResponse {
         res.setStatus(project.getStatus() != null ? project.getStatus().name() : "ACTIVE");
         res.setCreatedAt(project.getCreatedAt());
         res.setUpdatedAt(project.getUpdatedAt());
+        res.setAllowMemberDeleteIssue(project.getAllowMemberDeleteIssue() != null ? project.getAllowMemberDeleteIssue() : false);
+        res.setAllowMemberDeleteSubtask(project.getAllowMemberDeleteSubtask() != null ? project.getAllowMemberDeleteSubtask() : false);
+        res.setAllowMemberConvertSubtask(project.getAllowMemberConvertSubtask() != null ? project.getAllowMemberConvertSubtask() : true);
+        res.setAllowMemberManageCustomFields(project.getAllowMemberManageCustomFields() != null ? project.getAllowMemberManageCustomFields() : false);
         return res;
     }
 
@@ -55,4 +63,12 @@ public class ProjectResponse {
     public void setInviteResults(Map<String, String> inviteResults) { this.inviteResults = inviteResults; }
     public String getMyRole() { return myRole; }
     public void setMyRole(String myRole) { this.myRole = myRole; }
+    public Boolean getAllowMemberDeleteIssue() { return allowMemberDeleteIssue; }
+    public void setAllowMemberDeleteIssue(Boolean allowMemberDeleteIssue) { this.allowMemberDeleteIssue = allowMemberDeleteIssue; }
+    public Boolean getAllowMemberDeleteSubtask() { return allowMemberDeleteSubtask; }
+    public void setAllowMemberDeleteSubtask(Boolean allowMemberDeleteSubtask) { this.allowMemberDeleteSubtask = allowMemberDeleteSubtask; }
+    public Boolean getAllowMemberConvertSubtask() { return allowMemberConvertSubtask; }
+    public void setAllowMemberConvertSubtask(Boolean allowMemberConvertSubtask) { this.allowMemberConvertSubtask = allowMemberConvertSubtask; }
+    public Boolean getAllowMemberManageCustomFields() { return allowMemberManageCustomFields; }
+    public void setAllowMemberManageCustomFields(Boolean allowMemberManageCustomFields) { this.allowMemberManageCustomFields = allowMemberManageCustomFields; }
 }
