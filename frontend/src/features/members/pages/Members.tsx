@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, AlertTriangle, AlertCircle, ShieldAlert, Check, Loader2 } from 'lucide-react';
+import { Plus, AlertTriangle, AlertCircle, ShieldAlert, Check, Loader2, Save } from 'lucide-react';
 import type { Role, User, ProjectPermissions } from '../../../types';
 import MemberTable from '../components/MemberTable';
 import InviteMemberPanel from '../components/InviteMemberPanel';
+import ConfirmModal from '../../../components/common/ConfirmModal';
 import { useProjectStore } from '../../../store/projectStore';
 import { memberService } from '../../../services/memberService';
 import { invitationService } from '../../../services/invitationService';
@@ -28,7 +29,8 @@ export default function Members({ role }: MembersProps) {
     allowMemberManageCustomFields: currentProject?.allowMemberManageCustomFields ?? false,
   });
   const [savingPermission, setSavingPermission] = useState(false);
-  const [savedPermission, setSavedPermission] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentProject) {
@@ -43,21 +45,49 @@ export default function Members({ role }: MembersProps) {
 
   const canManage = role === 'pm' || role === 'admin';
 
-  async function handleTogglePermission(key: keyof ProjectPermissions, val: boolean) {
+  const hasChanges = Boolean(
+    currentProject && (
+      permissions.allowMemberDeleteIssue !== (currentProject.allowMemberDeleteIssue ?? false) ||
+      permissions.allowMemberDeleteSubtask !== (currentProject.allowMemberDeleteSubtask ?? false) ||
+      permissions.allowMemberConvertSubtask !== (currentProject.allowMemberConvertSubtask ?? true) ||
+      permissions.allowMemberManageCustomFields !== (currentProject.allowMemberManageCustomFields ?? false)
+    )
+  );
+
+  function handleTogglePermission(key: keyof ProjectPermissions, val: boolean) {
+    if (!canManage) return;
+    setPermissions((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function handleCancelPermissions() {
+    if (currentProject) {
+      setPermissions({
+        allowMemberDeleteIssue: currentProject.allowMemberDeleteIssue ?? false,
+        allowMemberDeleteSubtask: currentProject.allowMemberDeleteSubtask ?? false,
+        allowMemberConvertSubtask: currentProject.allowMemberConvertSubtask ?? true,
+        allowMemberManageCustomFields: currentProject.allowMemberManageCustomFields ?? false,
+      });
+    }
+    setShowConfirmModal(false);
+  }
+
+  async function handleConfirmSave() {
     if (!currentProject || !canManage) return;
-    const nextPermissions: ProjectPermissions = { ...permissions, [key]: val };
-    setPermissions(nextPermissions);
     setSavingPermission(true);
+    setError(null);
     try {
-      const res = await projectService.updateProjectPermissions(currentProject.id, nextPermissions);
+      const res = await projectService.updateProjectPermissions(currentProject.id, permissions);
       if (res?.data) {
-        updateProject(currentProject.id, nextPermissions);
+        updateProject(currentProject.id, permissions);
       }
-      setSavedPermission(true);
-      setTimeout(() => setSavedPermission(false), 2500);
+      setShowConfirmModal(false);
+      setToastMessage('Lưu quyền thành công');
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 3000);
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Không thể cập nhật quyền hạn dự án');
-      setPermissions(permissions);
+      handleCancelPermissions();
     } finally {
       setSavingPermission(false);
     }
@@ -234,15 +264,37 @@ export default function Members({ role }: MembersProps) {
                 Cấu hình các quyền hạn có mức độ ảnh hưởng lớn đến dữ liệu dự án. Quản lý dự án (PM/Admin) luôn có toàn quyền thực hiện.
               </p>
             </div>
-            {savedPermission && (
-              <span className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full font-medium">
-                <Check className="w-3.5 h-3.5" /> Đã lưu quyền
-              </span>
-            )}
-            {savingPermission && (
-              <span className="flex items-center gap-1.5 text-xs text-[#6B6B70]">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang lưu…
-              </span>
+            {canManage && (
+              <div className="flex items-center gap-2 shrink-0">
+                {hasChanges && (
+                  <button
+                    type="button"
+                    onClick={handleCancelPermissions}
+                    disabled={savingPermission}
+                    className="px-3 py-1.5 text-xs text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F0F0F1] rounded-lg transition-colors font-medium"
+                  >
+                    Hủy
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={!hasChanges || savingPermission}
+                  onClick={() => setShowConfirmModal(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1A1A1A] hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
+                >
+                  {savingPermission ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Đang lưu…</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Lưu</span>
+                    </>
+                  )}
+                </button>
+              </div>
             )}
           </div>
 
@@ -410,6 +462,28 @@ export default function Members({ role }: MembersProps) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Permission Confirm Modal */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        title="Xác nhận cập nhật quyền dự án"
+        message="Bạn có chắc chắn muốn lưu các thay đổi về quyền thao tác dự án? Các thiết lập này sẽ có hiệu lực ngay lập tức đối với tất cả thành viên trong dự án."
+        confirmLabel="Xác nhận"
+        cancelLabel="Hủy"
+        isDanger={false}
+        onConfirm={handleConfirmSave}
+        onCancel={handleCancelPermissions}
+      />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-[#1A1A1A] text-white text-xs font-medium rounded-xl shadow-2xl border border-white/10 toast-enter">
+          <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <Check className="w-3.5 h-3.5" />
+          </div>
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>
