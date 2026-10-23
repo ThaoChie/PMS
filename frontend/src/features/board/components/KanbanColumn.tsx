@@ -66,7 +66,7 @@ export default function KanbanColumn({
         ) : (
           issues.map((issue) => (
             <div key={issue.id} draggable onDragStart={() => {}}>
-              <IssueCard issue={issue} onClick={() => onSelectIssue(issue.id)} />
+              <IssueCard issue={issue} onClick={() => onSelectIssue(issue.key || issue.id)} />
             </div>
           ))
         )}
