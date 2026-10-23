@@ -110,15 +110,11 @@ public class ReportServiceTest {
 
     @Test
     public void testGenerateProjectReport_CalculatesCounts() {
-        Issue issue1 = new Issue();
-        WorkflowStatus status1 = new WorkflowStatus();
-        status1.setName("In Progress");
-        issue1.setStatus(status1);
-        User user1 = new User();
-        user1.setFullName("Nguyen Van A");
-        issue1.setAssignee(user1);
+        List<Object[]> statusRows = Collections.singletonList(new Object[]{"In Progress", 1L});
+        when(issueRepository.countIssuesByStatusGrouped(1L)).thenReturn(statusRows);
 
-        when(issueRepository.findByProjectIdAndDeletedAtIsNull(1L)).thenReturn(List.of(issue1));
+        List<Object[]> assigneeRows = Collections.singletonList(new Object[]{"Nguyen Van A", 1L});
+        when(issueRepository.countIssuesByAssigneeGrouped(1L)).thenReturn(assigneeRows);
 
         ReportResponse response = reportService.generateProjectReport(1L);
         assertNotNull(response);
