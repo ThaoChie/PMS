@@ -27,7 +27,7 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [search, setSearch] = useState('');
   const [activeQuick, setActiveQuick] = useState<string>('all');
-  const [filterPanelOpen, setFilterPanelOpen] = useState(true);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [filterType, setFilterType] = useState<IssueType | ''>('');
   const [filterStatus, setFilterStatus] = useState<IssueStatus | ''>('');
   const [filterPriority, setFilterPriority] = useState<Priority | ''>('');
@@ -76,6 +76,11 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
             linkedIssues: item.linkedIssues || [],
             comments: item.comments || [],
             projectId: String(item.projectId || currentProject.id),
+            epicLink: item.epicLink,
+            epicId: item.epicId,
+            parentId: item.parentId,
+            parentKey: item.parentKey,
+            customFields: item.customFields || [],
             createdAt: item.createdAt || '',
             updatedAt: item.updatedAt || '',
             version: item.version,
@@ -319,6 +324,9 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
           onSelectIssue={onSelectIssue}
           hasFilters={hasFilters}
           onClearFilters={clearFilters}
+          projectId={currentProject?.id}
+          members={members}
+          onRefresh={loadIssues}
         />
       </div>
     </div>
