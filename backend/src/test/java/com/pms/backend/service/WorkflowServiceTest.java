@@ -1,5 +1,8 @@
 package com.pms.backend.service;
 
+import com.pms.backend.service.impl.*;
+import com.pms.backend.service.interfaces.*;
+
 import com.pms.backend.dao.*;
 import com.pms.backend.dto.SaveWorkflowRequest;
 import com.pms.backend.dto.WorkflowStatusDto;
@@ -35,11 +38,11 @@ public class WorkflowServiceTest {
     @Mock private ProjectMemberRepository memberRepository;
     @Mock private IssueStatusHistoryRepository historyRepository;
     @Mock private ProjectSecurity projectSecurity;
-    @Mock private NotificationService notificationService;
-    @Mock private AuditService auditService;
+    @Mock private INotificationService notificationService;
+    @Mock private IAuditService auditService;
 
     @InjectMocks
-    private WorkflowService workflowService;
+    private WorkflowServiceImpl workflowService;
 
     private Project project;
     private User pmUser;

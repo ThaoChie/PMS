@@ -2,7 +2,7 @@ package com.pms.backend.controller;
 
 import com.pms.backend.common.ApiResponse;
 import com.pms.backend.dto.*;
-import com.pms.backend.service.ReportService;
+import com.pms.backend.service.interfaces.IReportService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -12,9 +12,9 @@ import java.time.LocalDate;
 @RestController
 public class ReportController {
 
-    private final ReportService reportService;
+    private final IReportService reportService;
 
-    public ReportController(ReportService reportService) {
+    public ReportController(IReportService reportService) {
         this.reportService = reportService;
     }
 

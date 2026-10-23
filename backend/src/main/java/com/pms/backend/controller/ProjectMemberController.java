@@ -3,7 +3,7 @@ package com.pms.backend.controller;
 import com.pms.backend.common.ApiResponse;
 import com.pms.backend.dto.ChangeMemberRoleRequest;
 import com.pms.backend.dto.MemberResponse;
-import com.pms.backend.service.MembershipService;
+import com.pms.backend.service.interfaces.IMembershipService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +14,9 @@ import java.util.List;
 @RequestMapping({"/api/projects/{projectId}/members", "/projects/{projectId}/members"})
 public class ProjectMemberController {
 
-    private final MembershipService membershipService;
+    private final IMembershipService membershipService;
 
-    public ProjectMemberController(MembershipService membershipService) {
+    public ProjectMemberController(IMembershipService membershipService) {
         this.membershipService = membershipService;
     }
 
