@@ -218,16 +218,17 @@ export default function IssueTable({
         <thead className="sticky top-0 bg-[#F7F7F8] border-b border-[#E5E5E7] z-10">
           <tr>
             {[
-              { field: 'key' as SortField, label: 'Mã', w: 'w-36' },
+              { field: 'key' as SortField, label: 'Mã', w: 'w-28' },
               { field: 'summary' as SortField, label: 'Tóm tắt nội dung', w: 'w-auto' },
               { field: null, label: 'Loại', w: 'w-24' },
               { field: 'status' as SortField, label: 'Trạng thái', w: 'w-36' },
               { field: null, label: 'Người thực hiện', w: 'w-32' },
               { field: 'priority' as SortField, label: 'Ưu tiên', w: 'w-24' },
               { field: 'dueDate' as SortField, label: 'Hạn chót', w: 'w-28' },
-            ].map((col) => (
+              { field: null, label: '', w: 'w-28 text-right' },
+            ].map((col, idx) => (
               <th
-                key={col.label}
+                key={col.label || `action-col-${idx}`}
                 className={`${col.w} px-4 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider ${
                   col.field ? 'cursor-pointer hover:text-[#6B6B70] select-none' : ''
                 }`}
@@ -244,7 +245,7 @@ export default function IssueTable({
         <tbody className="divide-y divide-[#F0F0F1]">
           {topLevelIssues.length === 0 ? (
             <tr>
-              <td colSpan={7} className="py-16 text-center">
+              <td colSpan={8} className="py-16 text-center">
                 <p className="text-sm text-[#6B6B70]">Không có công việc nào khớp với bộ lọc</p>
                 {hasFilters && onClearFilters && (
                   <button
@@ -278,58 +279,10 @@ export default function IssueTable({
                     className="hover:bg-[#F7F7F8] cursor-pointer transition-colors group"
                     onClick={() => onSelectIssue(issue.key || issue.id)}
                   >
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-1.5">
-                        {/* Expand/Collapse Toggle Button ("^ ngược" / Chevron) */}
-                        {canExpand ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleExpand(issueKey);
-                            }}
-                            className="p-1 -ml-1 text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#EBEBEC] rounded transition-colors"
-                            title={isExpanded ? 'Thu gọn subtask' : 'Xổ ra xem subtask'}
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="w-3.5 h-3.5 text-[#1A1A1A]" />
-                            ) : (
-                              <ChevronDown className="w-3.5 h-3.5 text-[#6B6B70]" />
-                            )}
-                          </button>
-                        ) : (
-                          <span className="w-5 shrink-0" />
-                        )}
-
-                        <span className="text-[11px] font-mono text-[#9B9B9F] font-medium">
-                          {issue.key}
-                        </span>
-
-                        {/* Count badge */}
-                        {children.length > 0 && (
-                          <span
-                            className="text-[10px] px-1.5 py-0.2 bg-[#F0F0F1] text-[#6B6B70] rounded-full font-mono font-medium"
-                            title={`${children.length} công việc con`}
-                          >
-                            {children.length}
-                          </span>
-                        )}
-
-                        {/* Quick add "+" button */}
-                        {canHaveSubtasks && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startAddingSubtask(issue);
-                            }}
-                            className="p-1 text-[#9B9B9F] hover:text-[#1A1A1A] hover:bg-[#EBEBEC] rounded transition-colors ml-auto opacity-70 group-hover:opacity-100"
-                            title="Tạo nhanh subtask / bug"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="text-xs font-mono text-[#6B6B70] font-semibold">
+                        {issue.key}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-xs text-[#1A1A1A] group-hover:text-[#E53E3E] transition-colors line-clamp-1">
@@ -390,12 +343,58 @@ export default function IssueTable({
                         <span className="text-xs text-[#C5C5C8]">—</span>
                       )}
                     </td>
+                    {/* End of row: 2 Buttons (Quick Add & Expand/Collapse) */}
+                    <td className="px-3 py-3 text-right whitespace-nowrap">
+                      <div
+                        className="flex items-center justify-end gap-1.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Button 1: Quick add "+" button */}
+                        {canHaveSubtasks && (
+                          <button
+                            type="button"
+                            onClick={() => startAddingSubtask(issue)}
+                            className="p-1.5 text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#EBEBEC] rounded-md transition-colors"
+                            title="Tạo nhanh subtask / bug"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        {/* Button 2: Expand/Collapse Toggle Button ("^ ngược" / Chevron) */}
+                        {canExpand ? (
+                          <button
+                            type="button"
+                            onClick={() => toggleExpand(issueKey)}
+                            className={`px-2 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
+                              isExpanded
+                                ? 'bg-[#E5E5E7] text-[#1A1A1A]'
+                                : 'text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F0F0F1]'
+                            }`}
+                            title={isExpanded ? 'Thu gọn subtask' : 'Xổ ra xem subtask'}
+                          >
+                            {children.length > 0 && (
+                              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-white text-[#4A4A4F] rounded-full border border-[#D1D1D3]">
+                                {children.length}
+                              </span>
+                            )}
+                            {isExpanded ? (
+                              <ChevronUp className="w-3.5 h-3.5" />
+                            ) : (
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        ) : (
+                          <span className="w-6 shrink-0" />
+                        )}
+                      </div>
+                    </td>
                   </tr>
 
                   {/* Inline Quick Add Form */}
                   {addingSubtaskFor === issueKey && (
                     <tr key={`quick-add-${issueKey}`} className="bg-[#F8F9FA] border-y border-[#E5E5E7]">
-                      <td colSpan={7} className="px-6 py-3">
+                      <td colSpan={8} className="px-6 py-3 pl-12">
                         <div className="flex flex-col gap-2.5 max-w-3xl ml-6 pl-3 border-l-2 border-[#1A1A1A]">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-semibold text-[#1A1A1A] flex items-center gap-1.5">
@@ -484,18 +483,21 @@ export default function IssueTable({
                         className="bg-[#FAFAFB] hover:bg-[#F2F2F5] border-t border-[#F0F0F1] cursor-pointer transition-colors group"
                         onClick={() => onSelectIssue(child.key || String(child.id))}
                       >
-                        <td className="px-3 py-2.5 pl-8">
-                          <div className="flex items-center gap-1.5">
+                        <td className="px-4 py-2.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 pl-6">
                             <CornerDownRight className="w-3.5 h-3.5 text-[#9B9B9F] shrink-0" />
                             <span className="text-[11px] font-mono text-[#6B6B70] font-medium">
                               {child.key}
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-2.5">
-                          <span className="text-xs text-[#1A1A1A] group-hover:text-[#E53E3E] transition-colors line-clamp-1">
-                            {child.summary}
-                          </span>
+                        <td className="px-4 py-2.5 pl-8">
+                          <div className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#B0B0B5] shrink-0" />
+                            <span className="text-xs text-[#4A4A4F] group-hover:text-[#E53E3E] transition-colors line-clamp-1">
+                              {child.summary}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-4 py-2.5">
                           <span
@@ -551,13 +553,18 @@ export default function IssueTable({
                             <span className="text-xs text-[#C5C5C8]">—</span>
                           )}
                         </td>
+                        <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                          <span className="text-[10px] text-[#9B9B9F] opacity-0 group-hover:opacity-100 transition-opacity pr-1">
+                            {child.type}
+                          </span>
+                        </td>
                       </tr>
                     ))}
 
                   {/* Empty state when expanded but has 0 subtasks */}
                   {isExpanded && children.length === 0 && addingSubtaskFor !== issueKey && (
                     <tr key={`empty-${issueKey}`} className="bg-[#FAFAFB] border-t border-[#F0F0F1]">
-                      <td colSpan={7} className="px-8 py-2.5 text-xs text-[#9B9B9F] italic">
+                      <td colSpan={8} className="px-8 py-2.5 text-xs text-[#9B9B9F] italic">
                         <div className="flex items-center gap-2">
                           <CornerDownRight className="w-3.5 h-3.5 text-[#C5C5C8]" />
                           <span>Chưa có công việc con nào. Nhấn nút</span>
