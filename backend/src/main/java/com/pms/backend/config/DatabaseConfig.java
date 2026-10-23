@@ -37,14 +37,19 @@ public class DatabaseConfig {
     private String password;
 
     private String resolveDatabaseUrl() {
+        if ("true".equalsIgnoreCase(System.getenv("USE_LOCAL_DB")) || "true".equalsIgnoreCase(System.getProperty("use.local.db"))) {
+            log.info("USE_LOCAL_DB is set, connecting to local PostgreSQL at localhost:5432/pms");
+            return "jdbc:postgresql://localhost:5432/pms";
+        }
+
         // 1. Check system environment variables explicitly (standard for cloud platforms like Render / Railway / Neon)
         String envDbUrl = System.getenv("DATABASE_URL");
-        if (StringUtils.hasText(envDbUrl) && !envDbUrl.contains("localhost:5432/pms")) {
+        if (StringUtils.hasText(envDbUrl)) {
             return envDbUrl.trim();
         }
 
         String envSpringDs = System.getenv("SPRING_DATASOURCE_URL");
-        if (StringUtils.hasText(envSpringDs) && !envSpringDs.contains("localhost:5432/pms")) {
+        if (StringUtils.hasText(envSpringDs)) {
             return envSpringDs.trim();
         }
 
