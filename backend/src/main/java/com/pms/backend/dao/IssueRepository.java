@@ -39,7 +39,12 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
 
     long countByProjectIdAndDeletedAtIsNull(Long projectId);
 
-    @Query("SELECT i FROM Issue i WHERE i.project.id = :projectId AND i.deletedAt IS NULL AND " +
+    @Query(value = "SELECT i FROM Issue i WHERE i.project.id = :projectId AND i.deletedAt IS NULL AND " +
+           "(:type IS NULL OR i.type = :type) AND " +
+           "(:priority IS NULL OR i.priority = :priority) AND " +
+           "(:statusId IS NULL OR i.status.id = :statusId) AND " +
+           "(:assigneeId IS NULL OR i.assignee.id = :assigneeId)",
+           countQuery = "SELECT COUNT(i) FROM Issue i WHERE i.project.id = :projectId AND i.deletedAt IS NULL AND " +
            "(:type IS NULL OR i.type = :type) AND " +
            "(:priority IS NULL OR i.priority = :priority) AND " +
            "(:statusId IS NULL OR i.status.id = :statusId) AND " +
