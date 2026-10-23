@@ -266,11 +266,13 @@ export default function IssueTable({
                 isEpic ||
                 issue.type?.toUpperCase() === 'TASK' ||
                 issue.type?.toUpperCase() === 'STORY' ||
+                issue.type?.toUpperCase() === 'BUG' ||
                 issue.type === 'Task' ||
-                issue.type === 'Story';
+                issue.type === 'Story' ||
+                issue.type === 'Bug';
               const children = getChildIssues(issue, issues);
               const isExpanded = expandedKeys.has(issueKey);
-              const canExpand = isEpic || children.length > 0 || addingSubtaskFor === issueKey;
+              const canExpand = canHaveSubtasks || children.length > 0 || addingSubtaskFor === issueKey;
 
               return (
                 <React.Fragment key={issue.id}>
@@ -371,13 +373,25 @@ export default function IssueTable({
                                 ? 'bg-[#E5E5E7] text-[#1A1A1A]'
                                 : 'text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F0F0F1]'
                             }`}
-                            title={isExpanded ? 'Thu gọn subtask' : 'Xổ ra xem subtask'}
+                            title={
+                              children.length > 0
+                                ? isExpanded
+                                  ? 'Thu gọn subtask'
+                                  : 'Xổ ra xem subtask'
+                                : isExpanded
+                                ? 'Thu gọn'
+                                : 'Xổ ra xem subtask (0)'
+                            }
                           >
-                            {children.length > 0 && (
-                              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-white text-[#4A4A4F] rounded-full border border-[#D1D1D3]">
-                                {children.length}
-                              </span>
-                            )}
+                            <span
+                              className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full border ${
+                                children.length > 0
+                                  ? 'bg-white text-[#4A4A4F] border-[#D1D1D3]'
+                                  : 'bg-[#F7F7F8] text-[#9B9B9F] border-[#E5E5E7]'
+                              }`}
+                            >
+                              {children.length}
+                            </span>
                             {isExpanded ? (
                               <ChevronUp className="w-3.5 h-3.5" />
                             ) : (
