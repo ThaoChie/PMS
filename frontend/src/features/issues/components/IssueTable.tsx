@@ -106,7 +106,7 @@ export default function IssueTable({
               <tr
                 key={issue.id}
                 className="hover:bg-[#F7F7F8] cursor-pointer transition-colors group"
-                onClick={() => onSelectIssue(issue.id)}
+                onClick={() => onSelectIssue(issue.key || issue.id)}
               >
                 <td className="px-4 py-3">
                   <span className="text-[11px] font-mono text-[#9B9B9F] font-medium">

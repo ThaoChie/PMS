@@ -10,6 +10,26 @@ interface CreateIssueModalProps {
   onSubmitSuccess?: () => void;
 }
 
+function Field({
+  label,
+  children,
+  optional = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  optional?: boolean;
+}) {
+  return (
+    <div>
+      <label className="flex items-center gap-1.5 text-xs font-medium text-[#1A1A1A] mb-1.5">
+        {label}
+        {optional && <span className="text-[10px] text-[#9B9B9F] font-normal">tùy chọn</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
 export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIssueModalProps) {
   const { projects, currentProject } = useProjectStore();
 
@@ -86,26 +106,6 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
     } finally {
       setSaving(false);
     }
-  }
-
-  function Field({
-    label,
-    children,
-    optional = false,
-  }: {
-    label: string;
-    children: React.ReactNode;
-    optional?: boolean;
-  }) {
-    return (
-      <div>
-        <label className="flex items-center gap-1.5 text-xs font-medium text-[#1A1A1A] mb-1.5">
-          {label}
-          {optional && <span className="text-[10px] text-[#9B9B9F] font-normal">tùy chọn</span>}
-        </label>
-        {children}
-      </div>
-    );
   }
 
   const inputCls =

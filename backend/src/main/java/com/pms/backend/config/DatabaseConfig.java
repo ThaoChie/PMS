@@ -27,6 +27,9 @@ public class DatabaseConfig {
     @Value("${DATABASE_URL:}")
     private String databaseUrl;
 
+    @Value("${spring.profiles.active:}")
+    private String activeProfile;
+
     @Value("${spring.datasource.username:}")
     private String username;
 
@@ -34,6 +37,11 @@ public class DatabaseConfig {
     private String password;
 
     private String resolveDatabaseUrl() {
+        if ("dev".equalsIgnoreCase(activeProfile) || "local".equalsIgnoreCase(activeProfile) || "test".equalsIgnoreCase(activeProfile)) {
+            if (StringUtils.hasText(datasourceUrl)) {
+                return datasourceUrl;
+            }
+        }
         if (StringUtils.hasText(datasourceUrl) && !datasourceUrl.contains("localhost:5432/pms")) {
             return datasourceUrl;
         }

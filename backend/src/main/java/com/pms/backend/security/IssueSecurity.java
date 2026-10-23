@@ -27,11 +27,23 @@ public class IssueSecurity {
         return null;
     }
 
+    private Optional<Issue> findIssue(String keyOrId) {
+        if (keyOrId == null || keyOrId.isBlank()) return Optional.empty();
+        Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(keyOrId);
+        if (issueOpt.isEmpty() && keyOrId.matches("^\\d+$")) {
+            try {
+                issueOpt = issueRepository.findById(Long.parseLong(keyOrId))
+                        .filter(i -> i.getDeletedAt() == null);
+            } catch (Exception ignored) {}
+        }
+        return issueOpt;
+    }
+
     public boolean canView(String issueKey) {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) return false;
 
-        Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
+        Optional<Issue> issueOpt = findIssue(issueKey);
         if (issueOpt.isEmpty()) return false;
 
         Long projectId = issueOpt.get().getProject().getId();
@@ -42,7 +54,7 @@ public class IssueSecurity {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) return false;
 
-        Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
+        Optional<Issue> issueOpt = findIssue(issueKey);
         if (issueOpt.isEmpty()) return false;
 
         Issue issue = issueOpt.get();
@@ -69,7 +81,7 @@ public class IssueSecurity {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) return false;
 
-        Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
+        Optional<Issue> issueOpt = findIssue(issueKey);
         if (issueOpt.isEmpty()) return false;
 
         Issue issue = issueOpt.get();
@@ -80,14 +92,16 @@ public class IssueSecurity {
         }
 
         Long userId = user.getId();
-        return issue.getAssignee() != null && userId.equals(issue.getAssignee().getId());
+        boolean isReporter = issue.getReporter() != null && userId.equals(issue.getReporter().getId());
+        boolean isAssignee = issue.getAssignee() != null && userId.equals(issue.getAssignee().getId());
+        return isReporter || isAssignee;
     }
 
     public boolean canApprove(String issueKey) {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) return false;
 
-        Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey);
+        Optional<Issue> issueOpt = findIssue(issueKey);
         if (issueOpt.isEmpty()) return false;
 
         Long projectId = issueOpt.get().getProject().getId();

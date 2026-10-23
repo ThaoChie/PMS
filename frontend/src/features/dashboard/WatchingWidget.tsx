@@ -39,7 +39,7 @@ export const WatchingWidget: React.FC<WatchingWidgetProps> = ({
             <button
               key={issue.id}
               className="w-full flex items-start gap-3 px-5 py-3 text-left hover:bg-[#F7F7F8] transition-colors group"
-              onClick={() => onSelectIssue(issue.id)}
+              onClick={() => onSelectIssue(issue.key || issue.id)}
             >
               <div className="flex-1 min-w-0">
                 <span className="text-[10px] font-mono text-[#9B9B9F] mb-0.5 block">{issue.key}</span>

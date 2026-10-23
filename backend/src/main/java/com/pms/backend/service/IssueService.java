@@ -222,10 +222,23 @@ public class IssueService {
         return page.map(IssueResponse::from);
     }
 
+    private Issue findIssue(String issueKeyOrId) {
+        if (issueKeyOrId == null || issueKeyOrId.isBlank()) {
+            throw new ResourceNotFoundException("Issue not found");
+        }
+        Optional<Issue> issueOpt = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKeyOrId);
+        if (issueOpt.isEmpty() && issueKeyOrId.matches("^\\d+$")) {
+            try {
+                issueOpt = issueRepository.findById(Long.parseLong(issueKeyOrId))
+                        .filter(i -> i.getDeletedAt() == null);
+            } catch (Exception ignored) {}
+        }
+        return issueOpt.orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKeyOrId));
+    }
+
     @Transactional
     public IssueResponse getIssueDetail(String issueKey, User currentUser) {
-        Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
+        Issue issue = findIssue(issueKey);
 
         if (recentViewService != null && currentUser != null) {
             recentViewService.recordView(issue, currentUser);
@@ -244,7 +257,7 @@ public class IssueService {
         res.setLinkedIssues(linkedResponses);
 
         // Available transitions for this user
-        List<TransitionOptionResponse> transitions = workflowService.getTransitionsForIssue(issueKey, currentUser);
+        List<TransitionOptionResponse> transitions = workflowService.getTransitionsForIssue(issue.getIssueKey(), currentUser);
         res.setAvailableTransitions(transitions);
 
         return res;
@@ -252,8 +265,7 @@ public class IssueService {
 
     @Transactional
     public IssueResponse updateIssue(String issueKey, UpdateIssueRequest request, User currentUser) {
-        Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
+        Issue issue = findIssue(issueKey);
 
         projectSecurity.assertProjectWritable(issue.getProject());
 
@@ -273,9 +285,13 @@ public class IssueService {
             }
             issue.setRemainingEstimateMin(request.getRemainingEstimateMin());
         }
-        if (request.getEstimates() != null && !request.getEstimates().isBlank()) {
-            int parsed = DurationParser.parseToMinutes(request.getEstimates());
-            issue.setRemainingEstimateMin(parsed);
+        if (request.getEstimates() != null) {
+            if (request.getEstimates().isBlank()) {
+                issue.setRemainingEstimateMin(0);
+            } else {
+                int parsed = DurationParser.parseToMinutes(request.getEstimates());
+                issue.setRemainingEstimateMin(parsed);
+            }
         }
 
         if (request.getSummary() != null && !request.getSummary().isBlank()) {
@@ -290,18 +306,22 @@ public class IssueService {
         if (request.getPriority() != null) {
             issue.setPriority(request.getPriority());
         }
-        if (request.getDueDate() != null) {
+        if (Boolean.TRUE.equals(request.getClearDueDate())) {
+            issue.setDueDate(null);
+        } else if (request.getDueDate() != null) {
             issue.setDueDate(request.getDueDate());
         }
         if (request.getEnvironment() != null) {
-            issue.setEnvironment(request.getEnvironment());
+            issue.setEnvironment(request.getEnvironment().isBlank() ? null : request.getEnvironment().trim());
         }
         if (request.getResolution() != null) {
             issue.setResolution(request.getResolution());
         }
 
         // Assignee change
-        if (request.getAssigneeId() != null) {
+        if (Boolean.TRUE.equals(request.getClearAssignee()) || (request.getAssigneeId() != null && request.getAssigneeId() <= 0)) {
+            issue.setAssignee(null);
+        } else if (request.getAssigneeId() != null && request.getAssigneeId() > 0) {
             User newAssignee = userRepository.findById(request.getAssigneeId())
                     .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
             if (!memberRepository.existsByProjectIdAndUserId(issue.getProject().getId(), newAssignee.getId())) {
@@ -345,8 +365,7 @@ public class IssueService {
 
     @Transactional
     public void deleteIssue(String issueKey, User currentUser) {
-        Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
+        Issue issue = findIssue(issueKey);
 
         projectSecurity.assertProjectWritable(issue.getProject());
 
@@ -366,12 +385,11 @@ public class IssueService {
 
     @Transactional
     public void assignIssue(String issueKey, Long assigneeId, User currentUser) {
-        Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
+        Issue issue = findIssue(issueKey);
 
         projectSecurity.assertProjectWritable(issue.getProject());
 
-        if (assigneeId == null) {
+        if (assigneeId == null || assigneeId <= 0) {
             issue.setAssignee(null);
         } else {
             User assignee = userRepository.findById(assigneeId)
@@ -407,11 +425,8 @@ public class IssueService {
             throw new ValidationException("Cannot link an issue to itself");
         }
 
-        Issue source = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Source issue not found: " + issueKey));
-
-        Issue target = issueRepository.findByIssueKeyAndDeletedAtIsNull(targetKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Target issue not found: " + targetKey));
+        Issue source = findIssue(issueKey);
+        Issue target = findIssue(targetKey);
 
         // Must be member of target project
         if (!projectSecurity.isMember(target.getProject().getId())) {
@@ -444,8 +459,7 @@ public class IssueService {
 
     @Transactional
     public void setEpic(String issueKey, String epicKey, User currentUser) {
-        Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
+        Issue issue = findIssue(issueKey);
 
         projectSecurity.assertProjectWritable(issue.getProject());
 
@@ -455,8 +469,7 @@ public class IssueService {
             if (epicKey.equalsIgnoreCase(issueKey)) {
                 throw new BusinessException(ErrorCode.EPIC_LINK_CYCLE, "An issue cannot be its own Epic");
             }
-            Issue epic = issueRepository.findByIssueKeyAndDeletedAtIsNull(epicKey)
-                    .orElseThrow(() -> new ResourceNotFoundException("Epic issue not found: " + epicKey));
+            Issue epic = findIssue(epicKey);
 
             if (epic.getType() != IssueType.EPIC) {
                 throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Target issue is not of type EPIC");
@@ -474,8 +487,7 @@ public class IssueService {
 
     @Transactional
     public SubtaskResponse createSubtask(String issueKey, String summary, Long assigneeId, User currentUser) {
-        Issue parent = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Parent issue not found: " + issueKey));
+        Issue parent = findIssue(issueKey);
 
         projectSecurity.assertProjectWritable(parent.getProject());
 
@@ -501,8 +513,7 @@ public class IssueService {
 
     @Transactional
     public AttachmentResponse uploadAttachment(String issueKey, MultipartFile file, User currentUser) {
-        Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
+        Issue issue = findIssue(issueKey);
 
         projectSecurity.assertProjectWritable(issue.getProject());
 
@@ -553,8 +564,7 @@ public class IssueService {
 
     @Transactional(readOnly = true)
     public List<IssueStatusHistoryResponse> getIssueHistory(String issueKey) {
-        Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
+        Issue issue = findIssue(issueKey);
 
         List<IssueStatusHistory> list = historyRepository.findByIssueIdOrderByChangedAtAsc(issue.getId());
         return list.stream().map(IssueStatusHistoryResponse::from).collect(Collectors.toList());
@@ -566,13 +576,11 @@ public class IssueService {
             throw new ValidationException("Cannot convert issue to subtask of itself");
         }
 
-        Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
+        Issue issue = findIssue(issueKey);
 
         projectSecurity.assertProjectWritable(issue.getProject());
 
-        Issue parent = issueRepository.findByIssueKeyAndDeletedAtIsNull(parentKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Parent issue not found: " + parentKey));
+        Issue parent = findIssue(parentKey);
 
         if (parent.getType() == IssueType.SUB_TASK) {
             throw new BusinessException(ErrorCode.SUBTASK_NESTING_NOT_ALLOWED, "Sub-task cannot have sub-tasks");
@@ -601,8 +609,7 @@ public class IssueService {
 
     @Transactional
     public ShareIssueResponse shareIssue(String issueKey, ShareIssueRequest request, User currentUser) {
-        Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found: " + issueKey));
+        Issue issue = findIssue(issueKey);
 
         List<String> warnings = new ArrayList<>();
         if (request.getRecipients() == null || request.getRecipients().isEmpty()) {

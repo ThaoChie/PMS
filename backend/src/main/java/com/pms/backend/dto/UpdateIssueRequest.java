@@ -20,7 +20,15 @@ public class UpdateIssueRequest {
     private LocalDate dueDate;
     private String environment;
     private String resolution;
+    private Boolean clearDueDate;
+    private Boolean clearAssignee;
     private Integer version; // Required for optimistic concurrency check
+
+    public Boolean getClearDueDate() { return clearDueDate; }
+    public void setClearDueDate(Boolean clearDueDate) { this.clearDueDate = clearDueDate; }
+
+    public Boolean getClearAssignee() { return clearAssignee; }
+    public void setClearAssignee(Boolean clearAssignee) { this.clearAssignee = clearAssignee; }
 
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }
