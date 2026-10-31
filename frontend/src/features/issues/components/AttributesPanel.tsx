@@ -31,7 +31,7 @@ export default function AttributesPanel({
   }) {
     return (
       <div className="flex items-center gap-3 py-2 px-3 border-b border-[#F0F0F1] last:border-0 hover:bg-[#FAF9F8] transition-colors">
-        <span className="text-xs text-[#9B9B9F] w-28 shrink-0 flex items-center gap-1">
+        <span className="text-xs text-[#9B9B9F] w-32 shrink-0 flex items-center gap-1">
           <span>{label}</span>
           {required && <span className="text-[#E53E3E] font-bold">*</span>}
         </span>
@@ -43,7 +43,7 @@ export default function AttributesPanel({
   return (
     <div className="border border-[#E5E5E7] rounded-lg overflow-hidden bg-white shadow-sm">
       {/* Assignee */}
-      <AttrRow label="Người thực hiện">
+      <AttrRow label="Người thực hiện" required={true}>
         {editingField === 'assignee' && canEdit && onUpdateField ? (
           <select
             autoFocus
@@ -94,7 +94,7 @@ export default function AttributesPanel({
       </AttrRow>
 
       {/* Reporter (informational) */}
-      <AttrRow label="Người báo cáo">
+      <AttrRow label="Người báo cáo" required={true}>
         <div className="flex items-center gap-2 py-1">
           <UserAvatar initials={issue.reporter.initials} size="xs" />
           <span className="truncate">{issue.reporter.name}</span>
@@ -139,7 +139,7 @@ export default function AttributesPanel({
       </AttrRow>
 
       {/* Due Date */}
-      <AttrRow label="Hạn chót">
+      <AttrRow label="Hạn chót" required={true}>
         {editingField === 'dueDate' && canEdit && onUpdateField ? (
           <div className="flex items-center gap-1.5">
             <input

@@ -725,8 +725,9 @@ export default function IssueDetailDrawer({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">
-                  Người thực hiện
+                <label className="flex items-center gap-1 text-xs font-semibold text-[#1A1A1A] mb-1.5">
+                  <span>Người thực hiện</span>
+                  <span className="text-[#E53E3E] font-bold">*</span>
                 </label>
                 <select
                   value={editForm.assigneeId}
@@ -743,8 +744,9 @@ export default function IssueDetailDrawer({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">
-                  Hạn chót
+                <label className="flex items-center gap-1 text-xs font-semibold text-[#1A1A1A] mb-1.5">
+                  <span>Hạn chót</span>
+                  <span className="text-[#E53E3E] font-bold">*</span>
                 </label>
                 <input
                   type="date"
