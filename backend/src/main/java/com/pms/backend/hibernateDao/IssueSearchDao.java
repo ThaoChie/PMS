@@ -33,9 +33,10 @@ public class IssueSearchDao {
         CriteriaQuery<Issue> query = cb.createQuery(Issue.class);
         Root<Issue> root = query.from(Issue.class);
 
-        // Eager fetch status and assignee for performance
+        // Eager fetch status, assignee, reporter, and project for performance & export
         root.fetch("status", JoinType.LEFT);
         root.fetch("assignee", JoinType.LEFT);
+        root.fetch("reporter", JoinType.LEFT);
         root.fetch("project", JoinType.LEFT);
 
         List<Predicate> predicates = buildPredicates(cb, query, root, request, accessibleProjectIds, currentUserId, recentlyViewedIssueIds);
@@ -77,6 +78,7 @@ public class IssueSearchDao {
         Root<Issue> root = query.from(Issue.class);
         root.fetch("status", JoinType.LEFT);
         root.fetch("assignee", JoinType.LEFT);
+        root.fetch("reporter", JoinType.LEFT);
         root.fetch("project", JoinType.LEFT);
 
         List<Predicate> predicates = buildPredicates(cb, query, root, request, accessibleProjectIds, currentUserId, recentlyViewedIssueIds);
