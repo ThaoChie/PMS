@@ -407,82 +407,119 @@ export default function IssueTable({
 
                   {/* Inline Quick Add Form */}
                   {addingSubtaskFor === issueKey && (
-                    <tr key={`quick-add-${issueKey}`} className="bg-[#F8F9FA] border-y border-[#E5E5E7]">
-                      <td colSpan={8} className="px-6 py-3 pl-12">
-                        <div className="flex flex-col gap-2.5 max-w-3xl ml-6 pl-3 border-l-2 border-[#1A1A1A]">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-[#1A1A1A] flex items-center gap-1.5">
-                              <CornerDownRight className="w-3.5 h-3.5 text-[#6B6B70]" />
-                              Tạo nhanh công việc con cho <span className="font-mono text-[#E53E3E]">{issue.key}</span>
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setAddingSubtaskFor(null)}
-                              className="text-xs text-[#9B9B9F] hover:text-[#1A1A1A]"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
+                    <tr key={`quick-add-${issueKey}`} className="bg-[#FAF9F8]/70 border-y border-[#E5E5E7]/80">
+                      <td colSpan={8} className="p-3 sm:p-4 pl-6 sm:pl-10">
+                        <div className="bg-white border border-[#E5E5E7] rounded-xl p-3 sm:p-4 shadow-sm max-w-4xl space-y-3 animate-in fade-in duration-150">
+                          {/* Card Header */}
+                          <div className="flex items-center justify-between pb-2 border-b border-[#F0F0F1]">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-md bg-[#F0F0F1] flex items-center justify-center text-[#6B6B70]">
+                                <CornerDownRight className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="text-xs font-semibold text-[#1A1A1A]">
+                                Tạo công việc con cho
+                              </span>
+                              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-[#FAF9F8] text-[#1A1A1A] border border-[#E5E5E7]">
+                                {issue.key}
+                              </span>
+                              <span className="hidden sm:inline text-xs text-[#9B9B9F] truncate max-w-xs">
+                                — {issue.summary}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <span className="hidden md:inline text-[11px] text-[#9B9B9F]">
+                                Nhấn <kbd className="px-1.5 py-0.5 bg-[#F0F0F1] rounded text-[10px] font-mono text-[#6B6B70] border border-[#E5E5E7]">Enter</kbd> để tạo, <kbd className="px-1.5 py-0.5 bg-[#F0F0F1] rounded text-[10px] font-mono text-[#6B6B70] border border-[#E5E5E7]">Esc</kbd> để hủy
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setAddingSubtaskFor(null)}
+                                className="w-6 h-6 rounded-md flex items-center justify-center text-[#9B9B9F] hover:text-[#1A1A1A] hover:bg-[#F0F0F1] transition-colors"
+                                title="Đóng"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <select
-                              value={subtaskType}
-                              onChange={(e) => setSubtaskType(e.target.value as any)}
-                              className="px-2 py-1.5 border border-[#D1D1D3] rounded text-xs bg-white text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
-                            >
-                              <option value="Sub-task">Sub-task (Tác vụ con)</option>
-                              <option value="Bug">Bug (Lỗi)</option>
-                              {isEpic && <option value="Task">Task (Tác vụ)</option>}
-                            </select>
+                          {/* Form Controls */}
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                            {/* Type selector */}
+                            <div className="sm:w-44 shrink-0">
+                              <select
+                                value={subtaskType}
+                                onChange={(e) => setSubtaskType(e.target.value as any)}
+                                className="w-full h-9 px-3 bg-white border border-[#E5E5E7] hover:border-[#C5C5C8] rounded-lg text-xs font-medium text-[#1A1A1A] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] transition-colors"
+                              >
+                                <option value="Sub-task">Sub-task (Tác vụ con)</option>
+                                <option value="Bug">Bug (Lỗi phát sinh)</option>
+                                {isEpic && <option value="Task">Task (Công việc)</option>}
+                              </select>
+                            </div>
 
-                            <input
-                              type="text"
-                              autoFocus
-                              value={subtaskSummary}
-                              onChange={(e) => setSubtaskSummary(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleCreateSubtask(issue);
-                                }
-                                if (e.key === 'Escape') {
-                                  setAddingSubtaskFor(null);
-                                }
-                              }}
-                              placeholder="Nhập tóm tắt công việc con / bug mới..."
-                              className="flex-1 min-w-[220px] px-3 py-1.5 border border-[#D1D1D3] rounded text-xs text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none focus:border-[#1A1A1A]"
-                            />
+                            {/* Summary Input */}
+                            <div className="flex-1 min-w-[240px]">
+                              <input
+                                type="text"
+                                autoFocus
+                                value={subtaskSummary}
+                                onChange={(e) => setSubtaskSummary(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleCreateSubtask(issue);
+                                  }
+                                  if (e.key === 'Escape') {
+                                    setAddingSubtaskFor(null);
+                                  }
+                                }}
+                                placeholder="Nhập tiêu đề công việc con..."
+                                className="w-full h-9 px-3.5 bg-white border border-[#E5E5E7] hover:border-[#C5C5C8] rounded-lg text-xs text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] transition-colors"
+                              />
+                            </div>
 
-                            <select
-                              value={subtaskAssignee}
-                              onChange={(e) => setSubtaskAssignee(e.target.value)}
-                              className="px-2 py-1.5 border border-[#D1D1D3] rounded text-xs bg-white text-[#6B6B70] focus:outline-none focus:border-[#1A1A1A]"
-                            >
-                              <option value="">Chưa phân công</option>
-                              {members.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                  {m.name}
-                                </option>
-                              ))}
-                            </select>
+                            {/* Assignee selector */}
+                            <div className="sm:w-44 shrink-0">
+                              <select
+                                value={subtaskAssignee}
+                                onChange={(e) => setSubtaskAssignee(e.target.value)}
+                                className="w-full h-9 px-3 bg-white border border-[#E5E5E7] hover:border-[#C5C5C8] rounded-lg text-xs text-[#4A4A4F] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] transition-colors"
+                              >
+                                <option value="">Chưa phân công</option>
+                                {members.map((m) => (
+                                  <option key={m.id} value={m.id}>
+                                    {m.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
 
-                            <button
-                              type="button"
-                              disabled={!subtaskSummary.trim() || creating}
-                              onClick={() => handleCreateSubtask(issue)}
-                              className="px-3 py-1.5 bg-[#1A1A1A] hover:bg-[#333333] disabled:opacity-50 text-white rounded text-xs font-medium transition-colors flex items-center gap-1.5"
-                            >
-                              {creating && <Loader2 className="w-3 h-3 animate-spin" />}
-                              <span>{creating ? 'Đang tạo…' : 'Tạo'}</span>
-                            </button>
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                              <button
+                                type="button"
+                                disabled={!subtaskSummary.trim() || creating}
+                                onClick={() => handleCreateSubtask(issue)}
+                                className="h-9 px-4 bg-[#E53E3E] hover:bg-[#C53030] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors shadow-xs flex items-center gap-1.5 whitespace-nowrap"
+                              >
+                                {creating ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    <span>Đang tạo…</span>
+                                  </>
+                                ) : (
+                                  <span>Tạo</span>
+                                )}
+                              </button>
 
-                            <button
-                              type="button"
-                              onClick={() => setAddingSubtaskFor(null)}
-                              className="px-3 py-1.5 border border-[#D1D1D3] hover:bg-white text-[#6B6B70] rounded text-xs transition-colors"
-                            >
-                              Hủy
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => setAddingSubtaskFor(null)}
+                                className="h-9 px-3 text-xs font-medium text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F0F0F1] rounded-lg transition-colors"
+                              >
+                                Hủy
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </td>
