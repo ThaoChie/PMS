@@ -43,7 +43,8 @@ public class MailServiceImpl implements IMailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
 
-            helper.setFrom(appProperties.getMail().getFrom());
+            String fromAddress = appProperties.getMail().getFrom();
+            helper.setFrom(fromAddress, "Hệ thống Quản lý Dự án EPMS");
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlContent, true);

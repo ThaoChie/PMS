@@ -35,7 +35,12 @@ export default function App() {
   const { projects, currentProject, setCurrentProject, fetchProjects } = useProjectStore();
 
   const [authView, setAuthView] = useState<AuthView>('login');
-  const [currentScreen, setCurrentScreen] = useState<Screen>('projects');
+  const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.includes('/invitations')) {
+      return 'invitations';
+    }
+    return 'projects';
+  });
   const [role, setRole] = useState<Role>('pm');
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [showCreateIssue, setShowCreateIssue] = useState(false);
@@ -52,6 +57,10 @@ export default function App() {
       setAuthView('reset-password');
     }
 
+    if (window.location.pathname.includes('/invitations')) {
+      setCurrentScreen('invitations');
+    }
+
     const pathMatch = window.location.pathname.match(/\/issues\/([A-Za-z0-9_-]+)/);
     const issueKeyParam = pathMatch ? pathMatch[1] : searchParams.get('issue');
     if (issueKeyParam) {
@@ -62,6 +71,9 @@ export default function App() {
 
   useEffect(() => {
     function handleLocation() {
+      if (window.location.pathname.includes('/invitations')) {
+        setCurrentScreen('invitations');
+      }
       const searchParams = new URLSearchParams(window.location.search);
       const pathMatch = window.location.pathname.match(/\/issues\/([A-Za-z0-9_-]+)/);
       const issueKeyParam = pathMatch ? pathMatch[1] : searchParams.get('issue');
@@ -248,6 +260,11 @@ export default function App() {
         onNavigate={(screen) => {
           setCurrentScreen(screen);
           setSelectedIssueId(null);
+          if (screen === 'invitations') {
+            window.history.pushState({}, '', '/invitations');
+          } else if (window.location.pathname.includes('/invitations')) {
+            window.history.pushState({}, '', '/');
+          }
         }}
         onRoleChange={setRole}
         onCreateIssue={() => setShowCreateIssue(true)}

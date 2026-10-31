@@ -49,3 +49,4 @@ DEPLOYMENT.md
 .claude/
 .github/
 test-results/
+run_backend.cmd
