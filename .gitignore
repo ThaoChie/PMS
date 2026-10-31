@@ -44,5 +44,8 @@ task.md
 statusproject.md
 API_DOCUMENTATION.md
 DEPLOYMENT.md
-
 TEAM_TASK_ALLOCATION.md
+
+# Automation & Local Agent Plans/Reports
+.claude/
+e2e/
