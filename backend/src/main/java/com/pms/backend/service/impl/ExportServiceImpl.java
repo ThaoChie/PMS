@@ -12,10 +12,15 @@ import com.pms.backend.util.DurationParser;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -24,7 +29,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class ExportServiceImpl implements IExportService {
+
+    private static final Logger log = LoggerFactory.getLogger(ExportServiceImpl.class);
 
     @Value("${app.export.max-rows:10000}")
     private int maxExportRows = 10000;
@@ -130,8 +138,19 @@ public class ExportServiceImpl implements IExportService {
             );
         }
 
-        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100);
-             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        Workbook workbook = null;
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            // For smaller datasets or containerized environments without temp file access, use XSSFWorkbook
+            try {
+                if (issues.size() > 2000) {
+                    workbook = new SXSSFWorkbook(100);
+                } else {
+                    workbook = new XSSFWorkbook();
+                }
+            } catch (Throwable t) {
+                log.warn("SXSSFWorkbook initialization failed, falling back to XSSFWorkbook: {}", t.getMessage());
+                workbook = new XSSFWorkbook();
+            }
 
             Sheet sheet = workbook.createSheet("Issues");
 
@@ -154,21 +173,60 @@ public class ExportServiceImpl implements IExportService {
             }
 
             workbook.write(out);
-            workbook.dispose();
+            if (workbook instanceof SXSSFWorkbook sxssf) {
+                sxssf.dispose();
+            }
             return out.toByteArray();
-        } catch (IOException e) {
-            throw new BusinessException("Lỗi tạo file Excel: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Lỗi khi xuất file Excel: {}", e.getMessage(), e);
+            throw new BusinessException("Lỗi tạo file Excel: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+        } finally {
+            if (workbook != null) {
+                try {
+                    workbook.close();
+                } catch (Exception ignored) {
+                }
+            }
         }
     }
 
     private String[] extractIssueData(Issue issue, DateTimeFormatter dtf) {
+        String assigneeName = "Chưa giao";
+        try {
+            if (issue.getAssignee() != null) {
+                String full = issue.getAssignee().getFullName();
+                assigneeName = (full != null && !full.isBlank()) ? full : issue.getAssignee().getEmail();
+            }
+        } catch (Exception e) {
+            log.debug("Lazy load assignee failed: {}", e.getMessage());
+        }
+
+        String reporterName = "";
+        try {
+            if (issue.getReporter() != null) {
+                String full = issue.getReporter().getFullName();
+                reporterName = (full != null && !full.isBlank()) ? full : issue.getReporter().getEmail();
+            }
+        } catch (Exception e) {
+            log.debug("Lazy load reporter failed: {}", e.getMessage());
+        }
+
+        String statusName = "";
+        try {
+            if (issue.getStatus() != null) {
+                statusName = issue.getStatus().getName();
+            }
+        } catch (Exception e) {
+            log.debug("Lazy load status failed: {}", e.getMessage());
+        }
+
         return new String[]{
                 issue.getIssueKey() != null ? issue.getIssueKey() : "",
                 issue.getSummary() != null ? issue.getSummary() : "",
                 issue.getType() != null ? issue.getType().name() : "",
-                issue.getStatus() != null ? issue.getStatus().getName() : "",
-                issue.getAssignee() != null ? issue.getAssignee().getFullName() : "Chưa giao",
-                issue.getReporter() != null ? issue.getReporter().getFullName() : "",
+                statusName,
+                assigneeName,
+                reporterName,
                 issue.getPriority() != null ? issue.getPriority().name() : "",
                 issue.getDueDate() != null ? issue.getDueDate().toString() : "",
                 DurationParser.formatMinutes(issue.getOriginalEstimateMin()),
