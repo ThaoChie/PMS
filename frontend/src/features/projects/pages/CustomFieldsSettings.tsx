@@ -238,37 +238,41 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
 
   return (
     <div className="h-full overflow-y-auto bg-white">
-      <div className="max-w-4xl mx-auto px-8 py-8">
+      <div className="max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <Sliders className="w-5 h-5 text-[#1A1A1A]" />
-              <h1 className="text-xl font-bold text-[#1A1A1A]">Quản lý trường tùy chỉnh</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-[#F0F0F1]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#FAF9F8] border border-[#E5E5E7] flex items-center justify-center text-[#1A1A1A] shrink-0 shadow-xs">
+              <Sliders className="w-5 h-5" />
             </div>
-            <p className="text-sm text-[#6B6B70] mt-1">
-              Thêm, sửa và quản lý các trường thông tin chi tiết cho công việc (ví dụ: Sprint, Module, Release,...) trong dự án{' '}
-              <span className="font-semibold text-[#1A1A1A]">{currentProject.name}</span> ({currentProject.key})
-            </p>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg sm:text-xl font-bold text-[#1A1A1A]">Quản lý trường tùy chỉnh</h1>
+                <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-md bg-[#F0F0F1] text-[#6B6B70] border border-[#E5E5E7]">
+                  {currentProject.key}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
             <button
               type="button"
               onClick={loadFields}
-              className="p-2 border border-[#E5E5E7] text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
+              className="h-9 px-3 border border-[#E5E5E7] bg-white text-[#6B6B70] hover:text-[#1A1A1A] rounded-lg hover:bg-[#F7F7F8] transition-colors flex items-center gap-1.5 text-xs font-medium shrink-0 shadow-xs"
               title="Làm mới danh sách"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden md:inline">Làm mới</span>
             </button>
             {canEdit && (
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#E53E3E] hover:bg-[#C53030] text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
+                className="h-9 px-4 bg-[#E53E3E] hover:bg-[#C53030] text-white text-xs font-medium rounded-lg transition-colors shadow-xs flex items-center gap-1.5 whitespace-nowrap shrink-0"
               >
-                <Plus className="w-4 h-4" />
-                <span>Thêm trường mới</span>
+                <Plus className="w-4 h-4 shrink-0" />
+                <span>Thêm trường thông tin</span>
               </button>
             )}
           </div>
@@ -297,27 +301,29 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
           </div>
         ) : fields.length === 0 ? (
           <div className="py-16 px-4 text-center border-2 border-dashed border-[#E5E5E7] rounded-xl bg-[#FAF9F8]">
-            <Sliders className="w-10 h-10 text-[#C5C5C8] mx-auto mb-3" />
+            <div className="w-12 h-12 rounded-xl bg-white border border-[#E5E5E7] flex items-center justify-center mx-auto mb-3 text-[#9B9B9F] shadow-xs">
+              <Sliders className="w-6 h-6" />
+            </div>
             <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">
               Chưa có trường tùy chỉnh nào
             </h3>
-            <p className="text-xs text-[#6B6B70] max-w-md mx-auto mb-4">
-              Bạn có thể tạo các trường dữ liệu riêng biệt cho dự án này như Sprint, Module, Release, Mức độ ưu tiên nâng cao,...
+            <p className="text-xs text-[#6B6B70] max-w-md mx-auto mb-5 leading-relaxed">
+              Bạn có thể tạo các trường dữ liệu mở rộng cho dự án này như Sprint, Module, Release, Mức độ ưu tiên nâng cao,...
             </p>
             {canEdit && (
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#1A1A1A] text-white text-xs font-medium rounded-lg hover:bg-black transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1A1A1A] hover:bg-black text-white text-xs font-medium rounded-lg transition-colors shadow-xs whitespace-nowrap"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Tạo trường đầu tiên (ví dụ: Sprint)</span>
+                <Plus className="w-4 h-4 shrink-0" />
+                <span>Tạo trường thông tin đầu tiên</span>
               </button>
             )}
           </div>
         ) : (
           <div className="border border-[#E5E5E7] rounded-xl overflow-hidden shadow-sm bg-white">
-            <div className="px-5 py-3.5 bg-[#FAF9F8] border-b border-[#E5E5E7] flex items-center justify-between">
+            <div className="px-5 py-3.5 bg-[#FAF9F8] border-b border-[#E5E5E7] flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <span className="text-xs font-semibold text-[#1A1A1A]">
                 Danh sách trường dữ liệu ({fields.length})
               </span>
@@ -330,7 +336,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
               {fields.map((f) => (
                 <div
                   key={f.id}
-                  className="p-4 flex items-center justify-between hover:bg-[#FAF9F8] transition-colors"
+                  className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#FAF9F8] transition-colors"
                 >
                   <div className="space-y-1.5 min-w-0 pr-4 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -382,7 +388,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                   </div>
 
                   {canEdit && (
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0 self-end sm:self-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-[#F0F0F1] w-full sm:w-auto justify-end">
                       <button
                         type="button"
                         onClick={() => openEditModal(f)}

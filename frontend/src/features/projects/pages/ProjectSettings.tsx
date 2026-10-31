@@ -76,9 +76,9 @@ export default function ProjectSettings({ role, onNavigate }: ProjectSettingsPro
 
         {/* Dedicated Custom Fields Screen Link (PM / Admin) */}
         {canEdit && (
-          <div className="bg-white border border-[#E5E5E7] rounded-xl p-5 shadow-sm mb-6 flex items-center justify-between">
+          <div className="bg-white border border-[#E5E5E7] rounded-xl p-5 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FAF9F8] border border-[#E5E5E7] flex items-center justify-center text-[#1A1A1A]">
+              <div className="w-10 h-10 rounded-lg bg-[#FAF9F8] border border-[#E5E5E7] flex items-center justify-center text-[#1A1A1A] shrink-0">
                 <Sliders className="w-5 h-5" />
               </div>
               <div>
@@ -91,7 +91,7 @@ export default function ProjectSettings({ role, onNavigate }: ProjectSettingsPro
             <button
               type="button"
               onClick={() => onNavigate?.('custom-fields')}
-              className="flex items-center gap-1.5 px-4 py-2 border border-[#E5E5E7] rounded-lg text-xs font-medium text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors shadow-sm"
+              className="flex items-center justify-center gap-1.5 px-4 py-2 border border-[#E5E5E7] rounded-lg text-xs font-medium text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors shadow-xs whitespace-nowrap shrink-0 self-end sm:self-auto"
             >
               <span>Vào màn quản lý</span>
               <ArrowRight className="w-3.5 h-3.5 text-[#6B6B70]" />
