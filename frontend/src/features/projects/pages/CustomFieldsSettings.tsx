@@ -25,7 +25,7 @@ interface CustomFieldsSettingsProps {
 
 export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettingsProps) {
   const { currentProject } = useProjectStore();
-  const canEdit = role === 'admin' || role === 'pm';
+  const canEdit = role === 'admin' || role === 'pm' || Boolean(currentProject?.allowMemberManageCustomFields);
 
   const [fields, setFields] = useState<CustomField[]>([]);
   const [loading, setLoading] = useState(false);

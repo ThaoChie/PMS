@@ -1,31 +1,35 @@
 package com.pms.backend.service.impl;
 
-import com.pms.backend.service.interfaces.*;
-
+import com.pms.backend.exception.BusinessException;
+import com.pms.backend.exception.ResourceNotFoundException;
+import com.pms.backend.dao.IssueRepository;
 import com.pms.backend.dao.ProjectMemberRepository;
 import com.pms.backend.dao.ProjectRepository;
 import com.pms.backend.dao.UserRepository;
 import com.pms.backend.dto.CreateProjectRequest;
 import com.pms.backend.dto.InviteMemberRequest;
+import com.pms.backend.dto.MemberResponse;
 import com.pms.backend.dto.ProjectResponse;
 import com.pms.backend.dto.UpdateProjectRequest;
 import com.pms.backend.enu.ErrorCode;
 import com.pms.backend.enu.ProjectRole;
 import com.pms.backend.enu.ProjectStatus;
-import com.pms.backend.exception.BusinessException;
-import com.pms.backend.exception.ForbiddenException;
-import com.pms.backend.exception.ResourceNotFoundException;
 import com.pms.backend.hibernateDao.ProjectListHibernateDao;
 import com.pms.backend.model.Project;
 import com.pms.backend.model.ProjectMember;
 import com.pms.backend.model.User;
 import com.pms.backend.security.AuthUserPrincipal;
 import com.pms.backend.security.ProjectSecurity;
+import com.pms.backend.service.interfaces.IAuditService;
+import com.pms.backend.service.interfaces.IDefaultWorkflowSeeder;
+import com.pms.backend.service.interfaces.IInvitationService;
+import com.pms.backend.service.interfaces.IProjectService;
 import com.pms.backend.wrapper.PageWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +43,7 @@ public class ProjectServiceImpl implements IProjectService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final UserRepository userRepository;
+    private final IssueRepository issueRepository;
     private final ProjectListHibernateDao projectListHibernateDao;
     private final IDefaultWorkflowSeeder defaultWorkflowSeeder;
     private final IInvitationService invitationService;
@@ -46,16 +51,18 @@ public class ProjectServiceImpl implements IProjectService {
     private final ProjectSecurity projectSecurity;
 
     public ProjectServiceImpl(ProjectRepository projectRepository,
-                          ProjectMemberRepository projectMemberRepository,
-                          UserRepository userRepository,
-                          ProjectListHibernateDao projectListHibernateDao,
-                          IDefaultWorkflowSeeder defaultWorkflowSeeder,
-                          IInvitationService invitationService,
-                          IAuditService auditService,
-                          ProjectSecurity projectSecurity) {
+                              ProjectMemberRepository projectMemberRepository,
+                              UserRepository userRepository,
+                              IssueRepository issueRepository,
+                              ProjectListHibernateDao projectListHibernateDao,
+                              IDefaultWorkflowSeeder defaultWorkflowSeeder,
+                              IInvitationService invitationService,
+                              IAuditService auditService,
+                              ProjectSecurity projectSecurity) {
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.userRepository = userRepository;
+        this.issueRepository = issueRepository;
         this.projectListHibernateDao = projectListHibernateDao;
         this.defaultWorkflowSeeder = defaultWorkflowSeeder;
         this.invitationService = invitationService;
@@ -71,7 +78,8 @@ public class ProjectServiceImpl implements IProjectService {
         }
 
         if (projectRepository.existsByProjectKeyIgnoreCase(key)) {
-            throw new BusinessException(ErrorCode.PROJECT_KEY_EXISTS, "Mã dự án '" + key + "' đã tồn tại trong hệ thống");
+            String suggested = suggestProjectKey(key);
+            throw new BusinessException(ErrorCode.CONFLICT, "Mã dự án '" + key + "' đã tồn tại. Gợi ý: " + suggested);
         }
 
         Project project = new Project();
@@ -81,6 +89,12 @@ public class ProjectServiceImpl implements IProjectService {
         project.setStatus(ProjectStatus.INITIATED);
         project.setCreatedBy(creator);
         project.setIssueSeq(0);
+        if (request.getColor() != null && !request.getColor().isBlank()) {
+            project.setColor(request.getColor().trim());
+        }
+        if (request.getIcon() != null && !request.getIcon().isBlank()) {
+            project.setIcon(request.getIcon().trim());
+        }
 
         Project savedProject = projectRepository.save(project);
 
@@ -140,23 +154,62 @@ public class ProjectServiceImpl implements IProjectService {
 
         ProjectResponse response = ProjectResponse.from(savedProject);
         response.setMyRole("PM");
+        response.setMemberCount(1);
+        response.setMembers(List.of(MemberResponse.from(creatorMember)));
+        response.setOpenIssuesCount(0);
         response.setInviteResults(inviteResults);
         return response;
     }
 
     public PageWrapper<ProjectResponse> getProjects(Long userId, String q, String sort, int page, int size) {
         PageWrapper<ProjectResponse> pageWrapper = projectListHibernateDao.findProjects(userId, q, sort, page, size);
-        if (!pageWrapper.getContent().isEmpty() && userId != null) {
-            List<ProjectMember> memberships = projectMemberRepository.findByUserId(userId);
-            Map<Long, String> roleByProjectId = memberships.stream()
-                    .filter(pm -> pm.getProject() != null && pm.getProject().getId() != null)
-                    .collect(Collectors.toMap(pm -> pm.getProject().getId(), pm -> pm.getRole().name(), (r1, r2) -> r1));
-            for (ProjectResponse pr : pageWrapper.getContent()) {
-                String role = roleByProjectId.get(pr.getId());
-                if (role != null) {
-                    pr.setMyRole(role);
+        if (!pageWrapper.getContent().isEmpty()) {
+            List<Long> projectIds = pageWrapper.getContent().stream()
+                    .map(ProjectResponse::getId)
+                    .collect(Collectors.toList());
+
+            // 1. Roles for current user
+            if (userId != null) {
+                List<ProjectMember> memberships = projectMemberRepository.findByUserId(userId);
+                Map<Long, String> roleByProjectId = memberships.stream()
+                        .filter(pm -> pm.getProject() != null && pm.getProject().getId() != null)
+                        .collect(Collectors.toMap(pm -> pm.getProject().getId(), pm -> pm.getRole().name(), (r1, r2) -> r1));
+                for (ProjectResponse pr : pageWrapper.getContent()) {
+                    String role = roleByProjectId.get(pr.getId());
+                    if (role != null) {
+                        pr.setMyRole(role);
+                    }
                 }
             }
+
+            // 2. Member counts & Members
+            try {
+                List<Object[]> memberCounts = projectMemberRepository.countMembersByProjectIds(projectIds);
+                Map<Long, Integer> memberCountMap = memberCounts.stream()
+                        .collect(Collectors.toMap(arr -> (Long) arr[0], arr -> ((Number) arr[1]).intValue()));
+
+                List<ProjectMember> allMembers = projectMemberRepository.findMembersByProjectIds(projectIds);
+                Map<Long, List<MemberResponse>> membersMap = allMembers.stream()
+                        .collect(Collectors.groupingBy(
+                                pm -> pm.getProject().getId(),
+                                Collectors.mapping(MemberResponse::from, Collectors.toList())
+                        ));
+
+                for (ProjectResponse pr : pageWrapper.getContent()) {
+                    pr.setMemberCount(memberCountMap.getOrDefault(pr.getId(), 0));
+                    pr.setMembers(membersMap.getOrDefault(pr.getId(), new ArrayList<>()));
+                }
+            } catch (Exception ignored) {}
+
+            // 3. Open issues count
+            try {
+                List<Object[]> openIssueCounts = issueRepository.countOpenIssuesByProjectIds(projectIds);
+                Map<Long, Integer> openIssuesMap = openIssueCounts.stream()
+                        .collect(Collectors.toMap(arr -> (Long) arr[0], arr -> ((Number) arr[1]).intValue()));
+                for (ProjectResponse pr : pageWrapper.getContent()) {
+                    pr.setOpenIssuesCount(openIssuesMap.getOrDefault(pr.getId(), 0));
+                }
+            } catch (Exception ignored) {}
         }
         return pageWrapper;
     }
@@ -170,6 +223,13 @@ public class ProjectServiceImpl implements IProjectService {
             projectMemberRepository.findByProjectIdAndUserId(projectId, principal.getId())
                     .ifPresent(pm -> res.setMyRole(pm.getRole().name()));
         }
+        try {
+            res.setMemberCount((int) projectMemberRepository.countByProjectId(projectId));
+            res.setMembers(projectMemberRepository.findByProjectId(projectId).stream()
+                    .map(MemberResponse::from)
+                    .collect(Collectors.toList()));
+            res.setOpenIssuesCount((int) issueRepository.countByProjectIdAndDeletedAtIsNull(projectId));
+        } catch (Exception ignored) {}
         return res;
     }
 
@@ -180,7 +240,7 @@ public class ProjectServiceImpl implements IProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dự án với ID: " + projectId));
 
-        String before = "Name: " + project.getName() + ", Desc: " + project.getDescription();
+        String before = "Name: " + project.getName() + ", Desc: " + project.getDescription() + ", Color: " + project.getColor() + ", Icon: " + project.getIcon();
 
         if (request.getName() != null && !request.getName().isBlank()) {
             project.setName(request.getName().trim());
@@ -188,13 +248,27 @@ public class ProjectServiceImpl implements IProjectService {
         if (request.getDescription() != null) {
             project.setDescription(request.getDescription().trim());
         }
+        if (request.getColor() != null && !request.getColor().isBlank()) {
+            project.setColor(request.getColor().trim());
+        }
+        if (request.getIcon() != null && !request.getIcon().isBlank()) {
+            project.setIcon(request.getIcon().trim());
+        }
 
         project = projectRepository.save(project);
-        String after = "Name: " + project.getName() + ", Desc: " + project.getDescription();
+        String after = "Name: " + project.getName() + ", Desc: " + project.getDescription() + ", Color: " + project.getColor() + ", Icon: " + project.getIcon();
 
         auditService.log("UPDATE_PROJECT", "PROJECT", project.getId(), project.getId(), before, after);
 
-        return ProjectResponse.from(project);
+        ProjectResponse res = ProjectResponse.from(project);
+        try {
+            res.setMemberCount((int) projectMemberRepository.countByProjectId(projectId));
+            res.setMembers(projectMemberRepository.findByProjectId(projectId).stream()
+                    .map(MemberResponse::from)
+                    .collect(Collectors.toList()));
+            res.setOpenIssuesCount((int) issueRepository.countByProjectIdAndDeletedAtIsNull(projectId));
+        } catch (Exception ignored) {}
+        return res;
     }
 
     @Transactional
@@ -227,6 +301,13 @@ public class ProjectServiceImpl implements IProjectService {
             projectMemberRepository.findByProjectIdAndUserId(projectId, principal.getId())
                     .ifPresent(pm -> res.setMyRole(pm.getRole().name()));
         }
+        try {
+            res.setMemberCount((int) projectMemberRepository.countByProjectId(projectId));
+            res.setMembers(projectMemberRepository.findByProjectId(projectId).stream()
+                    .map(MemberResponse::from)
+                    .collect(Collectors.toList()));
+            res.setOpenIssuesCount((int) issueRepository.countByProjectIdAndDeletedAtIsNull(projectId));
+        } catch (Exception ignored) {}
         return res;
     }
 
@@ -244,7 +325,15 @@ public class ProjectServiceImpl implements IProjectService {
 
         auditService.log("CLOSE_PROJECT", "PROJECT", project.getId(), project.getId(), "Status: ACTIVE", "Status: CLOSED");
 
-        return ProjectResponse.from(project);
+        ProjectResponse res = ProjectResponse.from(project);
+        try {
+            res.setMemberCount((int) projectMemberRepository.countByProjectId(projectId));
+            res.setMembers(projectMemberRepository.findByProjectId(projectId).stream()
+                    .map(MemberResponse::from)
+                    .collect(Collectors.toList()));
+            res.setOpenIssuesCount((int) issueRepository.countByProjectIdAndDeletedAtIsNull(projectId));
+        } catch (Exception ignored) {}
+        return res;
     }
 
     // Kept for backward compatibility
@@ -256,6 +345,8 @@ public class ProjectServiceImpl implements IProjectService {
         req.setName(project.getName());
         req.setProjectKey(project.getProjectKey());
         req.setDescription(project.getDescription());
+        req.setColor(project.getColor());
+        req.setIcon(project.getIcon());
         createProject(req, creator);
         return projectRepository.findByProjectKeyIgnoreCase(project.getProjectKey()).orElse(project);
     }

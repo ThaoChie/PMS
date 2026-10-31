@@ -40,6 +40,9 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
 
     long countByProjectIdAndDeletedAtIsNull(Long projectId);
 
+    @Query("SELECT i.project.id, COUNT(i) FROM Issue i WHERE i.project.id IN :projectIds AND i.deletedAt IS NULL AND (i.status IS NULL OR i.status.category != com.pms.backend.enu.StatusCategory.DONE) GROUP BY i.project.id")
+    List<Object[]> countOpenIssuesByProjectIds(@Param("projectIds") List<Long> projectIds);
+
     @EntityGraph(attributePaths = {"status", "assignee", "reporter", "project"})
     @Query(value = "SELECT i FROM Issue i WHERE i.project.id = :projectId AND i.deletedAt IS NULL AND " +
            "(:type IS NULL OR i.type = :type) AND " +

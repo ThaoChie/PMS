@@ -31,6 +31,8 @@ export const projectService = {
     key?: string;
     projectKey?: string;
     description?: string;
+    color?: string;
+    icon?: string;
     initialInvites?: string[];
     initialEmails?: string[];
   }): Promise<ApiResponse<any>> {
@@ -38,6 +40,8 @@ export const projectService = {
       name: data.name,
       projectKey: data.projectKey || data.key,
       description: data.description,
+      color: data.color,
+      icon: data.icon,
       initialEmails: data.initialEmails || data.initialInvites || [],
     };
     return axiosClient.post<any, ApiResponse<any>>('/projects', payload);
@@ -49,24 +53,25 @@ export const projectService = {
 
   async updateProjectPermissions(
     id: string,
-    permissions: import('../types').ProjectPermissions,
+    permissions: {
+      allowMemberDeleteIssue?: boolean;
+      allowMemberDeleteSubtask?: boolean;
+      allowMemberConvertSubtask?: boolean;
+      allowMemberManageCustomFields?: boolean;
+    }
   ): Promise<ApiResponse<Project>> {
     return axiosClient.put<any, ApiResponse<Project>>(`/projects/${id}/permissions`, permissions);
   },
 
-  async closeProject(id: string): Promise<ApiResponse<void>> {
-    return axiosClient.post<any, ApiResponse<void>>(`/projects/${id}/close`);
+  async closeProject(id: string): Promise<ApiResponse<Project>> {
+    return axiosClient.post<any, ApiResponse<Project>>(`/projects/${id}/close`);
   },
 
   async suggestProjectKey(name: string): Promise<ApiResponse<{ suggestedKey: string }>> {
-    return axiosClient.get<any, ApiResponse<{ suggestedKey: string }>>('/projects/suggest-key', {
-      params: { name },
-    });
+    return axiosClient.get('/projects/suggest-key', { params: { name } });
   },
 
   async checkProjectKey(key: string): Promise<ApiResponse<{ available: boolean; suggestedKey: string }>> {
-    return axiosClient.get<any, ApiResponse<{ available: boolean; suggestedKey: string }>>('/projects/check-key', {
-      params: { key },
-    });
+    return axiosClient.get('/projects/check-key', { params: { key } });
   },
 };

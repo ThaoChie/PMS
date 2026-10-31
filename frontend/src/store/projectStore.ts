@@ -5,14 +5,27 @@ import { projectService } from '../services/projectService';
 export function mapProjectResponseToProject(raw: any): Project {
   if (!raw) return raw;
   const myRole = raw.myRole ? (raw.myRole.toLowerCase() as Role) : undefined;
+  const members = (raw.members || []).map((m: any) => ({
+    id: String(m.userId || m.id),
+    name: m.fullName || m.name || '',
+    email: m.email || '',
+    avatarUrl: m.avatarUrl,
+    initials: (m.fullName || m.email || 'U').slice(0, 2).toUpperCase(),
+    role: m.role ? (m.role.toLowerCase() as Role) : undefined,
+  }));
+  const memberCount = raw.memberCount ?? (members.length > 0 ? members.length : 1);
+
   return {
     id: String(raw.id),
     name: raw.name || '',
     key: raw.projectKey || raw.key || '',
     description: raw.description || '',
     status: raw.status === 'CLOSED' || raw.status === 'Closed' ? 'Closed' : 'Active',
+    color: raw.color || '#1A1A1A',
+    icon: raw.icon || 'folder',
     openIssues: raw.openIssuesCount ?? raw.openIssues ?? 0,
-    members: raw.members || [],
+    memberCount,
+    members,
     createdAt: raw.createdAt || new Date().toISOString(),
     myRole,
     allowMemberDeleteIssue: raw.allowMemberDeleteIssue ?? false,
