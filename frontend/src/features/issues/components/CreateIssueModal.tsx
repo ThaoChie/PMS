@@ -248,7 +248,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   <option value="LOWEST">Rất thấp (Lowest)</option>
                 </select>
               </Field>
-              <Field label="Người thực hiện" optional>
+              <Field label="Người thực hiện" required>
                 <select
                   value={form.assigneeId}
                   onChange={(e) => set('assigneeId', e.target.value)}
@@ -284,7 +284,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <Field label="Hạn hoàn thành" optional>
+              <Field label="Hạn chót" required>
                 <input
                   type="date"
                   value={form.dueDate}
