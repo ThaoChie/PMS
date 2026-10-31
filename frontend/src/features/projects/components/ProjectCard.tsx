@@ -11,23 +11,26 @@ interface ProjectCardProps {
 export default function ProjectCard({ project, onClick }: ProjectCardProps) {
   return (
     <div
-      className="bg-white border border-[#E5E5E7] rounded-xl p-5 hover:border-[#C5C5C8] hover:shadow-sm transition-all cursor-pointer group"
+      className="bg-white border border-[#E5E5E7] rounded-xl p-5 hover:border-[#C5C5C8] hover:shadow-sm transition-all cursor-pointer group overflow-hidden"
       onClick={onClick}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2.5">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <div className="w-8 h-8 rounded-lg bg-[#1A1A1A] flex items-center justify-center text-white text-xs font-bold shrink-0">
             {(project.key || 'PR').slice(0, 2)}
           </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-[#1A1A1A] truncate group-hover:text-[#E53E3E] transition-colors">
+          <div className="min-w-0 flex-1">
+            <h3
+              className="text-sm font-semibold text-[#1A1A1A] truncate group-hover:text-[#E53E3E] transition-colors"
+              title={project.name}
+            >
               {project.name}
             </h3>
             <p className="text-[10px] font-mono text-[#9B9B9F]">{project.key}</p>
           </div>
         </div>
         <span
-          className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+          className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border whitespace-nowrap self-start ${
             project.status === 'Active'
               ? 'bg-[#F7F7F8] text-[#1A1A1A] border-[#E5E5E7]'
               : 'bg-[#F7F7F8] text-[#9B9B9F] border-[#E5E5E7]'

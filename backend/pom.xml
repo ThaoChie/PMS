@@ -17,6 +17,7 @@
 		<java.version>17</java.version>
 		<springdoc.version>2.3.0</springdoc.version>
 		<poi.version>5.2.5</poi.version>
+		<commons-compress.version>1.26.0</commons-compress.version>
 		<sanitizer.version>20220608.1</sanitizer.version>
 		<flyway.version>10.10.0</flyway.version>
 	</properties>
@@ -131,6 +132,11 @@
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-ooxml</artifactId>
 			<version>${poi.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-compress</artifactId>
+			<version>${commons-compress.version}</version>
 		</dependency>
 
 		<!-- Test Dependencies -->

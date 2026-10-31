@@ -34,8 +34,9 @@ export default function ProjectList({
     setCurrentProject(p);
     if (onSelectProject) {
       onSelectProject(p);
+    } else if (onSettings) {
+      onSettings();
     }
-    onSettings();
   }
 
   return (
