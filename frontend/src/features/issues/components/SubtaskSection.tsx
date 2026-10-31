@@ -3,6 +3,7 @@ import { CheckSquare, Plus, Loader2, UserMinus, Trash2 } from 'lucide-react';
 import type { SubTask } from '../../../types';
 import UserAvatar from '../../../components/common/UserAvatar';
 import { issueService } from '../../../services/issueService';
+import { toast } from '../../../store/toastStore';
 
 interface SubtaskSectionProps {
   subtasks?: SubTask[];
@@ -117,9 +118,10 @@ export default function SubtaskSection({
                     if (confirm(`Bạn có chắc muốn xóa subtask ${st.key}?`)) {
                       try {
                         await issueService.deleteIssue(st.key);
+                        toast.success(`Đã xóa subtask ${st.key}`);
                         onSubtaskCreated?.();
                       } catch (err: any) {
-                        alert(err?.response?.data?.message || err?.message || 'Xóa subtask thất bại');
+                        toast.error(err?.response?.data?.message || err?.message || 'Xóa subtask thất bại');
                       }
                     }
                   }}

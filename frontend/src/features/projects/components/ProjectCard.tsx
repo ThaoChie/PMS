@@ -14,7 +14,7 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
 
   return (
     <div
-      className="bg-white border border-[#E5E5E7] rounded-xl p-5 hover:border-[#C5C5C8] hover:shadow-sm transition-all cursor-pointer group flex flex-col justify-between"
+      className="bg-white border border-[#E5E5E7] rounded-xl p-5 hover:border-[#C5C5C8] hover:shadow-sm transition-all cursor-pointer group flex flex-col justify-between overflow-hidden"
       onClick={onClick}
     >
       <div>
@@ -47,7 +47,6 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
             {project.status === 'Active' ? 'Đang hoạt động' : 'Đã đóng'}
           </span>
         </div>
-
         <p className="text-xs text-[#6B6B70] line-clamp-2 mb-4 min-h-[32px] break-words">
           {project.description || <span className="italic text-[#9B9B9F]">Không có mô tả dự án</span>}
         </p>

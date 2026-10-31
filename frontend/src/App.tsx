@@ -25,6 +25,7 @@ import IssueDetailPage from './features/issues/pages/IssueDetailPage';
 
 import ForgotPassword from './features/auth/pages/ForgotPassword';
 import ResetPassword from './features/auth/pages/ResetPassword';
+import ToastContainer from './components/common/ToastContainer';
 import { useAuthStore } from './store/authStore';
 import { useProjectStore } from './store/projectStore';
 
@@ -126,6 +127,7 @@ export default function App() {
 
   function handleSelectProject(proj: Project) {
     setCurrentProject(proj);
+    setCurrentScreen('board');
   }
 
   if (authLoading) {
@@ -151,21 +153,27 @@ export default function App() {
 
   // Auth screens
   if (!isAuthenticated) {
+    let authContent = null;
     if (authView === 'register') {
-      return <Register onLogin={handleLogin} onBack={() => setAuthView('login')} />;
-    }
-    if (authView === 'forgot-password') {
-      return <ForgotPassword onBack={() => setAuthView('login')} />;
-    }
-    if (authView === 'reset-password') {
-      return <ResetPassword onSuccess={() => setAuthView('login')} />;
+      authContent = <Register onLogin={handleLogin} onBack={() => setAuthView('login')} />;
+    } else if (authView === 'forgot-password') {
+      authContent = <ForgotPassword onBack={() => setAuthView('login')} />;
+    } else if (authView === 'reset-password') {
+      authContent = <ResetPassword onSuccess={() => setAuthView('login')} />;
+    } else {
+      authContent = (
+        <Login
+          onLogin={handleLogin}
+          onRegister={() => setAuthView('register')}
+          onForgotPassword={() => setAuthView('forgot-password')}
+        />
+      );
     }
     return (
-      <Login
-        onLogin={handleLogin}
-        onRegister={() => setAuthView('register')}
-        onForgotPassword={() => setAuthView('forgot-password')}
-      />
+      <>
+        {authContent}
+        <ToastContainer />
+      </>
     );
   }
 
@@ -285,6 +293,9 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Global Toasts */}
+      <ToastContainer />
     </>
   );
 }
