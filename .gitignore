@@ -44,3 +44,8 @@ task.md
 statusproject.md
 API_DOCUMENTATION.md
 DEPLOYMENT.md
+
+# AI Agent & Internal workflows
+.claude/
+.github/
+test-results/

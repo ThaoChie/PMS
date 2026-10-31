@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Phone, User as UserIcon, Mail } from 'lucide-react';
 import AvatarUpload from '../components/AvatarUpload';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import { useAuthStore, mapUserResponseToUser } from '../../../store/authStore';
@@ -9,14 +9,16 @@ export default function Profile() {
   const { user, updateUser } = useAuthStore();
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
-      setName(user.name);
-      setEmail(user.email);
+      setName(user.name || '');
+      setEmail(user.email || '');
+      setPhoneNumber(user.phoneNumber || '');
     }
   }, [user]);
 
@@ -24,10 +26,14 @@ export default function Profile() {
 
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
+    if (!name.trim()) {
+      setError('Tên hiển thị không được để trống');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      const res = await userService.updateMe({ name });
+      const res = await userService.updateMe({ name: name.trim(), phoneNumber: phoneNumber.trim() });
       if (res?.data) {
         const mapped = mapUserResponseToUser(res.data);
         updateUser(mapped);
@@ -52,10 +58,23 @@ export default function Profile() {
     }
   }
 
+  async function handleSelectPreset(presetUrl: string) {
+    try {
+      const res = await userService.updateMe({ avatarUrl: presetUrl });
+      if (res?.data) {
+        const mapped = mapUserResponseToUser(res.data);
+        updateUser(mapped);
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Không thể cập nhật ảnh mẫu');
+    }
+  }
+
   const currentUser = user || {
     id: '',
     name: name || 'Người dùng',
     email: email || '',
+    phoneNumber: phoneNumber || '',
     initials: (name || 'U').slice(0, 2).toUpperCase(),
     role: 'member' as const,
     status: 'Active' as const,
@@ -81,42 +100,65 @@ export default function Profile() {
         <div className="bg-white border border-[#E5E5E7] rounded-xl p-6 mb-5">
           <h2 className="text-sm font-semibold text-[#1A1A1A] mb-5">Thông tin tài khoản</h2>
 
-          <AvatarUpload user={currentUser} onUpload={handleAvatarUpload} />
+          <AvatarUpload
+            user={currentUser}
+            onUpload={handleAvatarUpload}
+            onSelectPreset={handleSelectPreset}
+          />
 
           <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
-                  Tên hiển thị
+                <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5 flex items-center gap-1.5">
+                  <UserIcon className="w-3.5 h-3.5 text-[#6B6B70]" /> Tên hiển thị <span className="text-[#E53E3E]">*</span>
                 </label>
                 <input
+                  type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  placeholder="Nhập họ và tên"
+                  className="w-full px-3 py-2.5 border border-[#E5E5E7] rounded-lg text-sm text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] transition-colors"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5 flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-[#6B6B70]" /> Số điện thoại
+                </label>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="0912 345 678"
                   className="w-full px-3 py-2.5 border border-[#E5E5E7] rounded-lg text-sm text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] transition-colors"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
-                  Địa chỉ email
-                </label>
-                <input
-                  value={email}
-                  disabled
-                  className="w-full px-3 py-2.5 border border-[#E5E5E7] rounded-lg text-sm text-[#9B9B9F] bg-[#F7F7F8] cursor-not-allowed"
-                />
-              </div>
             </div>
-            <div className="flex items-center gap-3 pt-1">
+
+            <div>
+              <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-[#6B6B70]" /> Địa chỉ email
+              </label>
+              <input
+                type="email"
+                value={email}
+                disabled
+                className="w-full px-3 py-2.5 border border-[#E5E5E7] rounded-lg text-sm text-[#9B9B9F] bg-[#F7F7F8] cursor-not-allowed"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-60 transition-colors"
+                className="px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-60 transition-colors cursor-pointer"
               >
                 {saving ? 'Đang lưu…' : 'Lưu thay đổi'}
               </button>
               {saved && (
-                <span className="flex items-center gap-1.5 text-xs text-[#1A1A1A]">
-                  <Check className="w-3.5 h-3.5" /> Đã lưu ✓
+                <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+                  <Check className="w-3.5 h-3.5" /> Đã lưu thành công ✓
                 </span>
               )}
             </div>
@@ -128,8 +170,8 @@ export default function Profile() {
           <ChangePasswordForm />
         ) : (
           <div className="bg-[#F7F7F8] border border-[#E5E5E7] rounded-xl p-5">
-            <p className="text-xs text-[#6B6B70]">
-              Tài khoản của bạn được liên kết qua Google. Quản lý mật khẩu được xử lý thông qua tài khoản Google của bạn.
+            <p className="text-xs text-[#6B6B70] leading-relaxed">
+              Tài khoản của bạn được liên kết qua Google. Quản lý mật khẩu được xử lý an toàn thông qua tài khoản Google của bạn.
             </p>
           </div>
         )}

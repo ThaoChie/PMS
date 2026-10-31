@@ -9,6 +9,11 @@ public class UpdateProfileRequest {
 
     private String name;
 
+    @JsonAlias({"phone"})
+    private String phoneNumber;
+
+    private String avatarUrl;
+
     public String getFullName() {
         if (fullName != null && !fullName.isBlank()) {
             return fullName;
@@ -19,4 +24,8 @@ public class UpdateProfileRequest {
     public void setFullName(String fullName) { this.fullName = fullName; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 }

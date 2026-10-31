@@ -12,8 +12,8 @@ export default function EmailLoginForm({
   onForgotPassword,
   loading = false,
 }: EmailLoginFormProps) {
-  const [email, setEmail] = useState('admin@drl.edu.vn');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [slowNotice, setSlowNotice] = useState(false);
 
@@ -44,7 +44,7 @@ export default function EmailLoginForm({
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="admin@drl.edu.vn"
+          placeholder="name@example.com"
           className="w-full px-4 py-2.5 sm:py-3 border border-[#E2E8F0] rounded-xl text-sm text-[#1E293B] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#C5221F] focus:ring-1 focus:ring-[#C5221F] transition-all bg-white"
           required
         />

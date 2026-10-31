@@ -16,8 +16,15 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
     @Query("SELECT pm FROM ProjectMember pm JOIN FETCH pm.user WHERE pm.project.id = :projectId")
     List<ProjectMember> findByProjectId(@Param("projectId") Long projectId);
 
+    @Query("SELECT pm.project.id, COUNT(pm) FROM ProjectMember pm WHERE pm.project.id IN :projectIds GROUP BY pm.project.id")
+    List<Object[]> countMembersByProjectIds(@Param("projectIds") List<Long> projectIds);
+
+    @Query("SELECT pm FROM ProjectMember pm JOIN FETCH pm.user WHERE pm.project.id IN :projectIds")
+    List<ProjectMember> findMembersByProjectIds(@Param("projectIds") List<Long> projectIds);
+
     Optional<ProjectMember> findByProjectIdAndUserId(Long projectId, Long userId);
     boolean existsByProjectIdAndUserId(Long projectId, Long userId);
+    long countByProjectId(Long projectId);
     long countByProjectIdAndRole(Long projectId, ProjectRole role);
     void deleteByProjectIdAndUserId(Long projectId, Long userId);
 }

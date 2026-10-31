@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Plus, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { X, Plus, CheckCircle2, AlertCircle, Sparkles, Check } from 'lucide-react';
 import { projectService } from '../../../services/projectService';
 import { useProjectStore, mapProjectResponseToProject } from '../../../store/projectStore';
+import { PROJECT_COLORS, PROJECT_ICONS } from '../constants/projectBranding';
 
 interface CreateProjectModalProps {
   onClose: () => void;
@@ -37,6 +38,8 @@ export function generateBaseKey(name: string): string {
 export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateProjectModalProps) {
   const [name, setName] = useState('');
   const [key, setKey] = useState('');
+  const [color, setColor] = useState('#1A1A1A');
+  const [icon, setIcon] = useState('folder');
   const [isKeyManuallyEdited, setIsKeyManuallyEdited] = useState(false);
   const [keyWarning, setKeyWarning] = useState<{ message: string; suggested?: string } | null>(null);
   const [description, setDescription] = useState('');
@@ -133,6 +136,8 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
         name: name.trim(),
         projectKey: key.trim().toUpperCase(),
         description: description.trim(),
+        color,
+        icon,
         initialEmails: validEmails,
       });
 
@@ -186,7 +191,7 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
       onClick={onClose}
     >
       <div
-        className="bg-white border border-[#E5E5E7] rounded-xl w-full max-w-md shadow-xl"
+        className="bg-white border border-[#E5E5E7] rounded-xl w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E5E7]">
@@ -258,33 +263,36 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
                       setKeyWarning(null);
                       setError(null);
                     }}
-                    className="underline text-red-700 hover:text-red-900 font-semibold shrink-0"
+                    className="font-semibold text-red-900 underline shrink-0 hover:text-black"
                   >
                     Dùng {keyWarning.suggested}
                   </button>
                 )}
               </div>
             )}
+
             <div>
               <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
-                Tên dự án <span className="text-[#E53E3E]">*</span>
+                Tên dự án <span className="text-[#E53E3E] font-bold">*</span>
               </label>
               <input
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="Ví dụ: Thiết kế ứng dụng di động"
+                placeholder="Ví dụ: Thiết kế di động"
                 className={inputCls}
+                maxLength={100}
                 required
+                autoFocus
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-medium text-[#1A1A1A]">
-                  Mã dự án (Key) <span className="text-[#E53E3E]">*</span>
+                  Mã dự án (Key) <span className="text-[#E53E3E] font-bold">*</span>
                 </label>
                 {!isKeyManuallyEdited && (
-                  <span className="flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
+                  <span className="text-[10px] text-[#059669] flex items-center gap-1 font-medium">
                     <Sparkles className="w-3 h-3" /> Tự động sinh mã khả dụng
                   </span>
                 )}
@@ -325,6 +333,31 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
                   Từ 2–10 ký tự chữ hoa/số. Dùng làm tiền tố mã công việc (ví dụ TEST-1).
                 </p>
               )}
+            </div>
+
+            {/* Color selection */}
+            <div>
+              <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">
+                Màu sắc nhận diện
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                {PROJECT_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    title={c.label}
+                    onClick={() => setColor(c.value)}
+                    style={{ backgroundColor: c.value }}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform ${
+                      color === c.value
+                        ? 'ring-2 ring-offset-2 ring-[#1A1A1A] scale-110'
+                        : 'hover:scale-105 opacity-80 hover:opacity-100'
+                    }`}
+                  >
+                    {color === c.value && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>
@@ -370,7 +403,7 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
                   onClick={addEmail}
                   className="flex items-center gap-1.5 text-xs text-[#6B6B70] hover:text-[#1A1A1A] transition-colors"
                 >
-                  <Plus className="w-3.5 h-3.5" /> + Thêm email khác
+                  <Plus className="w-3.5 h-3.5" /> Thêm email khác
                 </button>
               </div>
             </div>
