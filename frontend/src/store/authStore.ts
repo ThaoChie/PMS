@@ -29,6 +29,7 @@ export function mapUserResponseToUser(raw: any): User {
     role,
     status,
     avatarUrl: raw.avatarUrl,
+    phoneNumber: raw.phoneNumber,
     isGoogleAccount: raw.authProvider === 'GOOGLE' || raw.isGoogleAccount === true,
   };
 }

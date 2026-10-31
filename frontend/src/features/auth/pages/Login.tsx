@@ -13,7 +13,7 @@ interface LoginProps {
 
 export default function Login({ onLogin, onRegister, onForgotPassword }: LoginProps) {
   const [loading, setLoading] = useState(false);
-  const [showGoogle, setShowGoogle] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleEmailSubmit(email: string, password: string) {
@@ -30,18 +30,12 @@ export default function Login({ onLogin, onRegister, onForgotPassword }: LoginPr
               userObj = mapUserResponseToUser(meRes.data);
             }
           } catch {
-            // fallback if getMe fails
+            // Error fetching me
           }
         }
         if (!userObj) {
-          userObj = {
-            id: '1',
-            name: email.split('@')[0],
-            email,
-            initials: email.slice(0, 2).toUpperCase(),
-            role: 'member',
-            status: 'Active',
-          };
+          setError('Không thể tải thông tin tài khoản người dùng từ máy chủ. Vui lòng thử lại.');
+          return;
         }
         useAuthStore.getState().login(userObj, res.data.accessToken);
         onLogin();
@@ -61,6 +55,40 @@ export default function Login({ onLogin, onRegister, onForgotPassword }: LoginPr
       setError(msg);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleGoogleTokenReceived(idToken: string) {
+    setGoogleLoading(true);
+    setError(null);
+    try {
+      const res = await authService.googleLogin(idToken);
+      if (res?.success || res?.data?.accessToken) {
+        let userObj = res.data?.user ? mapUserResponseToUser(res.data.user) : null;
+        if (!userObj) {
+          try {
+            const meRes = await userService.getMe();
+            if (meRes?.data) {
+              userObj = mapUserResponseToUser(meRes.data);
+            }
+          } catch {
+            // Error fetching me
+          }
+        }
+        if (!userObj) {
+          setError('Không thể tải thông tin tài khoản Google từ máy chủ.');
+          return;
+        }
+        useAuthStore.getState().login(userObj, res.data.accessToken);
+        onLogin();
+      } else {
+        setError(res?.message || 'Đăng nhập bằng Google không thành công');
+      }
+    } catch (err: any) {
+      const rawMsg = err?.response?.data?.message || err?.message || '';
+      setError(rawMsg || 'Xác thực tài khoản Google thất bại. Vui lòng kiểm tra lại ID Token.');
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -87,7 +115,7 @@ export default function Login({ onLogin, onRegister, onForgotPassword }: LoginPr
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs sm:text-sm font-medium">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs sm:text-sm font-medium leading-relaxed">
             {error}
           </div>
         )}
@@ -99,30 +127,35 @@ export default function Login({ onLogin, onRegister, onForgotPassword }: LoginPr
           loading={loading}
         />
 
-        {/* Additional Auth Options */}
-        <div className="mt-4 pt-3 border-t border-[#F1F5F9] space-y-3">
-          {!showGoogle ? (
-            <button
-              type="button"
-              onClick={() => setShowGoogle(true)}
-              className="w-full text-center text-xs text-[#64748B] hover:text-[#1E293B] transition-colors py-1"
-            >
-              Hoặc đăng nhập bằng phương thức khác
-            </button>
-          ) : (
-            <GoogleLoginButton onSuccess={onLogin} />
-          )}
+        {/* Divider Hoặc */}
+        <div className="relative my-5">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[#E2E8F0]" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-3 text-[#64748B] font-medium tracking-wide">
+              Hoặc tiếp tục với
+            </span>
+          </div>
+        </div>
 
-          <p className="text-center text-xs text-[#64748B]">
-            Chưa có tài khoản?{' '}
-            <button
-              type="button"
-              onClick={onRegister}
-              className="text-[#C5221F] font-semibold hover:underline transition-all"
-            >
-              Đăng ký ngay
-            </button>
-          </p>
+        {/* Google Official Login Button */}
+        <GoogleLoginButton
+          onTokenReceived={handleGoogleTokenReceived}
+          onError={(msg) => setError(msg)}
+          loading={googleLoading}
+        />
+
+        {/* Footer Link */}
+        <div className="mt-5 text-center text-xs text-[#64748B]">
+          Chưa có tài khoản?{' '}
+          <button
+            type="button"
+            onClick={onRegister}
+            className="text-[#C5221F] font-semibold hover:underline transition-all cursor-pointer"
+          >
+            Đăng ký ngay
+          </button>
         </div>
       </div>
     </div>

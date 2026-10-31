@@ -148,7 +148,7 @@ export default function Register({ onLogin, onBack }: RegisterProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {field('name', 'Họ và tên', 'text', 'Nguyễn Văn A')}
-          {field('email', 'Email', 'email', 'student@drl.edu.vn')}
+          {field('email', 'Email', 'email', 'name@example.com')}
 
           <div>
             <label className="block text-xs sm:text-sm font-medium text-[#334155] mb-1.5">

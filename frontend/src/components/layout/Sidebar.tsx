@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { Role, Screen, Project, User } from '../../types';
 import ProjectSwitcher from './ProjectSwitcher';
+import ProjectBadge from '../../features/projects/components/ProjectBadge';
 import UserMenu from './UserMenu';
 import { useUIStore } from '../../store/uiStore';
 
@@ -91,10 +92,15 @@ export default function Sidebar({
         <div className="p-2 flex justify-center">
           <div
             title={selectedProject ? `${selectedProject.name} (${selectedProject.key})` : 'Chọn dự án'}
-            className="w-9 h-9 rounded-lg bg-white border border-[#E5E5E7] flex items-center justify-center font-bold text-xs text-[#1A1A1A] cursor-pointer hover:border-[#1A1A1A]"
+            className="cursor-pointer hover:opacity-90 transition-opacity"
             onClick={() => onNavigate('projects')}
           >
-            {selectedProject ? selectedProject.key.substring(0, 2) : 'PR'}
+            <ProjectBadge
+              color={selectedProject?.color}
+              icon={selectedProject?.icon}
+              projectKey={selectedProject?.key}
+              size="md"
+            />
           </div>
         </div>
       )}
@@ -120,7 +126,7 @@ export default function Sidebar({
           </button>
         ))}
 
-        {canSeeSettings && (
+        {(canSeeSettings || Boolean(selectedProject?.allowMemberManageCustomFields)) && (
           <>
             <div className="pt-3 pb-1">
               <div className="h-px bg-[#E5E5E7] mx-1" />
@@ -130,7 +136,7 @@ export default function Sidebar({
                 </p>
               )}
             </div>
-            {SETTINGS_NAV.map(({ id, label, icon: Icon }) => (
+            {SETTINGS_NAV.filter(({ id }) => canSeeSettings || (id === 'custom-fields' && selectedProject?.allowMemberManageCustomFields)).map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 type="button"
@@ -167,9 +173,17 @@ export default function Sidebar({
             className="cursor-pointer"
             onClick={() => onNavigate('profile')}
           >
-            <div className="w-8 h-8 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-xs font-semibold">
-              {user.initials || 'U'}
-            </div>
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name}
+                className="w-8 h-8 rounded-full object-cover border border-[#E5E5E7]"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-xs font-semibold">
+                {user.initials || 'U'}
+              </div>
+            )}
           </div>
         )}
       </div>

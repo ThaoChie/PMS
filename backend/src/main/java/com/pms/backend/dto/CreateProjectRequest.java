@@ -19,6 +19,12 @@ public class CreateProjectRequest {
 
     private String description;
 
+    @Size(max = 30, message = "Mã màu không được vượt quá 30 ký tự")
+    private String color;
+
+    @Size(max = 50, message = "Tên icon không được vượt quá 50 ký tự")
+    private String icon;
+
     private List<String> initialEmails = new ArrayList<>();
 
     public String getName() { return name; }
@@ -27,6 +33,10 @@ public class CreateProjectRequest {
     public void setProjectKey(String projectKey) { this.projectKey = projectKey != null ? projectKey.toUpperCase().trim() : null; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getColor() { return color != null ? color : "#1A1A1A"; }
+    public void setColor(String color) { this.color = color; }
+    public String getIcon() { return icon != null ? icon : "folder"; }
+    public void setIcon(String icon) { this.icon = icon; }
     public List<String> getInitialEmails() { return initialEmails; }
     public void setInitialEmails(List<String> initialEmails) { this.initialEmails = initialEmails != null ? initialEmails : new ArrayList<>(); }
 }
