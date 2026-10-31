@@ -116,7 +116,7 @@ public class InvitationServiceImpl implements IInvitationService {
                 inviter
         );
 
-        String acceptUrl = "http://localhost:3000/invitations";
+        String acceptUrl = "http://localhost:5173/invitations";
         mailService.sendMailAsync(
                 email,
                 "[EPMS] Lời mời tham gia dự án " + project.getName(),

@@ -24,6 +24,12 @@ public class Project extends BaseEntity {
     @Column(nullable = false)
     private ProjectStatus status = ProjectStatus.INITIATED;
 
+    @Column(name = "color", length = 30)
+    private String color = "#1A1A1A";
+
+    @Column(name = "icon", length = 50)
+    private String icon = "folder";
+
     @Column(name = "issue_seq", nullable = false)
     private Integer issueSeq = 0;
 
@@ -55,6 +61,10 @@ public class Project extends BaseEntity {
     public void setDescription(String description) { this.description = description; }
     public ProjectStatus getStatus() { return status; }
     public void setStatus(ProjectStatus status) { this.status = status; }
+    public String getColor() { return color != null ? color : "#1A1A1A"; }
+    public void setColor(String color) { this.color = color; }
+    public String getIcon() { return icon != null ? icon : "folder"; }
+    public void setIcon(String icon) { this.icon = icon; }
     public Integer getIssueSeq() { return issueSeq; }
     public void setIssueSeq(Integer issueSeq) { this.issueSeq = issueSeq; }
     public User getCreatedBy() { return createdBy; }

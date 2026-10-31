@@ -74,11 +74,20 @@ public class CustomFieldServiceImpl implements ICustomFieldService {
             throw new BusinessException(ErrorCode.CONFLICT, "Mã trường '" + fieldKey + "' đã tồn tại trong dự án");
         }
 
+        String rawType = request.getType() != null ? request.getType().toUpperCase().trim() : "TEXT";
+        Set<String> validTypes = Set.of("TEXT", "NUMBER", "DATE", "DROPDOWN", "SELECT", "CHECKBOX");
+        if (!validTypes.contains(rawType)) {
+            throw new ValidationException("Kiểu dữ liệu trường tùy chỉnh không hợp lệ: " + rawType + ". Các kiểu hỗ trợ: TEXT, NUMBER, DATE, DROPDOWN, CHECKBOX");
+        }
+        if (("DROPDOWN".equals(rawType) || "SELECT".equals(rawType)) && !StringUtils.hasText(request.getOptions())) {
+            throw new ValidationException("Trường kiểu danh sách lựa chọn (DROPDOWN) bắt buộc phải có danh sách các lựa chọn (options)");
+        }
+
         ProjectCustomField field = new ProjectCustomField(
                 project,
                 request.getName().trim(),
                 fieldKey,
-                request.getType() != null ? request.getType().toUpperCase() : "TEXT",
+                rawType,
                 request.getRequired() != null ? request.getRequired() : false,
                 request.getOptions(),
                 request.getDefaultValue(),
@@ -107,7 +116,15 @@ public class CustomFieldServiceImpl implements ICustomFieldService {
 
         field.setName(request.getName().trim());
         if (request.getType() != null) {
-            field.setType(request.getType().toUpperCase());
+            String updatedType = request.getType().toUpperCase().trim();
+            Set<String> validTypes = Set.of("TEXT", "NUMBER", "DATE", "DROPDOWN", "SELECT", "CHECKBOX");
+            if (!validTypes.contains(updatedType)) {
+                throw new ValidationException("Kiểu dữ liệu trường tùy chỉnh không hợp lệ: " + updatedType);
+            }
+            if (("DROPDOWN".equals(updatedType) || "SELECT".equals(updatedType)) && !StringUtils.hasText(request.getOptions()) && !StringUtils.hasText(field.getOptions())) {
+                throw new ValidationException("Trường kiểu danh sách lựa chọn (DROPDOWN) bắt buộc phải có danh sách các lựa chọn (options)");
+            }
+            field.setType(updatedType);
         }
         if (request.getRequired() != null) {
             field.setRequired(request.getRequired());
@@ -216,13 +233,17 @@ public class CustomFieldServiceImpl implements ICustomFieldService {
                     } catch (Exception e) {
                         throw new ValidationException("Trường '" + def.getName() + "' phải có định dạng ngày hợp lệ (YYYY-MM-DD)");
                     }
-                } else if ("DROPDOWN".equalsIgnoreCase(def.getType()) && StringUtils.hasText(def.getOptions())) {
+                } else if (("DROPDOWN".equalsIgnoreCase(def.getType()) || "SELECT".equalsIgnoreCase(def.getType())) && StringUtils.hasText(def.getOptions())) {
                     List<String> options = Arrays.stream(def.getOptions().split(","))
                             .map(String::trim)
                             .filter(StringUtils::hasText)
                             .collect(Collectors.toList());
                     if (!options.isEmpty() && !options.contains(trimmed)) {
                         throw new ValidationException("Giá trị '" + trimmed + "' không nằm trong danh sách lựa chọn của trường " + def.getName());
+                    }
+                } else if ("CHECKBOX".equalsIgnoreCase(def.getType())) {
+                    if (!"true".equalsIgnoreCase(trimmed) && !"false".equalsIgnoreCase(trimmed) && !"1".equals(trimmed) && !"0".equals(trimmed)) {
+                        throw new ValidationException("Trường '" + def.getName() + "' phải là giá trị đúng/sai (true/false)");
                     }
                 }
 

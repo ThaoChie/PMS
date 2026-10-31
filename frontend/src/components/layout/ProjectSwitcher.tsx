@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, Plus } from 'lucide-react';
 import type { Project } from '../../types';
+import ProjectBadge from '../../features/projects/components/ProjectBadge';
 
 interface ProjectSwitcherProps {
   projects: Project[];
@@ -27,10 +28,13 @@ export default function ProjectSwitcher({
           setIsOpen((o) => !o);
         }}
       >
-        <div className="w-5 h-5 rounded bg-[#1A1A1A] flex items-center justify-center text-white text-[9px] font-bold shrink-0">
-          {(selectedProject?.key || 'PR').slice(0, 2)}
-        </div>
-        <span className="flex-1 text-left font-medium text-[#1A1A1A] truncate text-xs">
+        <ProjectBadge
+          color={selectedProject?.color}
+          icon={selectedProject?.icon}
+          projectKey={selectedProject?.key}
+          size="xs"
+        />
+        <span className="flex-1 text-left font-medium text-[#1A1A1A] truncate text-xs min-w-0">
           {selectedProject?.name || 'Chọn dự án'}
         </span>
         <ChevronDown className="w-3.5 h-3.5 text-[#6B6B70] shrink-0" />
@@ -38,7 +42,7 @@ export default function ProjectSwitcher({
 
       {isOpen && (
         <div
-          className="absolute left-0 mt-1 w-52 bg-white border border-[#E5E5E7] rounded-lg shadow-sm z-50 overflow-hidden fade-in"
+          className="absolute left-0 mt-1 w-56 bg-white border border-[#E5E5E7] rounded-lg shadow-sm z-50 overflow-hidden fade-in"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="py-1">
@@ -54,12 +58,17 @@ export default function ProjectSwitcher({
                   setIsOpen(false);
                 }}
               >
-                <div className="w-5 h-5 rounded bg-[#1A1A1A] flex items-center justify-center text-white text-[9px] font-bold shrink-0">
-                  {(p.key || 'PR').slice(0, 2)}
-                </div>
-                <span className="truncate text-[#1A1A1A]">{p.name}</span>
+                <ProjectBadge
+                  color={p.color}
+                  icon={p.icon}
+                  projectKey={p.key}
+                  size="xs"
+                />
+                <span className="truncate text-[#1A1A1A] flex-1 min-w-0" title={p.name}>
+                  {p.name}
+                </span>
                 {p.status === 'Closed' && (
-                  <span className="ml-auto text-[10px] text-[#6B6B70]">Đã đóng</span>
+                  <span className="ml-2 text-[10px] text-[#6B6B70] shrink-0">Đã đóng</span>
                 )}
               </button>
             ))}

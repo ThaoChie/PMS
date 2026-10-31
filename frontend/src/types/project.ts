@@ -36,8 +36,11 @@ export interface Project extends ProjectPermissions {
   key: string;
   description: string;
   status: ProjectStatus;
+  color?: string;
+  icon?: string;
   openIssues: number;
-  members: User[];
+  memberCount?: number;
+  members: any[];
   createdAt: string;
   myRole?: Role;
 }
