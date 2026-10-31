@@ -210,7 +210,7 @@ export default function Topbar({
               setNotifOpen(false);
             }}
           >
-            <UserAvatar initials={user.initials} size="sm" />
+            <UserAvatar initials={user.initials} name={user.name} avatarUrl={user.avatarUrl} size="sm" />
           </button>
 
           {userDropdownOpen && (

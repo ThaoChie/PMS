@@ -68,6 +68,8 @@ app:
     retention-days: 30
   mail:
     from: ${SPRING_MAIL_FROM:no-reply@epms.com}
+  google:
+    clientId: ${GOOGLE_CLIENT_ID:337423940351-r77410qsu9b5mf8m8ldsie3cprn8ks6b.apps.googleusercontent.com}
 
 minio:
   url: ${MINIO_URL:http://localhost:9000}

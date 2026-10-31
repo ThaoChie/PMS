@@ -28,7 +28,7 @@ export default function UserMenu({
           setIsOpen((o) => !o);
         }}
       >
-        <UserAvatar initials={user.initials} size="sm" />
+        <UserAvatar initials={user.initials} name={user.name} avatarUrl={user.avatarUrl} size="sm" />
         <div className="flex-1 text-left min-w-0">
           <p className="text-xs font-medium text-[#1A1A1A] truncate">{user.name}</p>
           <p className="text-[10px] text-[#6B6B70] truncate">{user.email}</p>

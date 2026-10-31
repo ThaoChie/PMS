@@ -48,7 +48,15 @@ public class UserServiceImpl implements IUserService {
     @Transactional
     public User updateProfile(Long userId, UpdateProfileRequest request) {
         User user = getUserById(userId);
-        user.setFullName(request.getFullName().trim());
+        if (request.getFullName() != null && !request.getFullName().isBlank()) {
+            user.setFullName(request.getFullName().trim());
+        }
+        if (request.getPhoneNumber() != null) {
+            user.setPhoneNumber(request.getPhoneNumber().trim());
+        }
+        if (request.getAvatarUrl() != null && !request.getAvatarUrl().isBlank()) {
+            user.setAvatarUrl(request.getAvatarUrl().trim());
+        }
         return userRepository.save(user);
     }
 

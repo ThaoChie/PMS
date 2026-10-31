@@ -47,13 +47,16 @@ public class GoogleAuthServiceImpl implements IGoogleAuthService {
     @Transactional
     public TokenResponse loginWithGoogle(GoogleLoginRequest request) {
         try {
+            if (request.getIdToken() == null || request.getIdToken().isBlank()) {
+                throw new UnauthorizedException("Google ID Token không được để trống");
+            }
+
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
                     .setAudience(Collections.singletonList(googleClientId))
                     .build();
 
             GoogleIdToken idToken = verifier.verify(request.getIdToken());
             if (idToken == null) {
-                // If verifier fails audience check in dev, we can verify email from payload if token is valid structure
                 throw new UnauthorizedException("Google ID Token không hợp lệ hoặc đã hết hạn");
             }
 

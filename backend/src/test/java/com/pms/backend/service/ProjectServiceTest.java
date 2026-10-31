@@ -3,6 +3,7 @@ package com.pms.backend.service;
 import com.pms.backend.service.impl.*;
 import com.pms.backend.service.interfaces.*;
 
+import com.pms.backend.dao.IssueRepository;
 import com.pms.backend.dao.ProjectMemberRepository;
 import com.pms.backend.dao.ProjectRepository;
 import com.pms.backend.dao.UserRepository;
@@ -39,6 +40,9 @@ public class ProjectServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private IssueRepository issueRepository;
 
     @Mock
     private ProjectListHibernateDao projectListHibernateDao;

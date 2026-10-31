@@ -3,6 +3,8 @@ package com.pms.backend.dto;
 import com.pms.backend.model.Project;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class ProjectResponse {
@@ -11,8 +13,11 @@ public class ProjectResponse {
     private String projectKey;
     private String description;
     private String status;
+    private String color = "#1A1A1A";
+    private String icon = "folder";
     private int openIssuesCount = 0;
     private int memberCount = 0;
+    private List<MemberResponse> members = new ArrayList<>();
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Map<String, String> inviteResults;
@@ -32,6 +37,8 @@ public class ProjectResponse {
         res.setProjectKey(project.getProjectKey());
         res.setDescription(project.getDescription());
         res.setStatus(project.getStatus() != null ? project.getStatus().name() : "ACTIVE");
+        res.setColor(project.getColor() != null ? project.getColor() : "#1A1A1A");
+        res.setIcon(project.getIcon() != null ? project.getIcon() : "folder");
         res.setCreatedAt(project.getCreatedAt());
         res.setUpdatedAt(project.getUpdatedAt());
         res.setAllowMemberDeleteIssue(project.getAllowMemberDeleteIssue() != null ? project.getAllowMemberDeleteIssue() : false);
@@ -51,10 +58,16 @@ public class ProjectResponse {
     public void setDescription(String description) { this.description = description; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getColor() { return color != null ? color : "#1A1A1A"; }
+    public void setColor(String color) { this.color = color; }
+    public String getIcon() { return icon != null ? icon : "folder"; }
+    public void setIcon(String icon) { this.icon = icon; }
     public int getOpenIssuesCount() { return openIssuesCount; }
     public void setOpenIssuesCount(int openIssuesCount) { this.openIssuesCount = openIssuesCount; }
     public int getMemberCount() { return memberCount; }
     public void setMemberCount(int memberCount) { this.memberCount = memberCount; }
+    public List<MemberResponse> getMembers() { return members != null ? members : new ArrayList<>(); }
+    public void setMembers(List<MemberResponse> members) { this.members = members != null ? members : new ArrayList<>(); }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

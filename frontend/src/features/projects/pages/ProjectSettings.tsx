@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Sliders, ArrowRight } from 'lucide-react';
 import type { Role, Screen } from '../../../types';
 import EditProjectForm from '../components/EditProjectForm';
 import CloseProjectPanel from '../components/CloseProjectPanel';
+import ProjectBadge from '../components/ProjectBadge';
 import { useProjectStore } from '../../../store/projectStore';
 import { projectService } from '../../../services/projectService';
 
@@ -25,14 +27,14 @@ export default function ProjectSettings({ role, onNavigate }: ProjectSettingsPro
     );
   }
 
-  async function handleSave(name: string, description: string) {
+  async function handleSave(name: string, description: string, color?: string, icon?: string) {
     if (!currentProject) return;
     setError(null);
     setStatusMsg(null);
     try {
-      await projectService.updateProject(currentProject.id, { name, description });
-      updateProject(currentProject.id, { name, description });
-      setStatusMsg('Đã cập nhật thông tin dự án thành công');
+      await projectService.updateProject(currentProject.id, { name, description, color, icon });
+      updateProject(currentProject.id, { name, description, color, icon });
+      setStatusMsg('Đã cập nhật thông tin và nhận diện dự án thành công');
       setTimeout(() => setStatusMsg(null), 3000);
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Không thể cập nhật dự án');
@@ -54,9 +56,17 @@ export default function ProjectSettings({ role, onNavigate }: ProjectSettingsPro
   return (
     <div className="h-full overflow-y-auto bg-white">
       <div className="max-w-2xl mx-auto px-8 py-10">
-        <div className="mb-8">
-          <h1 className="text-xl font-bold text-[#1A1A1A]">Cài đặt dự án</h1>
-          <p className="text-xs font-mono text-[#9B9B9F] mt-0.5">{currentProject.key}</p>
+        <div className="mb-8 flex items-center gap-3.5">
+          <ProjectBadge
+            color={currentProject.color}
+            icon={currentProject.icon}
+            projectKey={currentProject.key}
+            size="lg"
+          />
+          <div>
+            <h1 className="text-xl font-bold text-[#1A1A1A]">{currentProject.name}</h1>
+            <p className="text-xs font-mono text-[#9B9B9F] mt-0.5">{currentProject.key}</p>
+          </div>
         </div>
 
         {error && (
@@ -71,7 +81,7 @@ export default function ProjectSettings({ role, onNavigate }: ProjectSettingsPro
           </div>
         )}
 
-        {/* Edit project general info */}
+        {/* Edit project general info & Branding */}
         <EditProjectForm project={currentProject} canEdit={canEdit} onSave={handleSave} />
 
         {/* Dedicated Custom Fields Screen Link (PM / Admin) */}

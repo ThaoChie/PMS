@@ -9,6 +9,7 @@ export interface User {
   role: Role;
   status: MemberStatus;
   avatarUrl?: string;
+  phoneNumber?: string;
   isGoogleAccount?: boolean;
 }
 
