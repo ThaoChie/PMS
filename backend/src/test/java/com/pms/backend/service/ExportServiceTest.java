@@ -75,4 +75,17 @@ public class ExportServiceTest {
         // Verify formula was neutralized
         assertTrue(csvContent.contains("'=cmd|' /C calc'!A0"));
     }
+
+    @Test
+    public void testExport_Excel_Success() {
+        Issue issue = new Issue();
+        issue.setIssueKey("EXCEL-1");
+        issue.setSummary("Test Excel Generation");
+        issue.setType(com.pms.backend.enu.IssueType.TASK);
+        issue.setPriority(com.pms.backend.enu.Priority.HIGH);
+
+        byte[] xlsxBytes = exportService.generateExcel(List.of(issue));
+        assertNotNull(xlsxBytes);
+        assertTrue(xlsxBytes.length > 0);
+    }
 }

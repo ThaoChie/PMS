@@ -6,6 +6,7 @@ import CloseProjectPanel from '../components/CloseProjectPanel';
 import ProjectBadge from '../components/ProjectBadge';
 import { useProjectStore } from '../../../store/projectStore';
 import { projectService } from '../../../services/projectService';
+import { toast } from '../../../store/toastStore';
 
 interface ProjectSettingsProps {
   role: Role;
@@ -34,10 +35,14 @@ export default function ProjectSettings({ role, onNavigate }: ProjectSettingsPro
     try {
       await projectService.updateProject(currentProject.id, { name, description, color, icon });
       updateProject(currentProject.id, { name, description, color, icon });
-      setStatusMsg('Đã cập nhật thông tin và nhận diện dự án thành công');
+      const msg = 'Đã cập nhật thông tin và nhận diện dự án thành công';
+      setStatusMsg(msg);
+      toast.success(msg);
       setTimeout(() => setStatusMsg(null), 3000);
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Không thể cập nhật dự án');
+      const msg = err?.response?.data?.message || err?.message || 'Không thể cập nhật dự án';
+      setError(msg);
+      toast.error(msg);
     }
   }
 
@@ -47,9 +52,13 @@ export default function ProjectSettings({ role, onNavigate }: ProjectSettingsPro
     try {
       await projectService.closeProject(currentProject.id);
       updateProject(currentProject.id, { status: 'Closed' });
-      setStatusMsg('Dự án đã được đóng thành công');
+      const msg = 'Dự án đã được đóng thành công';
+      setStatusMsg(msg);
+      toast.success(msg);
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Không thể đóng dự án');
+      const msg = err?.response?.data?.message || err?.message || 'Không thể đóng dự án';
+      setError(msg);
+      toast.error(msg);
     }
   }
 
