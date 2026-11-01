@@ -18,10 +18,10 @@ const PRIORITY_BADGE: Record<string, string> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  'To Do': 'text-[#6B6B70] bg-[#F7F7F8]',
-  'In Progress': 'text-[#1A1A1A] bg-[#EBEBEC]',
-  'Pending Approval': 'text-[#6B6B70] bg-[#F0F0F1]',
-  Done: 'text-[#9B9B9F] bg-[#F7F7F8]',
+  'To Do': 'text-gray-700 bg-gray-100 border-gray-300',
+  'In Progress': 'text-blue-700 bg-blue-50 border-blue-200',
+  'Pending Approval': 'text-blue-700 bg-blue-50 border-blue-200',
+  Done: 'text-emerald-700 bg-emerald-50 border-emerald-200',
 };
 
 const TYPE_BADGE: Record<string, string> = {

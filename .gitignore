@@ -50,3 +50,15 @@ DEPLOYMENT.md
 .github/
 test-results/
 run_backend.cmd
+
+# Python & scratch scripts
+*.py
+*.pyc
+__pycache__/
+
+# E2E test runs, screenshots & logs
+e2e/screenshots/
+e2e/node_modules/
+e2e/test-*.js
+e2e/test_*.js
+*.log

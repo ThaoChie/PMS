@@ -213,6 +213,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
             <div className="mb-4">
               <Field label="Tóm tắt công việc" required>
                 <input
+                  id="create-issue-summary"
                   value={form.summary}
                   onChange={(e) => set('summary', e.target.value)}
                   placeholder="Mô tả ngắn gọn, rõ ràng về công việc cần thực hiện"
@@ -304,7 +305,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
 
             {/* Custom Fields section */}
             {customFields.length > 0 && (
-              <div className="pt-2 border-t border-[#E5E5E7] mb-4">
+              <div id="custom-fields-section" className="pt-2 border-t border-[#E5E5E7] mb-4">
                 <p className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider mb-3">
                   Thông tin bổ sung dự án ({customFields.length})
                 </p>
@@ -317,6 +318,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                       <Field key={cf.fieldKey} label={cf.name} required={cf.required} optional={!cf.required}>
                         {cf.type === 'DROPDOWN' ? (
                           <select
+                            id={`cf-field-${cf.fieldKey}`}
                             value={val}
                             onChange={(e) => setCustomFieldValue(cf.fieldKey, e.target.value)}
                             className={selectCls}
@@ -331,6 +333,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                         ) : cf.type === 'CHECKBOX' ? (
                           <label className="flex items-center gap-2 mt-2 cursor-pointer">
                             <input
+                              id={`cf-field-${cf.fieldKey}`}
                               type="checkbox"
                               checked={val === 'true'}
                               onChange={(e) => setCustomFieldValue(cf.fieldKey, String(e.target.checked))}
@@ -340,6 +343,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                           </label>
                         ) : (
                           <input
+                            id={`cf-field-${cf.fieldKey}`}
                             type={cf.type === 'NUMBER' ? 'number' : cf.type === 'DATE' ? 'date' : 'text'}
                             value={val}
                             onChange={(e) => setCustomFieldValue(cf.fieldKey, e.target.value)}
@@ -368,6 +372,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
               Hủy
             </button>
             <button
+              id="create-issue-submit-btn"
               type="submit"
               disabled={saving || !form.summary.trim()}
               className="px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
