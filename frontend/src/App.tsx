@@ -1,30 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Role, Screen, Project } from './types';
 
-import Login from './components/auth/Login';
-import Register from './components/auth/Register';
+import Login from './features/auth/pages/Login';
+import Register from './features/auth/pages/Register';
+import ForgotPassword from './features/auth/pages/ForgotPassword';
+import ResetPassword from './features/auth/pages/ResetPassword';
 import Shell from './components/Shell';
 import Dashboard from './components/Dashboard';
-import MyProfile from './components/profile/MyProfile';
+import MyProfile from './features/profile/pages/Profile';
 import NotificationCenter from './components/profile/NotificationCenter';
-import ProjectList from './components/projects/ProjectList';
-import ProjectSettings from './components/projects/ProjectSettings';
+import ProjectList from './features/projects/pages/ProjectList';
+import ProjectSettings from './features/projects/pages/ProjectSettings';
 import Board from './components/board/Board';
 import IssueList from './components/board/IssueList';
 import IssueDetail from './components/board/IssueDetail';
 import SavedFilters from './components/board/SavedFilters';
-import MembersRoles from './components/admin/MembersRoles';
-import WorkflowConfig from './components/admin/WorkflowConfig';
+import MembersRoles from './features/members/pages/Members';
+import WorkflowConfig from './features/workflow/pages/WorkflowSettings';
+import CustomFieldsConfig from './features/projects/pages/CustomFieldsSettings';
 import Reports from './components/reports/Reports';
 import CreateIssueModal from './components/shared/CreateIssueModal';
 import CreateProjectModal from './components/shared/CreateProjectModal';
 import QuickSearch from './components/shared/QuickSearch';
 import Invitations from './features/members/pages/Invitations';
-import CustomFieldsConfig from './components/admin/CustomFieldsConfig';
 import IssueDetailPage from './features/issues/pages/IssueDetailPage';
 
-import ForgotPassword from './features/auth/pages/ForgotPassword';
-import ResetPassword from './features/auth/pages/ResetPassword';
 import { useAuthStore } from './store/authStore';
 import { useProjectStore } from './store/projectStore';
 
@@ -34,13 +34,30 @@ export default function App() {
   const { user, isAuthenticated, isLoading: authLoading, bootstrap, logout } = useAuthStore();
   const { projects, currentProject, setCurrentProject, fetchProjects } = useProjectStore();
 
-  const [authView, setAuthView] = useState<AuthView>('login');
+  const [authView, setAuthView] = useState<AuthView>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname;
+      if (p === '/register') return 'register';
+      if (p === '/forgot-password') return 'forgot-password';
+      if (p === '/reset-password' || new URLSearchParams(window.location.search).get('token')) return 'reset-password';
+    }
+    return 'login';
+  });
+
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
-    if (typeof window !== 'undefined' && window.location.pathname.includes('/invitations')) {
-      return 'invitations';
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname;
+      if (p === '/profile') return 'profile';
+      if (p === '/projects') return 'projects';
+      if (p.includes('/invitations')) return 'invitations';
+      if (p.match(/^\/projects\/[^/]+\/members/)) return 'members-roles';
+      if (p.match(/^\/projects\/[^/]+\/settings/)) return 'project-settings';
+      if (p.match(/^\/projects\/[^/]+\/(workflows|workflow)/)) return 'workflow';
+      if (p.match(/^\/projects\/[^/]+\/custom-fields/)) return 'custom-fields';
     }
     return 'projects';
   });
+
   const [role, setRole] = useState<Role>('pm');
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [showCreateIssue, setShowCreateIssue] = useState(false);
@@ -48,43 +65,91 @@ export default function App() {
   const [showQuickSearch, setShowQuickSearch] = useState(false);
   const [activeIssueKey, setActiveIssueKey] = useState<string | null>(null);
 
-  // Restore session & check query params and deep links
-  useEffect(() => {
-    bootstrap();
+  // Sync route from window.location
+  const syncRouteFromLocation = useCallback((projectList = projects) => {
+    if (typeof window === 'undefined') return;
 
+    const pathname = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.get('token')) {
+
+    // 1. Auth routes
+    if (pathname === '/register') {
+      setAuthView('register');
+      return;
+    }
+    if (pathname === '/login') {
+      setAuthView('login');
+      return;
+    }
+    if (pathname === '/forgot-password') {
+      setAuthView('forgot-password');
+      return;
+    }
+    if (pathname === '/reset-password' || searchParams.get('token')) {
       setAuthView('reset-password');
+      return;
     }
 
-    if (window.location.pathname.includes('/invitations')) {
+    // 2. Global app routes
+    if (pathname === '/profile') {
+      setCurrentScreen('profile');
+      return;
+    }
+    if (pathname === '/projects') {
+      setCurrentScreen('projects');
+      return;
+    }
+    if (pathname.includes('/invitations')) {
       setCurrentScreen('invitations');
+      return;
     }
 
-    const pathMatch = window.location.pathname.match(/\/issues\/([A-Za-z0-9_-]+)/);
+    // 3. Project scoped routes (/projects/:id/(members|settings|workflows|custom-fields))
+    const projectSubMatch = pathname.match(/^\/projects\/([^/]+)\/(members|settings|workflows|workflow|custom-fields)/);
+    if (projectSubMatch) {
+      const projIdOrKey = decodeURIComponent(projectSubMatch[1]);
+      const sub = projectSubMatch[2];
+
+      if (projectList && projectList.length > 0) {
+        const found = projectList.find(
+          (p) => String(p.id) === projIdOrKey || p.key.toLowerCase() === projIdOrKey.toLowerCase()
+        );
+        if (found && (!currentProject || currentProject.id !== found.id)) {
+          setCurrentProject(found);
+        }
+      }
+
+      if (sub === 'members') setCurrentScreen('members-roles');
+      else if (sub === 'settings') setCurrentScreen('project-settings');
+      else if (sub === 'workflows' || sub === 'workflow') setCurrentScreen('workflow');
+      else if (sub === 'custom-fields') setCurrentScreen('custom-fields');
+      return;
+    }
+
+    // 4. Issue detail route
+    const pathMatch = pathname.match(/\/issues\/([A-Za-z0-9_-]+)/);
     const issueKeyParam = pathMatch ? pathMatch[1] : searchParams.get('issue');
     if (issueKeyParam) {
       setActiveIssueKey(issueKeyParam);
       setCurrentScreen('issue-detail');
+      return;
     }
-  }, [bootstrap]);
+  }, [projects, currentProject, setCurrentProject]);
 
+  // Restore session & sync route on mount
   useEffect(() => {
-    function handleLocation() {
-      if (window.location.pathname.includes('/invitations')) {
-        setCurrentScreen('invitations');
-      }
-      const searchParams = new URLSearchParams(window.location.search);
-      const pathMatch = window.location.pathname.match(/\/issues\/([A-Za-z0-9_-]+)/);
-      const issueKeyParam = pathMatch ? pathMatch[1] : searchParams.get('issue');
-      if (issueKeyParam) {
-        setActiveIssueKey(issueKeyParam);
-        setCurrentScreen('issue-detail');
-      }
-    }
-    window.addEventListener('popstate', handleLocation);
-    return () => window.removeEventListener('popstate', handleLocation);
-  }, []);
+    bootstrap();
+    syncRouteFromLocation();
+  }, [bootstrap, syncRouteFromLocation]);
+
+  // Listen to popstate (back/forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      syncRouteFromLocation();
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [syncRouteFromLocation]);
 
   // Sync projects when authenticated
   useEffect(() => {
@@ -92,6 +157,13 @@ export default function App() {
       fetchProjects();
     }
   }, [isAuthenticated, fetchProjects]);
+
+  // Sync route after projects list is loaded (e.g. resolve project id in /projects/:id/...)
+  useEffect(() => {
+    if (projects.length > 0) {
+      syncRouteFromLocation(projects);
+    }
+  }, [projects, syncRouteFromLocation]);
 
   // Sync active role with current project role
   useEffect(() => {
@@ -115,13 +187,14 @@ export default function App() {
 
   function handleLogin() {
     setAuthView('login');
-    setCurrentScreen('projects');
+    syncRouteFromLocation();
   }
 
   async function handleLogout() {
     await logout();
     setAuthView('login');
     setSelectedIssueId(null);
+    window.history.pushState({}, '', '/login');
   }
 
   function handleSelectIssue(id: string) {
@@ -136,8 +209,69 @@ export default function App() {
     setShowCreateProject(true);
   }
 
+  function handleNavigate(screen: Screen) {
+    setCurrentScreen(screen);
+    setSelectedIssueId(null);
+
+    const pid = currentProject?.id || (projects.length > 0 ? projects[0].id : null);
+
+    switch (screen) {
+      case 'profile':
+        window.history.pushState({}, '', '/profile');
+        break;
+      case 'projects':
+        window.history.pushState({}, '', '/projects');
+        break;
+      case 'members-roles':
+        if (pid) {
+          window.history.pushState({}, '', `/projects/${pid}/members`);
+        } else {
+          window.history.pushState({}, '', '/projects');
+        }
+        break;
+      case 'project-settings':
+        if (pid) {
+          window.history.pushState({}, '', `/projects/${pid}/settings`);
+        } else {
+          window.history.pushState({}, '', '/projects');
+        }
+        break;
+      case 'workflow':
+        if (pid) {
+          window.history.pushState({}, '', `/projects/${pid}/workflows`);
+        } else {
+          window.history.pushState({}, '', '/projects');
+        }
+        break;
+      case 'custom-fields':
+        if (pid) {
+          window.history.pushState({}, '', `/projects/${pid}/custom-fields`);
+        } else {
+          window.history.pushState({}, '', '/projects');
+        }
+        break;
+      case 'invitations':
+        window.history.pushState({}, '', '/invitations');
+        break;
+      case 'dashboard':
+        window.history.pushState({}, '', '/dashboard');
+        break;
+      default:
+        break;
+    }
+  }
+
   function handleSelectProject(proj: Project) {
     setCurrentProject(proj);
+    if (currentScreen === 'members-roles') {
+      window.history.pushState({}, '', `/projects/${proj.id}/members`);
+    } else if (currentScreen === 'project-settings') {
+      window.history.pushState({}, '', `/projects/${proj.id}/settings`);
+    } else if (currentScreen === 'workflow') {
+      window.history.pushState({}, '', `/projects/${proj.id}/workflows`);
+    } else if (currentScreen === 'custom-fields') {
+      window.history.pushState({}, '', `/projects/${proj.id}/custom-fields`);
+    }
   }
 
   if (authLoading) {
@@ -164,19 +298,50 @@ export default function App() {
   // Auth screens
   if (!isAuthenticated) {
     if (authView === 'register') {
-      return <Register onLogin={handleLogin} onBack={() => setAuthView('login')} />;
+      return (
+        <Register
+          onLogin={() => {
+            setAuthView('login');
+            window.history.pushState({}, '', '/login');
+          }}
+          onBack={() => {
+            setAuthView('login');
+            window.history.pushState({}, '', '/login');
+          }}
+        />
+      );
     }
     if (authView === 'forgot-password') {
-      return <ForgotPassword onBack={() => setAuthView('login')} />;
+      return (
+        <ForgotPassword
+          onBack={() => {
+            setAuthView('login');
+            window.history.pushState({}, '', '/login');
+          }}
+        />
+      );
     }
     if (authView === 'reset-password') {
-      return <ResetPassword onSuccess={() => setAuthView('login')} />;
+      return (
+        <ResetPassword
+          onSuccess={() => {
+            setAuthView('login');
+            window.history.pushState({}, '', '/login');
+          }}
+        />
+      );
     }
     return (
       <Login
         onLogin={handleLogin}
-        onRegister={() => setAuthView('register')}
-        onForgotPassword={() => setAuthView('forgot-password')}
+        onRegister={() => {
+          setAuthView('register');
+          window.history.pushState({}, '', '/register');
+        }}
+        onForgotPassword={() => {
+          setAuthView('forgot-password');
+          window.history.pushState({}, '', '/forgot-password');
+        }}
       />
     );
   }
@@ -188,7 +353,7 @@ export default function App() {
           <Dashboard
             role={role}
             onSelectIssue={handleSelectIssue}
-            onNavigate={setCurrentScreen}
+            onNavigate={handleNavigate}
           />
         );
       case 'board':
@@ -202,20 +367,20 @@ export default function App() {
       case 'profile':
         return <MyProfile />;
       case 'invitations':
-        return <Invitations onNavigate={setCurrentScreen} />;
+        return <Invitations onNavigate={handleNavigate} />;
       case 'notifications':
-        return <NotificationCenter onNavigate={setCurrentScreen} />;
+        return <NotificationCenter onNavigate={handleNavigate} />;
       case 'projects':
         return (
           <ProjectList
             role={role}
             onCreateProject={handleCreateProject}
-            onSettings={() => setCurrentScreen('project-settings')}
+            onSettings={() => handleNavigate('project-settings')}
             onSelectProject={handleSelectProject}
           />
         );
       case 'project-settings':
-        return <ProjectSettings role={role} onNavigate={setCurrentScreen} />;
+        return <ProjectSettings role={role} onNavigate={handleNavigate} />;
       case 'custom-fields':
         return <CustomFieldsConfig role={role} />;
       case 'issue-detail':
@@ -243,7 +408,7 @@ export default function App() {
           <Dashboard
             role={role}
             onSelectIssue={handleSelectIssue}
-            onNavigate={setCurrentScreen}
+            onNavigate={handleNavigate}
           />
         );
     }
@@ -257,15 +422,7 @@ export default function App() {
         projects={projects}
         selectedProject={currentProject}
         currentUser={user || undefined}
-        onNavigate={(screen) => {
-          setCurrentScreen(screen);
-          setSelectedIssueId(null);
-          if (screen === 'invitations') {
-            window.history.pushState({}, '', '/invitations');
-          } else if (window.location.pathname.includes('/invitations')) {
-            window.history.pushState({}, '', '/');
-          }
-        }}
+        onNavigate={handleNavigate}
         onRoleChange={setRole}
         onCreateIssue={() => setShowCreateIssue(true)}
         onSearch={() => setShowQuickSearch(true)}

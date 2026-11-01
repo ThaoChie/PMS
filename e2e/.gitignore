@@ -1,2 +1,6 @@
 node_modules/
 package-lock.json
+screenshots/
+test-*.js
+test_*.js
+*.log

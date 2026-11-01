@@ -223,7 +223,17 @@ public class CustomFieldServiceImpl implements ICustomFieldService {
                 // Validate data type
                 if ("NUMBER".equalsIgnoreCase(def.getType())) {
                     try {
-                        Double.parseDouble(trimmed);
+                        double num = Double.parseDouble(trimmed);
+                        if (StringUtils.hasText(def.getOptions())) {
+                            Double min = parseBound(def.getOptions(), "min");
+                            Double max = parseBound(def.getOptions(), "max");
+                            if (min != null && num < min) {
+                                throw new ValidationException("Giá trị của trường '" + def.getName() + "' không được nhỏ hơn " + min);
+                            }
+                            if (max != null && num > max) {
+                                throw new ValidationException("Giá trị của trường '" + def.getName() + "' không được lớn hơn " + max);
+                            }
+                        }
                     } catch (NumberFormatException e) {
                         throw new ValidationException("Trường '" + def.getName() + "' phải là giá trị số hợp lệ");
                     }
@@ -264,11 +274,25 @@ public class CustomFieldServiceImpl implements ICustomFieldService {
         }
     }
 
+    private Double parseBound(String options, String key) {
+        if (!StringUtils.hasText(options)) return null;
+        for (String part : options.split("[,;]")) {
+            String[] kv = part.split("[=:]");
+            if (kv.length == 2 && kv[0].trim().equalsIgnoreCase(key)) {
+                try {
+                    return Double.parseDouble(kv[1].trim());
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return null;
+    }
+
     private String generateFieldKey(String name) {
         if (!StringUtils.hasText(name)) {
             return "field_" + System.currentTimeMillis() % 10000;
         }
-        String slug = java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD)
+        String normalized = name.replace('đ', 'd').replace('Đ', 'd');
+        String slug = java.text.Normalizer.normalize(normalized, java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
                 .toLowerCase()
                 .replaceAll("[^a-z0-9_]+", "_")

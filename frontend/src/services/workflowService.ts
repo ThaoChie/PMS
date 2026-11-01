@@ -17,7 +17,17 @@ export const workflowService = {
       transitions: WorkflowTransition[];
     },
   ): Promise<ApiResponse<{ warnings?: string[] }>> {
-    return axiosClient.put(`/projects/${projectId}/workflow`, data);
+    const payload = {
+      statuses: data.statuses.map((s) => ({
+        ...s,
+        id: typeof s.id === 'number' || (typeof s.id === 'string' && /^\d+$/.test(s.id) && Number(s.id) < 1000000000) ? Number(s.id) : undefined,
+      })),
+      transitions: data.transitions.map((t) => ({
+        ...t,
+        id: typeof t.id === 'number' || (typeof t.id === 'string' && /^\d+$/.test(t.id) && Number(t.id) < 1000000000) ? Number(t.id) : undefined,
+      })),
+    };
+    return axiosClient.put(`/projects/${projectId}/workflow`, payload);
   },
 
   async getTransitions(issueKey: string): Promise<ApiResponse<WorkflowTransition[]>> {

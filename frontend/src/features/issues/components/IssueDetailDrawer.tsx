@@ -12,10 +12,10 @@ import ActivityTimeline from './ActivityTimeline';
 import ShareIssueModal from './ShareIssueModal';
 
 const STATUS_BADGE: Record<string, string> = {
-  'To Do': 'text-[#6B6B70] bg-[#F7F7F8] border-[#E5E5E7]',
-  'In Progress': 'text-[#1A1A1A] bg-[#EBEBEC] border-[#DCDCDE]',
-  'Pending Approval': 'text-[#6B6B70] bg-[#F0F0F1] border-[#E0E0E2]',
-  'Done': 'text-[#9B9B9F] bg-[#F7F7F8] border-[#E5E5E7]',
+  'To Do': 'text-gray-700 bg-gray-100 border-gray-300',
+  'In Progress': 'text-blue-700 bg-blue-50 border-blue-200',
+  'Pending Approval': 'text-blue-700 bg-blue-50 border-blue-200',
+  'Done': 'text-emerald-700 bg-emerald-50 border-emerald-200',
 };
 
 interface IssueDetailDrawerProps {
@@ -388,7 +388,7 @@ export default function IssueDetailDrawer({
       <div className="fixed inset-0 bg-black/20 z-30" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-14 bottom-0 w-[440px] bg-white border-l border-[#E5E5E7] z-40 flex flex-col issue-drawer shadow-xl">
+      <div id="issue-detail-drawer" className="fixed right-0 top-14 bottom-0 w-[440px] bg-white border-l border-[#E5E5E7] z-40 flex flex-col issue-drawer shadow-xl">
         {/* Header */}
         <div className="px-5 py-3 border-b border-[#E5E5E7] flex items-start gap-3 shrink-0">
           <div className="flex-1 min-w-0">
