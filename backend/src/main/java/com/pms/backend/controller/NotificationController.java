@@ -1,11 +1,10 @@
 package com.pms.backend.controller;
 
 import com.pms.backend.common.ApiResponse;
-import com.pms.backend.dao.NotificationRepository;
 import com.pms.backend.dto.NotificationResponse;
-import com.pms.backend.enu.NotificationGroup;
 import com.pms.backend.model.Notification;
 import com.pms.backend.model.User;
+import com.pms.backend.service.interfaces.INotificationService;
 import com.pms.backend.service.interfaces.IUserService;
 import com.pms.backend.wrapper.PageWrapper;
 import org.springframework.data.domain.Page;
@@ -14,21 +13,25 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * UC019 — Notification Center.
+ * Controller chỉ điều phối request/response; mọi truy vấn dữ liệu nằm ở {@link INotificationService}
+ * theo quy tắc phân lớp controller → service → repository (project_structure.md mục 3.2).
+ */
 @RestController
 @RequestMapping({"/api/notifications", "/notifications"})
 @PreAuthorize("isAuthenticated()")
 public class NotificationController {
 
-    private final NotificationRepository notificationRepository;
+    private final INotificationService notificationService;
     private final IUserService userService;
 
-    public NotificationController(NotificationRepository notificationRepository, IUserService userService) {
-        this.notificationRepository = notificationRepository;
+    public NotificationController(INotificationService notificationService, IUserService userService) {
+        this.notificationService = notificationService;
         this.userService = userService;
     }
 
@@ -47,22 +50,8 @@ public class NotificationController {
         User user = getCurrentUser();
         Pageable pageable = PageRequest.of(page, size);
 
-        NotificationGroup nGroup = NotificationGroup.fromString(group);
-        Page<Notification> pageResult;
-
-        if (nGroup != null && Boolean.TRUE.equals(unread)) {
-            pageResult = notificationRepository.findByRecipientIdAndIsReadAndTypeInOrderByCreatedAtDesc(
-                    user.getId(), false, nGroup.getNotificationTypes(), pageable);
-        } else if (nGroup != null) {
-            pageResult = notificationRepository.findByRecipientIdAndTypeInOrderByCreatedAtDesc(
-                    user.getId(), nGroup.getNotificationTypes(), pageable);
-        } else if (Boolean.TRUE.equals(unread)) {
-            pageResult = notificationRepository.findByRecipientIdAndIsReadOrderByCreatedAtDesc(
-                    user.getId(), false, pageable);
-        } else {
-            pageResult = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(
-                    user.getId(), pageable);
-        }
+        Page<Notification> pageResult = notificationService.getNotifications(
+                user.getId(), group, unread, pageable);
 
         Page<NotificationResponse> dtoPage = pageResult.map(NotificationResponse::from);
         return ApiResponse.success(PageWrapper.from(dtoPage));
@@ -71,8 +60,7 @@ public class NotificationController {
     @GetMapping("/unread-count")
     public ApiResponse<Map<String, Long>> getUnreadCount() {
         User user = getCurrentUser();
-        long count = notificationRepository.countByRecipientIdAndIsReadFalse(user.getId());
-        return ApiResponse.success(Map.of("count", count));
+        return ApiResponse.success(Map.of("count", notificationService.countUnread(user.getId())));
     }
 
     @PostMapping("/{id}/read")
@@ -87,20 +75,19 @@ public class NotificationController {
 
     private ApiResponse<Void> markAsRead(Long id) {
         User user = getCurrentUser();
-        notificationRepository.findById(id).ifPresent(n -> {
-            if (n.getRecipient() != null && n.getRecipient().getId().equals(user.getId())) {
-                n.setRead(true);
-                notificationRepository.save(n);
-            }
-        });
+        notificationService.markAsRead(id, user.getId());
         return ApiResponse.success(null);
     }
 
     @PostMapping("/read-all")
-    @Transactional
     public ApiResponse<Void> markAllAsRead() {
         User user = getCurrentUser();
-        notificationRepository.markAllAsReadForUser(user.getId());
+        notificationService.markAllAsRead(user.getId());
         return ApiResponse.success(null);
+    }
+
+    @PutMapping("/read-all")
+    public ApiResponse<Void> markAllAsReadPut() {
+        return markAllAsRead();
     }
 }

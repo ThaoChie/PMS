@@ -26,6 +26,10 @@ export interface Comment {
   createdAt: string;
   type: 'comment' | 'log-work' | 'status-change' | 'assignment';
   loggedTime?: string;
+  /** Thời điểm sửa gần nhất; null/undefined nghĩa là chưa từng sửa */
+  updatedAt?: string | null;
+  /** Danh sách id người được @mention trong bình luận */
+  mentionedUserIds?: string[];
 }
 
 export interface Worklog {

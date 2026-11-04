@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { X, Clock } from 'lucide-react';
 import DurationInput from '../../../components/common/DurationInput';
+import { MESSAGES } from '../../../constants/messages';
+import { parseDuration } from '../../../utils/duration';
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 interface LogWorkModalProps {
   isOpen: boolean;
@@ -16,15 +22,35 @@ export default function LogWorkModal({
   onLogWork,
 }: LogWorkModalProps) {
   const [timeSpent, setTimeSpent] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayIso());
   const [comment, setComment] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!timeSpent.trim()) return;
+    setError(null);
+
+    if (!timeSpent.trim()) {
+      setError(MESSAGES.WORKLOG.TIME_REQUIRED);
+      return;
+    }
+    // WORKLOG_002: thời gian phải là số dương hợp lệ
+    if (parseDuration(timeSpent) <= 0) {
+      setError(MESSAGES.WORKLOG.TIME_INVALID);
+      return;
+    }
+    // WORKLOG_001: ngày làm việc không được lớn hơn hôm nay
+    if (!date || date > todayIso()) {
+      setError(MESSAGES.WORKLOG.DATE_IN_FUTURE);
+      return;
+    }
+
     onLogWork(timeSpent, date, comment || undefined);
+    setTimeSpent('');
+    setComment('');
+    setDate(todayIso());
     onClose();
   }
 
@@ -34,7 +60,9 @@ export default function LogWorkModal({
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E5E7]">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-[#E53E3E]" />
-            <h3 className="text-sm font-semibold text-[#1A1A1A]">Log Work — {issueKey}</h3>
+            <h3 className="text-sm font-semibold text-[#1A1A1A]">
+              {MESSAGES.WORKLOG.LOG_BUTTON} — {issueKey}
+            </h3>
           </div>
           <button type="button" onClick={onClose} className="text-[#9B9B9F] hover:text-[#1A1A1A]">
             <X className="w-4 h-4" />
@@ -60,6 +88,7 @@ export default function LogWorkModal({
             <input
               type="date"
               value={date}
+              max={todayIso()}
               onChange={(e) => setDate(e.target.value)}
               className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
               required
@@ -78,6 +107,12 @@ export default function LogWorkModal({
               className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] resize-none"
             />
           </div>
+
+          {error && (
+            <p className="text-xs text-[#E53E3E] bg-[#FDECEC] border border-[#FBD5D5] rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
 
           <div className="flex items-center justify-end gap-2 pt-2">
             <button

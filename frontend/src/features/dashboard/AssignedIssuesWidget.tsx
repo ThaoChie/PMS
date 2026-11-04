@@ -41,7 +41,7 @@ export const AssignedIssuesWidget: React.FC<AssignedIssuesWidgetProps> = ({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <span className="text-[10px] font-mono text-[#9B9B9F]">{issue.key}</span>
-                  {issue.type === 'Bug' && (
+                  {String(issue.type).toUpperCase() === 'BUG' && (
                     <span className="text-[10px] text-[#E53E3E] bg-[#FDECEC] px-1 rounded">
                       Bug
                     </span>
@@ -53,9 +53,9 @@ export const AssignedIssuesWidget: React.FC<AssignedIssuesWidgetProps> = ({
               </div>
               <span
                 className={`text-[10px] shrink-0 px-1.5 py-0.5 rounded mt-0.5 ${
-                  issue.priority === 'Critical'
+                  ['CRITICAL', 'HIGHEST'].includes(String(issue.priority).toUpperCase())
                     ? 'text-[#E53E3E] bg-[#FDECEC]'
-                    : issue.priority === 'High'
+                    : String(issue.priority).toUpperCase() === 'HIGH'
                     ? 'text-[#1A1A1A] bg-[#F7F7F8]'
                     : 'text-[#9B9B9F] bg-[#F7F7F8]'
                 }`}

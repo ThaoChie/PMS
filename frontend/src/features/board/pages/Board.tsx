@@ -3,6 +3,7 @@ import { RefreshCw, AlertCircle } from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
 import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
+import { mapUserResponseToUser } from '../../../store/authStore';
 import type { Issue, IssueStatus, Role, WorkflowStatus, WorkflowTransition } from '../../../types';
 import KanbanColumn from '../components/KanbanColumn';
 
@@ -53,20 +54,8 @@ export default function Board({ role, onSelectIssue }: BoardProps) {
             type: item.type,
             status: item.status,
             priority: item.priority,
-            assignee: item.assignee ? {
-              id: String(item.assignee.id),
-              name: item.assignee.fullName || item.assignee.name || item.assignee.email,
-              email: item.assignee.email,
-              avatarUrl: item.assignee.avatarUrl,
-              role: 'member'
-            } : undefined,
-            reporter: item.reporter ? {
-              id: String(item.reporter.id),
-              name: item.reporter.fullName || item.reporter.name || item.reporter.email,
-              email: item.reporter.email,
-              avatarUrl: item.reporter.avatarUrl,
-              role: 'member'
-            } : { id: '0', name: 'Unknown', email: '', role: 'member' },
+            assignee: item.assignee ? mapUserResponseToUser(item.assignee) : undefined,
+            reporter: mapUserResponseToUser(item.reporter),
             labels: item.labels || [],
             estimates: item.estimates,
             dueDate: item.dueDate,
