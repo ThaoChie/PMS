@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
@@ -12,6 +12,12 @@ export default defineConfig({
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
     },
+  },
+  // Cấu hình cho unit test (Vitest) — chạy bằng: npm test
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['src/tests/**/*.{test,spec}.{ts,tsx}'],
   },
   server: {
     port: 5173,
