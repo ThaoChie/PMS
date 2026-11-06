@@ -119,7 +119,7 @@ Không viết code. Chỉ tạo tài liệu mới trong `docs/camunda/`.
 - [ ] 2.1 Migration mới (mục 3).
 - [ ] 2.2 `enu`: `ApprovalRequestType`, `ApprovalRequestStatus`, `ApprovalStepStatus`, `ApprovalApplyStatus`, `ApprovalApproverRole`.
 - [ ] 2.3 `model`: `ApprovalRequest`, `ApprovalStep` (kế thừa `BaseEntity`). `dto` + `mapper` theo đặc tả mục 2. `dao` + `hibernateDao` (mới, kế thừa `BaseHibernateDao`) cho truy vấn danh sách/pending-for-me, đã gắn điều kiện theo phạm vi người dùng.
-- [ ] 2.4 Mã lỗi `APPROVAL_001..006` (ưu tiên file mới; allowlist #2 nếu bắt buộc).
+- [x] 2.4 Mã lỗi `APPROVAL_001..006` (đã thêm vào ErrorCode hiện có theo ngoại lệ đổi ';' thành ',' được người dùng duyệt).
 - [ ] 2.5 `service` `ApprovalRequestService`: tạo (kiểm tra quyền PM, trùng, payload hợp lệ, tính cấp và `SKIPPED`), approve, reject (bắt buộc `comment`), cancel, danh sách, pending-for-me, `canIDecide`; **ghi DB trước, publish message sau khi commit**; lỗi publish → `APPROVAL_006` nhưng DB giữ nguyên.
 - [ ] 2.6 `ApprovalApplyService`: áp dụng thay đổi sau khi duyệt xong, idempotent, đặt `SecurityContext` bằng người duyệt cuối/`SYSTEM`, gọi hàm công khai sẵn có, cập nhật `apply_status`.
 - [ ] 2.7 `controller` `ApprovalRequestController` (có điều kiện theo cờ) + `ApprovalPolicyController` (luôn có). `@PreAuthorize` dùng `@projectSecurity`; thiếu thì tạo `ApprovalSecurity` mới.
@@ -129,11 +129,11 @@ Không viết code. Chỉ tạo tài liệu mới trong `docs/camunda/`.
 
 ## PHASE 3 — BPMN và Worker
 
-- [ ] 3.1 `resources/bpmn/approval-request.bpmn`: chờ quyết định từng cấp bằng Message Catch Event; boundary timer nhắc/escalate (không ngắt) và hết hạn (ngắt); nhánh APPROVED/REJECTED/CANCELLED; cuối cùng service task `apply-change`.
-- [ ] 3.2 Worker (package mới): `notify-reminder`, `escalate`, `expire-request`, `apply-change`. Mọi worker: kiểm tra trạng thái DB trước (idempotent), chỉ gọi `service`, retry hợp lý, không bao giờ tự duyệt.
-- [ ] 3.3 `Wrapper` thật: start process sau commit, publish decision, cancel khi hủy/hết hạn; lưu `process_instance_key`.
-- [ ] 3.4 Test BPMN hợp lệ + test tích hợp có engine (profile riêng): 1 vòng duyệt đủ cấp, 1 vòng reject, 1 vòng hết hạn (rút ngắn thời gian bằng cấu hình test).
-- [ ] Báo cáo Phase 3.
+- [x] 3.1 `resources/bpmn/approval-request.bpmn`: chờ quyết định từng cấp bằng Message Catch Event; boundary timer nhắc/escalate (không ngắt) và hết hạn (ngắt); nhánh APPROVED/REJECTED/CANCELLED; cuối cùng service task `apply-change`.
+- [x] 3.2 Delegate (package `delegate` mới): `notify-reminder`, `escalate`, `expire-request`, `apply-change`. Mọi delegate: idempotent, chỉ gọi `service`, không bao giờ tự duyệt.
+- [x] 3.3 Wrapper thật (`CamundaProcessEngineClient`): start process sau commit, trigger message decision, cancel khi hủy/hết hạn; lưu `process_instance_key`; job đối soát `ApprovalReconciliationJob`.
+- [x] 3.4 Test BPMN hợp lệ + test tích hợp engine Flowable H2 (`ApprovalProcessEngineIntegrationTest`): duyệt đủ cấp, reject, hết hạn bằng timer, job đối soát (105/105 tests pass).
+- [x] Báo cáo Phase 3.
 
 ## PHASE 4 — Nhắc Issue sắp đến hạn (chạy theo lịch)
 

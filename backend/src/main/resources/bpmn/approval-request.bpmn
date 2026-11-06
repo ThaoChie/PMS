@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://pms.com/approval">
+
+    <message id="msgLevel1" name="decisionMessage_level1"/>
+    <message id="msgLevel2" name="decisionMessage_level2"/>
+
+    <process id="approval-request" name="Quy trình duyệt nhiều cấp" isExecutable="true">
+
+        <startEvent id="startEvent" name="Bắt đầu"/>
+        <sequenceFlow id="flowStart" sourceRef="startEvent" targetRef="gatewayCheckL1"/>
+
+        <!-- Kiểm tra Cấp 1 có bị SKIPPED không -->
+        <exclusiveGateway id="gatewayCheckL1" name="Kiểm tra Cấp 1"/>
+        <sequenceFlow id="flowToL1" sourceRef="gatewayCheckL1" targetRef="subProcessL1">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${level1Status != 'SKIPPED'}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="flowSkipL1" sourceRef="gatewayCheckL1" targetRef="gatewayCheckL2">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${level1Status == 'SKIPPED'}]]></conditionExpression>
+        </sequenceFlow>
+
+        <!-- SUBPROCESS CẤP 1 -->
+        <subProcess id="subProcessL1" name="Chờ duyệt Cấp 1">
+            <startEvent id="startL1"/>
+            <sequenceFlow id="flowSubL1_1" sourceRef="startL1" targetRef="catchDecisionL1"/>
+            <intermediateCatchEvent id="catchDecisionL1" name="Chờ quyết định cấp 1">
+                <messageEventDefinition messageRef="msgLevel1"/>
+            </intermediateCatchEvent>
+            <sequenceFlow id="flowSubL1_2" sourceRef="catchDecisionL1" targetRef="endL1"/>
+            <endEvent id="endL1"/>
+        </subProcess>
+
+        <!-- Timers trên Cấp 1 -->
+        <boundaryEvent id="timerReminderL1" name="Nhắc duyệt cấp 1" attachedToRef="subProcessL1" cancelActivity="false">
+            <timerEventDefinition>
+                <timeDuration>${reminderDuration}</timeDuration>
+            </timerEventDefinition>
+        </boundaryEvent>
+        <sequenceFlow id="flowRemL1" sourceRef="timerReminderL1" targetRef="taskReminderL1"/>
+        <serviceTask id="taskReminderL1" name="Gửi thông báo nhắc duyệt L1" flowable:delegateExpression="${notifyReminderDelegate}"/>
+        <sequenceFlow id="flowRemL1End" sourceRef="taskReminderL1" targetRef="endRemL1"/>
+        <endEvent id="endRemL1"/>
+
+        <boundaryEvent id="timerEscalateL1" name="Escalate cấp 1" attachedToRef="subProcessL1" cancelActivity="false">
+            <timerEventDefinition>
+                <timeDuration>${escalateDuration}</timeDuration>
+            </timerEventDefinition>
+        </boundaryEvent>
+        <sequenceFlow id="flowEscL1" sourceRef="timerEscalateL1" targetRef="taskEscalateL1"/>
+        <serviceTask id="taskEscalateL1" name="Báo cáo Admin escalate L1" flowable:delegateExpression="${escalateDelegate}"/>
+        <sequenceFlow id="flowEscL1End" sourceRef="taskEscalateL1" targetRef="endEscL1"/>
+        <endEvent id="endEscL1"/>
+
+        <boundaryEvent id="timerExpireL1" name="Hết hạn yêu cầu L1" attachedToRef="subProcessL1" cancelActivity="true">
+            <timerEventDefinition>
+                <timeDuration>${expireDuration}</timeDuration>
+            </timerEventDefinition>
+        </boundaryEvent>
+        <sequenceFlow id="flowExpL1" sourceRef="timerExpireL1" targetRef="taskExpireL1"/>
+        <serviceTask id="taskExpireL1" name="Hết hạn yêu cầu L1" flowable:delegateExpression="${expireRequestDelegate}"/>
+        <sequenceFlow id="flowExpL1End" sourceRef="taskExpireL1" targetRef="endExpired"/>
+
+        <!-- Sau Cấp 1 -->
+        <sequenceFlow id="flowAfterL1" sourceRef="subProcessL1" targetRef="gatewayDecisionL1"/>
+        <exclusiveGateway id="gatewayDecisionL1" name="Kết quả Cấp 1"/>
+        <sequenceFlow id="flowL1Rejected" sourceRef="gatewayDecisionL1" targetRef="endRejected">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'REJECTED'}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="flowL1Cancelled" sourceRef="gatewayDecisionL1" targetRef="endCancelled">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'CANCELLED'}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="flowL1Approved" sourceRef="gatewayDecisionL1" targetRef="gatewayCheckL2">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'APPROVED'}]]></conditionExpression>
+        </sequenceFlow>
+
+        <!-- Kiểm tra Cấp 2 có bị SKIPPED không -->
+        <exclusiveGateway id="gatewayCheckL2" name="Kiểm tra Cấp 2"/>
+        <sequenceFlow id="flowToL2" sourceRef="gatewayCheckL2" targetRef="subProcessL2">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${level2Status != 'SKIPPED'}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="flowSkipL2" sourceRef="gatewayCheckL2" targetRef="applyChangeTask">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${level2Status == 'SKIPPED'}]]></conditionExpression>
+        </sequenceFlow>
+
+        <!-- SUBPROCESS CẤP 2 -->
+        <subProcess id="subProcessL2" name="Chờ duyệt Cấp 2">
+            <startEvent id="startL2"/>
+            <sequenceFlow id="flowSubL2_1" sourceRef="startL2" targetRef="catchDecisionL2"/>
+            <intermediateCatchEvent id="catchDecisionL2" name="Chờ quyết định cấp 2">
+                <messageEventDefinition messageRef="msgLevel2"/>
+            </intermediateCatchEvent>
+            <sequenceFlow id="flowSubL2_2" sourceRef="catchDecisionL2" targetRef="endL2"/>
+            <endEvent id="endL2"/>
+        </subProcess>
+
+        <!-- Timers trên Cấp 2 -->
+        <boundaryEvent id="timerReminderL2" name="Nhắc duyệt cấp 2" attachedToRef="subProcessL2" cancelActivity="false">
+            <timerEventDefinition>
+                <timeDuration>${reminderDuration}</timeDuration>
+            </timerEventDefinition>
+        </boundaryEvent>
+        <sequenceFlow id="flowRemL2" sourceRef="timerReminderL2" targetRef="taskReminderL2"/>
+        <serviceTask id="taskReminderL2" name="Gửi thông báo nhắc duyệt L2" flowable:delegateExpression="${notifyReminderDelegate}"/>
+        <sequenceFlow id="flowRemL2End" sourceRef="taskReminderL2" targetRef="endRemL2"/>
+        <endEvent id="endRemL2"/>
+
+        <boundaryEvent id="timerEscalateL2" name="Escalate cấp 2" attachedToRef="subProcessL2" cancelActivity="false">
+            <timerEventDefinition>
+                <timeDuration>${escalateDuration}</timeDuration>
+            </timerEventDefinition>
+        </boundaryEvent>
+        <sequenceFlow id="flowEscL2" sourceRef="timerEscalateL2" targetRef="taskEscalateL2"/>
+        <serviceTask id="taskEscalateL2" name="Báo cáo Admin escalate L2" flowable:delegateExpression="${escalateDelegate}"/>
+        <sequenceFlow id="flowEscL2End" sourceRef="taskEscalateL2" targetRef="endEscL2"/>
+        <endEvent id="endEscL2"/>
+
+        <boundaryEvent id="timerExpireL2" name="Hết hạn yêu cầu L2" attachedToRef="subProcessL2" cancelActivity="true">
+            <timerEventDefinition>
+                <timeDuration>${expireDuration}</timeDuration>
+            </timerEventDefinition>
+        </boundaryEvent>
+        <sequenceFlow id="flowExpL2" sourceRef="timerExpireL2" targetRef="taskExpireL2"/>
+        <serviceTask id="taskExpireL2" name="Hết hạn yêu cầu L2" flowable:delegateExpression="${expireRequestDelegate}"/>
+        <sequenceFlow id="flowExpL2End" sourceRef="taskExpireL2" targetRef="endExpired"/>
+
+        <!-- Sau Cấp 2 -->
+        <sequenceFlow id="flowAfterL2" sourceRef="subProcessL2" targetRef="gatewayDecisionL2"/>
+        <exclusiveGateway id="gatewayDecisionL2" name="Kết quả Cấp 2"/>
+        <sequenceFlow id="flowL2Rejected" sourceRef="gatewayDecisionL2" targetRef="endRejected">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'REJECTED'}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="flowL2Cancelled" sourceRef="gatewayDecisionL2" targetRef="endCancelled">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'CANCELLED'}]]></conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="flowL2Approved" sourceRef="gatewayDecisionL2" targetRef="applyChangeTask">
+            <conditionExpression xsi:type="tFormalExpression"><![CDATA[${decision == 'APPROVED'}]]></conditionExpression>
+        </sequenceFlow>
+
+        <!-- Áp dụng thay đổi -->
+        <serviceTask id="applyChangeTask" name="Áp dụng thay đổi" flowable:delegateExpression="${applyChangeDelegate}"/>
+        <sequenceFlow id="flowApplyEnd" sourceRef="applyChangeTask" targetRef="endApproved"/>
+
+        <!-- Các điểm kết thúc -->
+        <endEvent id="endApproved" name="Đã duyệt &amp; Áp dụng"/>
+        <endEvent id="endRejected" name="Bị từ chối"/>
+        <endEvent id="endCancelled" name="Đã hủy"/>
+        <endEvent id="endExpired" name="Đã hết hạn"/>
+
+    </process>
+
+</definitions>

@@ -7,16 +7,18 @@ import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
-import org.flowable.engine.impl.cfg.StandaloneProcessEngineConfiguration;
+import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 import javax.sql.DataSource;
 
@@ -26,12 +28,13 @@ public class CamundaConfig {
 
     private static final Logger log = LoggerFactory.getLogger(CamundaConfig.class);
 
-    @Bean
+    @Bean(destroyMethod = "close")
     public ProcessEngine flowableProcessEngine(
             @Value("${flowable.datasource.url:jdbc:postgresql://localhost:5433/epms_flowable}") String url,
             @Value("${flowable.datasource.username:postgres}") String username,
             @Value("${flowable.datasource.password:postgres}") String password,
             @Value("${flowable.datasource.driver-class-name:org.postgresql.Driver}") String driverClassName,
+            ApplicationContext applicationContext,
             ResourcePatternResolver resourcePatternResolver) {
         log.info("Initializing embedded Flowable ProcessEngine with isolated DataSource at {}", url);
 
@@ -44,10 +47,12 @@ public class CamundaConfig {
                 .driverClassName(driverClassName)
                 .build();
 
-        StandaloneProcessEngineConfiguration cfg = new StandaloneProcessEngineConfiguration();
+        SpringProcessEngineConfiguration cfg = new SpringProcessEngineConfiguration();
+        cfg.setApplicationContext(applicationContext);
         cfg.setDataSource(flowableDataSource);
+        cfg.setTransactionManager(new DataSourceTransactionManager(flowableDataSource));
         cfg.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_TRUE);
-        cfg.setAsyncExecutorActivate(false);
+        cfg.setAsyncExecutorActivate(true);
 
         ProcessEngine engine = cfg.buildProcessEngine();
         deployBpmnResources(engine, resourcePatternResolver);

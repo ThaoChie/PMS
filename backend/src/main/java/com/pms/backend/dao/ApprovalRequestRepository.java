@@ -17,4 +17,6 @@ public interface ApprovalRequestRepository extends JpaRepository<ApprovalRequest
 
     @Query("SELECT ar FROM ApprovalRequest ar LEFT JOIN FETCH ar.steps LEFT JOIN FETCH ar.requester LEFT JOIN FETCH ar.project WHERE ar.id = :id")
     Optional<ApprovalRequest> findByIdWithDetails(@Param("id") Long id);
+
+    java.util.List<ApprovalRequest> findByStatusAndProcessInstanceKeyIsNull(ApprovalRequestStatus status);
 }

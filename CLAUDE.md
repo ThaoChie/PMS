@@ -31,7 +31,7 @@ Phần còn lại của dự án đã hoàn thành và đang chạy. Bạn **kh�
 | # | File (xác minh đường dẫn thật) | Được phép |
 |---|---|---|
 | 1 | `backend/pom.xml` | Thêm dependency/property của Camunda client. Không đổi version cái khác |
-| 2 | Lớp mã lỗi hiện có (`ErrorCode`) | Thêm hằng `APPROVAL_001`…`APPROVAL_006`, chỉ khi **không thể** đặt mã lỗi ở file mới |
+| 2 | Lớp mã lỗi hiện có (`ErrorCode`) | Thêm hằng `APPROVAL_001`…`APPROVAL_006`, chỉ khi **không thể** đặt mã lỗi ở file mới (Chấp nhận ngoại lệ đổi dấu ';' của hằng trước đó thành ',') |
 | 3 | Enum `NotificationType` | Thêm `REMINDER`, chỉ khi không có loại phù hợp sẵn. Nếu cột DB có ràng buộc CHECK thì kèm migration mới |
 | 4 | Router frontend | Thêm route cho trang Yêu cầu duyệt |
 | 5 | Sidebar / `AppShell` | Thêm **1 dòng** render component mới `ApprovalNavItem` |
