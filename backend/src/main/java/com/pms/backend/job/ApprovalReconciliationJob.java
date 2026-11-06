@@ -48,6 +48,15 @@ public class ApprovalReconciliationJob {
         log.info("Tìm thấy {} yêu cầu PENDING chưa có process_instance_key. Đang đối soát và khởi động lại quy trình...", unlinkedRequests.size());
         for (ApprovalRequest request : unlinkedRequests) {
             try {
+                // Kiểm tra trước nếu process instance đã chạy trên engine cho businessKey này (tránh start trùng khi lặp/nhiều instance)
+                java.util.Optional<String> existingKey = processEngineClient.findProcessInstanceIdByBusinessKey(request.getId());
+                if (existingKey.isPresent()) {
+                    approvalRequestService.updateProcessInstanceKey(request.getId(), existingKey.get());
+                    log.info("Đối soát: Yêu cầu #{} đã tồn tại processInstanceKey={} trên engine. Cập nhật DB PMS, không start mới.",
+                            request.getId(), existingKey.get());
+                    continue;
+                }
+
                 Map<String, Object> vars = new HashMap<>();
                 vars.put("requestId", request.getId());
                 vars.put("projectId", request.getProject().getId());

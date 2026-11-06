@@ -14,10 +14,10 @@ flowable:
     driver-class-name: org.postgresql.Driver
 
 approval:
-  project-close-enabled: false
-  workflow-change-enabled: false
-  reminder-after-hours: 24
-  escalate-after-hours: 72
-  expire-after-days: 14
-  due-date-reminder-cron: "0 0 8 * * ?"
-  due-date-reminder-hours-before: 24
+  project-close-enabled: ${APPROVAL_PROJECT_CLOSE_ENABLED:false}
+  workflow-change-enabled: ${APPROVAL_WORKFLOW_CHANGE_ENABLED:false}
+  reminder-after-hours: ${APPROVAL_REMINDER_AFTER_HOURS:24}
+  escalate-after-hours: ${APPROVAL_ESCALATE_AFTER_HOURS:72}
+  expire-after-days: ${APPROVAL_EXPIRE_AFTER_DAYS:14}
+  due-date-reminder-cron: "${APPROVAL_DUE_DATE_REMINDER_CRON:0 0 8 * * ?}"
+  due-date-reminder-hours-before: ${APPROVAL_DUE_DATE_REMINDER_HOURS_BEFORE:24}

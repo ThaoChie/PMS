@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 
 public class CreateApprovalRequestRequest {
 
+    private Long projectId;
+
     @NotNull(message = "Loại yêu cầu không được để trống")
     private String type;
 
@@ -15,6 +17,8 @@ public class CreateApprovalRequestRequest {
 
     private Object payload;
 
+    public Long getProjectId() { return projectId; }
+    public void setProjectId(Long projectId) { this.projectId = projectId; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
     public String getReason() { return reason; }

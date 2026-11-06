@@ -28,6 +28,12 @@ public class FlowableProcessEngineClient implements ProcessEngineClient {
     @Override
     public Optional<String> startApprovalProcess(Long requestId, Map<String, Object> variables) {
         try {
+            Optional<String> existing = findProcessInstanceIdByBusinessKey(requestId);
+            if (existing.isPresent()) {
+                log.info("Process instance {} đã tồn tại cho businessKey={}. Không start trùng.", existing.get(), requestId);
+                return existing;
+            }
+
             Map<String, Object> vars = variables != null ? new HashMap<>(variables) : new HashMap<>();
             vars.put("requestId", requestId);
 
@@ -46,6 +52,23 @@ public class FlowableProcessEngineClient implements ProcessEngineClient {
             log.error("Failed to start Flowable process for requestId={}: {}", requestId, e.getMessage(), e);
             return Optional.empty();
         }
+    }
+
+    @Override
+    public Optional<String> findProcessInstanceIdByBusinessKey(Long requestId) {
+        try {
+            List<ProcessInstance> instances = runtimeService.createProcessInstanceQuery()
+                    .processDefinitionKey(PROCESS_KEY)
+                    .processInstanceBusinessKey(String.valueOf(requestId))
+                    .active()
+                    .list();
+            if (!instances.isEmpty()) {
+                return Optional.of(instances.get(0).getId());
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi tìm kiếm process instance theo businessKey={}: {}", requestId, e.getMessage());
+        }
+        return Optional.empty();
     }
 
     @Override

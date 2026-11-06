@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://pms.com/bpmn">
+
+    <process id="due-date-reminder" name="Due Date Reminder Process" isExecutable="true">
+
+        <startEvent id="timerStartEvent" name="Daily Due Date Reminder Trigger">
+            <timerEventDefinition>
+                <timeCycle>0 0 8 * * ?</timeCycle>
+            </timerEventDefinition>
+        </startEvent>
+
+        <sequenceFlow id="flowToScanTask" sourceRef="timerStartEvent" targetRef="scanDueIssuesTask"/>
+
+        <serviceTask id="scanDueIssuesTask"
+                     name="Scan and Remind Due Issues"
+                     flowable:delegateExpression="${scanDueIssuesDelegate}"/>
+
+        <sequenceFlow id="flowToEndEvent" sourceRef="scanDueIssuesTask" targetRef="reminderEndEvent"/>
+
+        <endEvent id="reminderEndEvent" name="Reminder Process Finished"/>
+
+    </process>
+
+</definitions>
