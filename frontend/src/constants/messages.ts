@@ -70,7 +70,7 @@ export const MESSAGES = {
     DATE_IN_FUTURE: 'Ngày làm việc không được lớn hơn ngày hôm nay',
     TIME_REQUIRED: 'Vui lòng nhập thời gian đã dành (ví dụ: 2h30m)',
     TIME_INVALID: 'Thời gian không hợp lệ. Dùng dạng 1d, 2h, 30m hoặc 2h30m',
-    ONLY_ASSIGNEE: 'Chỉ người được phân công (Assignee) của công việc này được ghi nhận thời gian',
+    ONLY_ASSIGNEE: 'Chỉ người được phân công (Assignee) hoặc PM/Admin dự án mới được ghi nhận thời gian',
     ESTIMATE_LABEL: 'Ước lượng ban đầu',
     SPENT_LABEL: 'Đã dành',
     REMAINING_LABEL: 'Còn lại',
