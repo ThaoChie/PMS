@@ -83,8 +83,11 @@ export default function WorklogSection({
     estimateMinutes > 0 ? Math.min(100, Math.round((spentMinutes / estimateMinutes) * 100)) : 0;
   const isOverBudget = estimateMinutes > 0 && spentMinutes > estimateMinutes;
 
-  // UC008: không ai được ghi nhận thời gian hộ người khác, kể cả PM/Admin
-  const canLog = !!currentUser?.id && !!assigneeId && String(currentUser.id) === String(assigneeId);
+  // UC008: Assignee hoặc PM/Admin được ghi nhận thời gian (khớp permission.ts issue:logwork)
+  const canLog =
+    !!currentUser?.id &&
+    (role === 'pm' || role === 'admin' ||
+      (!!assigneeId && String(currentUser.id) === String(assigneeId)));
 
   async function handleLogWork(timeSpent: string, date: string, comment?: string) {
     const minutes = parseDuration(timeSpent);
