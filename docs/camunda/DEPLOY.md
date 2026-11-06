@@ -91,3 +91,18 @@ Duyệt Cấp 2 yêu cầu người duyệt có vai trò hệ thống `ADMIN` (k
 - **Dự án có nhiều PM:** Cấp 1 (PM khác) ở trạng thái `PENDING`, Cấp 2 (Admin) tự động chuyển sang `SKIPPED`. Yêu cầu duyệt vẫn được tiến hành với 1 cấp.
 - **Dự án chỉ có 1 PM (chính người yêu cầu):** Do người yêu cầu không thể tự duyệt (Cấp 1 `SKIPPED`) và không có Admin (Cấp 2 `SKIPPED`), toàn bộ các cấp đều `SKIPPED`. Hệ thống sẽ từ chối tạo yêu cầu và trả về lỗi `400 VALIDATION_ERROR` ("Không có người duyệt hợp lệ cho bất kỳ cấp nào trong yêu cầu này") theo đúng quy tắc nghiệp vụ.
 
+---
+
+## 6. Đánh giá Rủi ro, Chi phí và Tài nguyên khi Triển khai Production
+
+Theo phân tích chi tiết trong `ADR-engine.md`:
+
+1. **Chi phí Bản quyền (License):** 0 USD. Flowable Core được phát hành theo giấy phép Apache 2.0 nguồn mở hoàn toàn, không có rủi ro bản quyền như Camunda 8 (Zeebe Source Available) hoặc Camunda 7 (ngừng bảo trì phiên bản cộng đồng).
+2. **Chi phí Hạ tầng & Bộ nhớ (Compute & RAM):**
+   - Engine nhúng trực tiếp trong JVM Spring Boot, chỉ tiêu tốn thêm khoảng ~100MB RAM khi kích hoạt async executor.
+   - Cơ sở dữ liệu phụ `epms_flowable` có thể dùng chung cụm PostgreSQL với database chính (khác database/schema) để tối ưu chi phí, hoặc tách biệt thành 1 database instance nhỏ (chi phí ~5–15 USD/tháng trên Render/Neon/AWS RDS).
+3. **Rủi ro Vận hành & Phục hồi:**
+   - Database chính của PMS luôn là **nguồn sự thật** (`source of truth`) cho trạng thái nghiệp vụ.
+   - Nếu Flowable database gặp sự cố, `ApprovalReconciliationJob` sẽ tự động quét và phục hồi các tiến trình BPMN bị gián đoạn ngay sau khi DB hoạt động trở lại.
+   - Các API cốt lõi của PMS (quản lý issue, sprint, thành viên) hoàn toàn không bị ảnh hưởng nếu Flowable gặp sự cố.
+

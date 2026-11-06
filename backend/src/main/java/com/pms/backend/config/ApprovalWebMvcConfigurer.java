@@ -21,6 +21,7 @@ public class ApprovalWebMvcConfigurer implements WebMvcConfigurer {
         registry.addInterceptor(new ApprovalPolicyInterceptor(approvalProperties, objectMapper))
                 .addPathPatterns(
                         "/api/projects/*/close",
+                        "/projects/*/close",
                         "/api/projects/*/workflow",
                         "/projects/*/workflow"
                 );

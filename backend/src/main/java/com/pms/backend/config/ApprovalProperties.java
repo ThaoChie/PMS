@@ -14,6 +14,7 @@ public class ApprovalProperties {
     private int expireAfterDays = 14;
     private String dueDateReminderCron = "0 0 8 * * ?";
     private int dueDateReminderHoursBefore = 24;
+    private String timeZone = "Asia/Ho_Chi_Minh";
 
     public boolean isProjectCloseEnabled() { return projectCloseEnabled; }
     public void setProjectCloseEnabled(boolean projectCloseEnabled) { this.projectCloseEnabled = projectCloseEnabled; }
@@ -29,4 +30,6 @@ public class ApprovalProperties {
     public void setDueDateReminderCron(String dueDateReminderCron) { this.dueDateReminderCron = dueDateReminderCron; }
     public int getDueDateReminderHoursBefore() { return dueDateReminderHoursBefore; }
     public void setDueDateReminderHoursBefore(int dueDateReminderHoursBefore) { this.dueDateReminderHoursBefore = dueDateReminderHoursBefore; }
+    public String getTimeZone() { return timeZone; }
+    public void setTimeZone(String timeZone) { this.timeZone = timeZone; }
 }
