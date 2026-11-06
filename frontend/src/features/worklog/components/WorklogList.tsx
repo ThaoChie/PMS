@@ -3,6 +3,7 @@ import type { Worklog } from '../../../types';
 import UserAvatar from '../../../components/common/UserAvatar';
 import { formatDate } from '../../../utils/date';
 import { Clock } from 'lucide-react';
+import { MESSAGES } from '../../../constants/messages';
 
 interface WorklogListProps {
   worklogs: Worklog[];
@@ -10,7 +11,7 @@ interface WorklogListProps {
 
 export default function WorklogList({ worklogs }: WorklogListProps) {
   if (worklogs.length === 0) {
-    return <p className="text-xs text-[#9B9B9F] text-center py-4">Chưa có bản ghi thời gian nào</p>;
+    return <p className="text-xs text-[#9B9B9F] text-center py-4">{MESSAGES.WORKLOG.EMPTY}</p>;
   }
 
   return (

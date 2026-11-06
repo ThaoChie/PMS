@@ -8,7 +8,8 @@ export const filterService = {
 
   async createFilter(data: {
     name: string;
-    filters: SavedFilter['filters'];
+    /** Tiêu chí lọc — khớp IssueSearchRequest của backend */
+    filters: SavedFilter['filters'] | Record<string, any>;
     sharedWithUserIds?: string[];
     emailSubscription?: boolean;
     frequency?: 'daily' | 'weekly';

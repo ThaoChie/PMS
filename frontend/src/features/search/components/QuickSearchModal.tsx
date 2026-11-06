@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, ArrowRight, FolderGit2 } from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
-import { issueService } from '../../../services/issueService';
+import { searchService } from '../../../services/searchService';
+import { mapUserResponseToUser } from '../../../store/authStore';
 import type { Issue } from '../../../types';
 
 const TYPE_BADGE: Record<string, string> = {
@@ -51,8 +52,9 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
     }
 
     const timer = setTimeout(() => {
-      issueService
-        .getIssues(currentProject.id, { search: trimmed, page: 1, size: 8 })
+      // UC011: dùng API tìm kiếm của backend (ILIKE trên mã/tiêu đề/mô tả, có index pg_trgm)
+      searchService
+        .searchIssues({ projectIds: [Number(currentProject.id)], keyword: trimmed }, 1, 8)
         .then((res) => {
           const raw = res?.data?.content || (res?.data as any) || [];
           if (Array.isArray(raw)) {
@@ -65,6 +67,8 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
                 type: item.type,
                 status: item.status,
                 priority: item.priority,
+                assignee: item.assignee ? mapUserResponseToUser(item.assignee) : undefined,
+                reporter: mapUserResponseToUser(item.reporter),
                 labels: item.labels || [],
                 attachments: item.attachments || [],
                 subtasks: item.subtasks || [],

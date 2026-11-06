@@ -1,3 +1,9 @@
+/**
+ * @deprecated KHÔNG CÒN ĐƯỢC SỬ DỤNG.
+ * Các tab Năng suất và Báo cáo lỗi (features/reports/*) cần biểu đồ 2 chuỗi dữ liệu
+ * (đã hoàn thành / đang làm, đã khắc phục / chưa khắc phục) nên tự dựng BarChart riêng.
+ * Component này chỉ vẽ được 1 chuỗi — có thể xóa file khi cả nhóm đồng ý.
+ */
 import React from 'react';
 import {
   BarChart,
