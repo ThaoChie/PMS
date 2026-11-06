@@ -62,13 +62,13 @@ export const CreateApprovalModal: React.FC<ModalProps> = ({
       onSuccess?.();
       onClose();
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'Không thể tạo yêu cầu duyệt');
+      setErrorMessage(err?.message || err?.response?.data?.message || 'Không thể tạo yêu cầu duyệt: có lỗi xảy ra');
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-[#E5E5E7] animate-scale-up">
+      <div data-testid="create-approval-modal" className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-[#E5E5E7] animate-scale-up">
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#E5E5E7] flex items-center justify-between bg-[#F7F7F8]">
           <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ export const CreateApprovalModal: React.FC<ModalProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {errorMessage && (
-            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+            <div data-testid="create-approval-error" className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{errorMessage}</span>
             </div>
@@ -96,6 +96,7 @@ export const CreateApprovalModal: React.FC<ModalProps> = ({
           <div>
             <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">Dự án áp dụng</label>
             <select
+              data-testid="select-approval-project"
               value={projectId}
               onChange={(e) => setProjectId(Number(e.target.value))}
               className="w-full text-xs px-3 py-2 border border-[#E5E5E7] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-black"
@@ -112,6 +113,7 @@ export const CreateApprovalModal: React.FC<ModalProps> = ({
           <div>
             <label className="block text-xs font-semibold text-[#1A1A1A] mb-1.5">Loại yêu cầu</label>
             <select
+              data-testid="select-approval-type"
               value={type}
               onChange={(e) => setType(e.target.value as ApprovalRequestType)}
               className="w-full text-xs px-3 py-2 border border-[#E5E5E7] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-black"
@@ -127,6 +129,7 @@ export const CreateApprovalModal: React.FC<ModalProps> = ({
               Lý do gửi yêu cầu <span className="text-[#E53E3E]">*</span>
             </label>
             <textarea
+              data-testid="textarea-approval-reason"
               rows={4}
               required
               maxLength={1000}
@@ -147,6 +150,7 @@ export const CreateApprovalModal: React.FC<ModalProps> = ({
                 Cấu hình Workflow mới (JSON) <span className="text-[#E53E3E]">*</span>
               </label>
               <textarea
+                data-testid="textarea-approval-payload"
                 rows={5}
                 required
                 placeholder='{"statuses": [...], "transitions": [...]}'
@@ -171,6 +175,7 @@ export const CreateApprovalModal: React.FC<ModalProps> = ({
             </button>
             <button
               type="submit"
+              data-testid="btn-submit-approval"
               disabled={isSubmitting}
               className="px-5 py-2 bg-[#1A1A1A] hover:bg-black text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1.5 disabled:opacity-50"
             >

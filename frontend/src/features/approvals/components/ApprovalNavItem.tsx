@@ -26,6 +26,7 @@ export const ApprovalNavItem: React.FC<ApprovalNavItemProps> = ({
   return (
     <button
       type="button"
+      data-testid="approval-nav-item"
       title={isCollapsed ? 'Yêu cầu duyệt' : undefined}
       className={`w-full flex items-center rounded-lg text-sm transition-colors text-left ${
         isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'
