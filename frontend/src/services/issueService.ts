@@ -106,6 +106,10 @@ export const issueService = {
     });
   },
 
+  async convertToIssue(issueKey: string, targetType: string = 'Task'): Promise<ApiResponse<void>> {
+    return axiosClient.post<any, ApiResponse<void>>(`/issues/${issueKey}/convert-to-issue?targetType=${targetType.toUpperCase()}`);
+  },
+
   async uploadAttachment(issueKey: string, file: File): Promise<ApiResponse<any>> {
     const formData = new FormData();
     formData.append('file', file);

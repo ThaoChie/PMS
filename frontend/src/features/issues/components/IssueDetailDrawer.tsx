@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, ChevronDown, AlertTriangle, Share2, Trash2, CheckCircle2, RefreshCw, Pencil, Copy, Check, ExternalLink } from 'lucide-react';
+import { X, ChevronDown, AlertTriangle, Share2, Trash2, CheckCircle2, RefreshCw, Pencil, Copy, Check, ExternalLink, GitFork } from 'lucide-react';
 import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
 import { memberService } from '../../../services/memberService';
@@ -9,6 +9,8 @@ import type { Role, Issue } from '../../../types';
 import AttributesPanel from './AttributesPanel';
 import SubtaskSection from './SubtaskSection';
 import LinkedIssuesSection from './LinkedIssuesSection';
+import AttachmentSection from './AttachmentSection';
+import ConvertIssueModal from './ConvertIssueModal';
 import ShareIssueModal from './ShareIssueModal';
 import CommentSection from '../../comments/components/CommentSection';
 import WorklogSection from '../../worklog/components/WorklogSection';
@@ -47,6 +49,7 @@ export default function IssueDetailDrawer({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [concurrentConflict, setConcurrentConflict] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -57,6 +60,7 @@ export default function IssueDetailDrawer({
     (isSubtask
       ? Boolean(currentProject?.allowMemberDeleteSubtask)
       : Boolean(currentProject?.allowMemberDeleteIssue));
+  const canConvert = isPmOrAdmin || Boolean(currentProject?.allowMemberConvertSubtask);
 
   // Edit form state (for full form toggle)
   const [isEditing, setIsEditing] = useState(false);
@@ -499,6 +503,16 @@ export default function IssueDetailDrawer({
             >
               <ExternalLink className="w-3.5 h-3.5" />
             </button>
+            {canConvert && (
+              <button
+                type="button"
+                onClick={() => setShowConvertModal(true)}
+                className="text-[#9B9B9F] hover:text-purple-600 p-1 rounded hover:bg-[#F7F7F8] transition-colors"
+                title={isSubtask ? "Tách thành công việc độc lập" : "Chuyển thành Subtask"}
+              >
+                <GitFork className="w-3.5 h-3.5" />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setShowShareModal(true)}
@@ -895,8 +909,25 @@ export default function IssueDetailDrawer({
 
             {/* Linked issues */}
             <LinkedIssuesSection
-              linkedIssues={issue.linkedIssues}
+              issueKey={issue.key}
+              linkedIssues={issue.linkedIssues || []}
+              canEdit={true}
               onSelectIssue={onSelectSubtask}
+              onChanged={async () => {
+                await fetchDetail();
+                onUpdated?.();
+              }}
+            />
+
+            {/* Tệp đính kèm */}
+            <AttachmentSection
+              issueKey={issue.key}
+              attachments={issue.attachments || []}
+              canEdit={true}
+              onChanged={async () => {
+                await fetchDetail();
+                onUpdated?.();
+              }}
             />
 
             {/* Thời gian làm việc (UC008) */}
@@ -921,6 +952,19 @@ export default function IssueDetailDrawer({
           </div>
         )}
       </div>
+
+      {/* Convert Issue Modal */}
+      {showConvertModal && (
+        <ConvertIssueModal
+          issueKey={issue.key}
+          isSubtask={isSubtask}
+          onClose={() => setShowConvertModal(false)}
+          onSuccess={async () => {
+            await fetchDetail();
+            onUpdated?.();
+          }}
+        />
+      )}
 
       {/* Share Modal */}
       {showShareModal && (

@@ -25,5 +25,6 @@ public interface IIssueService {
     void deleteAttachment(String issueKey, Long attachmentId, User currentUser);
     List<IssueStatusHistoryResponse> getIssueHistory(String issueKey);
     void convertToSubtask(String issueKey, String parentKey, User currentUser);
+    void convertToIssue(String issueKey, IssueType targetType, User currentUser);
     ShareIssueResponse shareIssue(String issueKey, ShareIssueRequest request, User currentUser);
 }
