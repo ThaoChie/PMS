@@ -8,6 +8,7 @@ import com.pms.backend.dao.ProjectMemberRepository;
 import com.pms.backend.dao.ProjectRepository;
 import com.pms.backend.dao.UserRepository;
 import com.pms.backend.dto.ApprovalDecisionRequest;
+import com.pms.backend.dto.ApprovalRequestResponse;
 import com.pms.backend.dto.CreateApprovalRequestRequest;
 import com.pms.backend.enu.ApprovalApplyStatus;
 import com.pms.backend.enu.ApprovalApproverRole;
@@ -150,6 +151,35 @@ public class ApprovalRequestServiceTest {
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> service.create(10L, buildCreateRequest("PROJECT_CLOSE")));
         assertEquals(ErrorCode.VALIDATION_ERROR, ex.getErrorCode());
+    }
+
+    @Test
+    void create_shouldSetLevel2Skipped_whenAppAdminsEmptyButOtherPmExists() {
+        when(projectSecurity.getCurrentUser()).thenReturn(requesterPrincipal);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(requester));
+        when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
+        when(requestRepository.existsByProjectIdAndTypeAndStatus(any(), any(), any())).thenReturn(false);
+
+        // Project has another PM (pm2), but app_admins is empty
+        ProjectMember pm1Member = new ProjectMember(project, requester, ProjectRole.PM);
+        ProjectMember pm2Member = new ProjectMember(project, pm2, ProjectRole.PM);
+        when(memberRepository.findByProjectId(10L)).thenReturn(List.of(pm1Member, pm2Member));
+        when(appAdminRepository.findAllAdminUserIds()).thenReturn(List.of());
+
+        ApprovalRequest saved = buildPendingRequest(1L);
+        when(requestRepository.save(any())).thenReturn(saved);
+        when(stepRepository.saveAll(any())).thenAnswer(invocation -> {
+            List<ApprovalStep> steps = invocation.getArgument(0);
+            assertEquals(2, steps.size());
+            assertEquals(ApprovalStepStatus.PENDING, steps.get(0).getStatus()); // Level 1 PM
+            assertEquals(ApprovalStepStatus.SKIPPED, steps.get(1).getStatus()); // Level 2 Admin SKIPPED
+            return steps;
+        });
+        when(requestRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(saved));
+        when(mapper.toResponse(any(), anyLong())).thenReturn(new ApprovalRequestResponse());
+
+        ApprovalRequestResponse response = service.create(10L, buildCreateRequest("PROJECT_CLOSE"));
+        assertNotNull(response);
     }
 
     // ---- Tự duyệt ----

@@ -1,11 +1,12 @@
 # ADR-001 — Lựa chọn Process Engine cho tích hợp Camunda
 
-> **Trạng thái:** Chờ duyệt (Phase 0 Gate)  
+> **Trạng thái:** Đã duyệt: phương án A, kèm điều kiện trên (06/11/2026)  
 > **Người soạn:** Phase 0 survey, 06/11/2026  
-> **Ràng buộc cứng từ CLAUDE.md:**  
+> **Ràng buộc cứng từ CLAUDE.md & Điều kiện phê duyệt:**  
 > (a) Spring Boot **3.2.0** — không được nâng version.  
 > (b) **Không thêm bảng vào DB hiện có** của PMS (ưu tiên).  
-> (c) Khi `camunda.enabled=false` ứng dụng khởi động bình thường, **không thử kết nối** engine.
+> (c) Khi `camunda.enabled=false` ứng dụng khởi động bình thường, **không thử kết nối** engine.  
+> (d) Không dùng spring-boot-starter tự cấu hình nếu nó tạo engine/kết nối DB khi cờ camunda.enabled tắt; ưu tiên thư viện lõi + bean tạo engine có @ConditionalOnProperty.
 
 ---
 

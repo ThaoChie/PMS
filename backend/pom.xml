@@ -20,6 +20,7 @@
 		<commons-compress.version>1.26.0</commons-compress.version>
 		<sanitizer.version>20220608.1</sanitizer.version>
 		<flyway.version>10.10.0</flyway.version>
+		<flowable.version>7.1.0</flowable.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -137,6 +138,18 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
 			<version>${commons-compress.version}</version>
+		</dependency>
+
+		<!-- Flowable Engine (Core - không dùng spring-boot-starter để tránh tự cấu hình khi cờ tắt) -->
+		<dependency>
+			<groupId>org.flowable</groupId>
+			<artifactId>flowable-engine</artifactId>
+			<version>${flowable.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.flowable</groupId>
+			<artifactId>flowable-spring</artifactId>
+			<version>${flowable.version}</version>
 		</dependency>
 
 		<!-- Test Dependencies -->
