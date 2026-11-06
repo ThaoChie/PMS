@@ -19,10 +19,19 @@ export default function MentionInput({
 }: MentionInputProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [query, setQuery] = useState('');
+  const [mentionedIds, setMentionedIds] = useState<string[]>([]);
 
   function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const val = e.target.value;
-    onChange(val);
+    // Filter mentionedIds to keep only those still present in text
+    const activeIds = mentionedIds.filter((id) => {
+      const user = members.find((m) => String(m.id) === String(id));
+      return user ? val.includes(`@${user.name}`) : false;
+    });
+    if (activeIds.length !== mentionedIds.length) {
+      setMentionedIds(activeIds);
+    }
+    onChange(val, activeIds);
 
     const lastAt = val.lastIndexOf('@');
     if (lastAt !== -1 && lastAt === val.length - 1) {
@@ -39,7 +48,9 @@ export default function MentionInput({
   function handleSelectMember(member: User) {
     const lastAt = value.lastIndexOf('@');
     const newValue = value.slice(0, lastAt) + `@${member.name} `;
-    onChange(newValue, [member.id]);
+    const updated = Array.from(new Set([...mentionedIds, String(member.id)]));
+    setMentionedIds(updated);
+    onChange(newValue, updated);
     setShowSuggestions(false);
   }
 
