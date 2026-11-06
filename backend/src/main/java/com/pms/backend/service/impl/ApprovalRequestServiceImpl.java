@@ -44,6 +44,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.pms.backend.config.ApprovalProperties;
 import com.pms.backend.model.AppAdmin;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
+import org.flowable.engine.RuntimeService;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -73,6 +75,7 @@ public class ApprovalRequestServiceImpl implements IApprovalRequestService {
     private final ObjectMapper objectMapper;
     private final ProjectSecurity projectSecurity;
     private final ApprovalProperties approvalProperties;
+    private final ObjectProvider<RuntimeService> runtimeServiceProvider;
 
     public ApprovalRequestServiceImpl(ApprovalRequestRepository requestRepository,
                                        ApprovalStepRepository stepRepository,
@@ -90,7 +93,27 @@ public class ApprovalRequestServiceImpl implements IApprovalRequestService {
         this(requestRepository, stepRepository, appAdminRepository, projectRepository,
                 memberRepository, userRepository, approvalHibernateDao, mapper,
                 processEngineClient, notificationService, applyService, objectMapper,
-                projectSecurity, null);
+                projectSecurity, null, null);
+    }
+
+    public ApprovalRequestServiceImpl(ApprovalRequestRepository requestRepository,
+                                       ApprovalStepRepository stepRepository,
+                                       AppAdminRepository appAdminRepository,
+                                       ProjectRepository projectRepository,
+                                       ProjectMemberRepository memberRepository,
+                                       UserRepository userRepository,
+                                       IApprovalRequestHibernateDao approvalHibernateDao,
+                                       ApprovalRequestMapper mapper,
+                                       ProcessEngineClient processEngineClient,
+                                       INotificationService notificationService,
+                                       IApprovalApplyService applyService,
+                                       ObjectMapper objectMapper,
+                                       ProjectSecurity projectSecurity,
+                                       ApprovalProperties approvalProperties) {
+        this(requestRepository, stepRepository, appAdminRepository, projectRepository,
+                memberRepository, userRepository, approvalHibernateDao, mapper,
+                processEngineClient, notificationService, applyService, objectMapper,
+                projectSecurity, approvalProperties, null);
     }
 
     @Autowired
@@ -107,7 +130,8 @@ public class ApprovalRequestServiceImpl implements IApprovalRequestService {
                                        IApprovalApplyService applyService,
                                        ObjectMapper objectMapper,
                                        ProjectSecurity projectSecurity,
-                                       @Autowired(required = false) ApprovalProperties approvalProperties) {
+                                       @Autowired(required = false) ApprovalProperties approvalProperties,
+                                       ObjectProvider<RuntimeService> runtimeServiceProvider) {
         this.requestRepository = requestRepository;
         this.stepRepository = stepRepository;
         this.appAdminRepository = appAdminRepository;
@@ -122,6 +146,7 @@ public class ApprovalRequestServiceImpl implements IApprovalRequestService {
         this.objectMapper = objectMapper;
         this.projectSecurity = projectSecurity;
         this.approvalProperties = approvalProperties;
+        this.runtimeServiceProvider = runtimeServiceProvider;
     }
 
     @Override
@@ -562,5 +587,14 @@ public class ApprovalRequestServiceImpl implements IApprovalRequestService {
         } catch (Exception e) {
             log.warn("Không thể correlate quyết định cho yêu cầu {}: {}", request.getId(), e.getMessage());
         }
+    }
+
+    @Override
+    public String triggerDueReminder() {
+        if (runtimeServiceProvider != null && runtimeServiceProvider.getIfAvailable() != null) {
+            runtimeServiceProvider.getIfAvailable().startProcessInstanceByKey("due-date-reminder");
+            return "Đã kích hoạt quy trình due-date-reminder thành công";
+        }
+        return "BPMN Engine không khả dụng (cờ camunda.enabled đang tắt)";
     }
 }

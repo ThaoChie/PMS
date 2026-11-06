@@ -30,4 +30,6 @@ public interface IApprovalRequestService {
     void expire(Long requestId);
 
     void updateProcessInstanceKey(Long requestId, String processInstanceKey);
+
+    String triggerDueReminder();
 }
