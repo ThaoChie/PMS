@@ -2,14 +2,19 @@ package com.pms.backend.mapper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pms.backend.dao.AppAdminRepository;
+import com.pms.backend.dao.ProjectMemberRepository;
 import com.pms.backend.dto.ApprovalRequestResponse;
 import com.pms.backend.dto.ApprovalStepResponse;
+import com.pms.backend.enu.ApprovalApproverRole;
 import com.pms.backend.enu.ApprovalStepStatus;
+import com.pms.backend.enu.ProjectRole;
 import com.pms.backend.model.ApprovalRequest;
 import com.pms.backend.model.ApprovalStep;
 import com.pms.backend.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -21,9 +26,20 @@ public class ApprovalRequestMapper {
 
     private static final Logger log = LoggerFactory.getLogger(ApprovalRequestMapper.class);
     private final ObjectMapper objectMapper;
+    private final ProjectMemberRepository memberRepository;
+    private final AppAdminRepository appAdminRepository;
+
+    @Autowired
+    public ApprovalRequestMapper(ObjectMapper objectMapper,
+                                 ProjectMemberRepository memberRepository,
+                                 AppAdminRepository appAdminRepository) {
+        this.objectMapper = objectMapper;
+        this.memberRepository = memberRepository;
+        this.appAdminRepository = appAdminRepository;
+    }
 
     public ApprovalRequestMapper(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+        this(objectMapper, null, null);
     }
 
     public ApprovalRequestResponse toResponse(ApprovalRequest req, Long currentUserId) {
@@ -64,9 +80,10 @@ public class ApprovalRequestMapper {
                 .orElse(null);
         dto.setCurrentLevel(currentLevel);
 
+        Long projectId = req.getProject() != null ? req.getProject().getId() : null;
         boolean canIDecide = currentLevel != null && req.getSteps().stream()
                 .filter(s -> s.getStatus() == ApprovalStepStatus.PENDING)
-                .anyMatch(s -> isEligibleDecider(s, currentUserId, req.getRequester()));
+                .anyMatch(s -> isEligibleDecider(s, currentUserId, req.getRequester(), projectId));
         dto.setCanIDecide(canIDecide);
 
         return dto;
@@ -90,10 +107,21 @@ public class ApprovalRequestMapper {
                 user.getId(), user.getFullName(), user.getEmail(), user.getAvatarUrl());
     }
 
-    private boolean isEligibleDecider(ApprovalStep step, Long currentUserId, User requester) {
+    private boolean isEligibleDecider(ApprovalStep step, Long currentUserId, User requester, Long projectId) {
         if (currentUserId == null) return false;
         if (requester != null && currentUserId.equals(requester.getId())) return false;
-        return true;
+        if (step == null || step.getApproverRole() == null) return false;
+
+        if (step.getApproverRole() == ApprovalApproverRole.PM) {
+            if (memberRepository == null || projectId == null) return false;
+            return memberRepository.findByProjectIdAndUserId(projectId, currentUserId)
+                    .map(m -> m.getRole() == ProjectRole.PM)
+                    .orElse(false);
+        } else if (step.getApproverRole() == ApprovalApproverRole.ADMIN) {
+            if (appAdminRepository == null) return false;
+            return appAdminRepository.existsByUserId(currentUserId);
+        }
+        return false;
     }
 
     private Object parseJson(String json) {
