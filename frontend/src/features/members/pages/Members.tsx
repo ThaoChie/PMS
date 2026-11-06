@@ -171,6 +171,8 @@ export default function Members({ role }: MembersProps) {
       const code = err?.response?.data?.code;
       if (code === 'LAST_PM_REMOVAL' || err?.response?.status === 409) {
         setError('Không thể xoá Project Manager duy nhất trong dự án.');
+        setRemoveTarget(null);
+        setConfirmText('');
       } else {
         setError(err?.response?.data?.message || err?.message || 'Không thể xoá thành viên.');
       }

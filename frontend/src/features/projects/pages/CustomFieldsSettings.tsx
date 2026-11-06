@@ -44,14 +44,18 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
     options: string;
     defaultValue: string;
     description: string;
+    minVal: string;
+    maxVal: string;
   }>({
     name: '',
     fieldKey: '',
-    type: 'TEXT',
+    type: 'DROPDOWN',
     required: false,
     options: '',
     defaultValue: '',
     description: '',
+    minVal: '',
+    maxVal: '',
   });
 
   const loadFields = useCallback(async () => {
@@ -87,6 +91,8 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
       options: '',
       defaultValue: '',
       description: '',
+      minVal: '',
+      maxVal: '',
     });
     setError(null);
     setIsModalOpen(true);
@@ -94,6 +100,16 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
 
   function openEditModal(field: CustomField) {
     setEditingFieldId(field.id);
+    let minVal = '';
+    let maxVal = '';
+    if (field.type === 'NUMBER' && field.options) {
+      const parts = field.options.split(',');
+      for (const p of parts) {
+        const [k, v] = p.split('=').map((s) => s.trim());
+        if (k === 'min') minVal = v || '';
+        if (k === 'max') maxVal = v || '';
+      }
+    }
     setFormData({
       name: field.name,
       fieldKey: field.fieldKey,
@@ -102,6 +118,8 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
       options: field.options || '',
       defaultValue: field.defaultValue || '',
       description: field.description || '',
+      minVal,
+      maxVal,
     });
     setError(null);
     setIsModalOpen(true);
@@ -111,6 +129,8 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
     setFormData((prev) => {
       if (editingFieldId === null) {
         const autoKey = name
+          .replace(/đ/g, 'd')
+          .replace(/Đ/g, 'd')
           .toLowerCase()
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '')
@@ -131,7 +151,15 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
       return;
     }
 
-    if (formData.type === 'DROPDOWN' && !formData.options.trim()) {
+    let finalOptions = formData.options.trim();
+    if (formData.type === 'NUMBER') {
+      const opts: string[] = [];
+      if (formData.minVal.trim()) opts.push(`min=${formData.minVal.trim()}`);
+      if (formData.maxVal.trim()) opts.push(`max=${formData.maxVal.trim()}`);
+      finalOptions = opts.join(',');
+    }
+
+    if (formData.type === 'DROPDOWN' && !finalOptions) {
       setError('Vui lòng nhập các giá trị lựa chọn cho trường Dropdown (cách nhau bởi dấu phẩy)');
       return;
     }
@@ -144,7 +172,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
           name: formData.name.trim(),
           type: formData.type,
           required: formData.required,
-          options: formData.options.trim() || undefined,
+          options: finalOptions || undefined,
           defaultValue: formData.defaultValue.trim() || undefined,
           description: formData.description.trim() || undefined,
         });
@@ -155,7 +183,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
           fieldKey: formData.fieldKey.trim() || undefined,
           type: formData.type,
           required: formData.required,
-          options: formData.options.trim() || undefined,
+          options: finalOptions || undefined,
           defaultValue: formData.defaultValue.trim() || undefined,
           description: formData.description.trim() || undefined,
         });
@@ -267,6 +295,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
             </button>
             {canEdit && (
               <button
+                id="cf-btn-add"
                 type="button"
                 onClick={openCreateModal}
                 className="h-9 px-4 bg-[#E53E3E] hover:bg-[#C53030] text-white text-xs font-medium rounded-lg transition-colors shadow-xs flex items-center gap-1.5 whitespace-nowrap shrink-0"
@@ -312,6 +341,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
             </p>
             {canEdit && (
               <button
+                id="cf-btn-add-empty"
                 type="button"
                 onClick={openCreateModal}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1A1A1A] hover:bg-black text-white text-xs font-medium rounded-lg transition-colors shadow-xs whitespace-nowrap"
@@ -370,6 +400,15 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                             {opt.trim()}
                           </span>
                         ))}
+                      </p>
+                    )}
+
+                    {f.type === 'NUMBER' && f.options && (
+                      <p className="text-xs text-[#6B6B70]">
+                        <span className="font-medium text-[#1A1A1A]">Giới hạn số:</span>{' '}
+                        <span className="inline-block font-mono text-[11px] bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.5 rounded">
+                          {f.options}
+                        </span>
                       </p>
                     )}
 
@@ -442,6 +481,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                     Tên trường <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="cf-input-name"
                     type="text"
                     required
                     placeholder="Ví dụ: Sprint, Module, Release, Mức độ tác động..."
@@ -456,6 +496,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                     Mã trường (Field Key) <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="cf-input-key"
                     type="text"
                     required
                     disabled={editingFieldId !== null}
@@ -480,6 +521,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                       Kiểu dữ liệu <span className="text-red-500">*</span>
                     </label>
                     <select
+                      id="cf-select-type"
                       value={formData.type}
                       onChange={(e) =>
                         setFormData((f) => ({ ...f, type: e.target.value as CustomFieldType }))
@@ -500,6 +542,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                     </label>
                     <label className="flex items-center gap-2 mt-2 cursor-pointer">
                       <input
+                        id="cf-check-required"
                         type="checkbox"
                         checked={formData.required}
                         onChange={(e) =>
@@ -518,6 +561,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                       Danh sách các lựa chọn (Options) <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="cf-input-options"
                       type="text"
                       required
                       placeholder="Sprint 1, Sprint 2, Sprint 3"
@@ -531,11 +575,51 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                   </div>
                 )}
 
+                {formData.type === 'NUMBER' && (
+                  <div className="p-3 bg-purple-50/60 border border-purple-200/80 rounded-lg space-y-2">
+                    <div className="text-xs font-medium text-[#1A1A1A]">
+                      Quy tắc giới hạn số (Validation Rules)
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-medium text-[#6B6B70] mb-1">
+                          Giá trị tối thiểu (Min)
+                        </label>
+                        <input
+                          id="cf-num-min"
+                          type="number"
+                          placeholder="Ví dụ: 0"
+                          value={formData.minVal}
+                          onChange={(e) => setFormData((f) => ({ ...f, minVal: e.target.value }))}
+                          className="w-full px-3 py-1.5 bg-white border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-[#6B6B70] mb-1">
+                          Giá trị tối đa (Max)
+                        </label>
+                        <input
+                          id="cf-num-max"
+                          type="number"
+                          placeholder="Ví dụ: 100"
+                          value={formData.maxVal}
+                          onChange={(e) => setFormData((f) => ({ ...f, maxVal: e.target.value }))}
+                          className="w-full px-3 py-1.5 bg-white border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-purple-700">
+                      Thiết lập khoảng giá trị hợp lệ mà người dùng được phép nhập cho trường này.
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-medium text-[#1A1A1A] mb-1">
                     Giá trị mặc định (tùy chọn)
                   </label>
                   <input
+                    id="cf-input-default"
                     type="text"
                     placeholder="Ví dụ: Sprint 1"
                     value={formData.defaultValue}
@@ -549,6 +633,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                     Mô tả / Hướng dẫn điền (tùy chọn)
                   </label>
                   <textarea
+                    id="cf-input-desc"
                     rows={2}
                     placeholder="Ghi chú hướng dẫn cho thành viên khi nhập trường này..."
                     value={formData.description}
@@ -559,6 +644,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
 
                 <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E5E5E7]">
                   <button
+                    id="cf-btn-cancel"
                     type="button"
                     onClick={() => setIsModalOpen(false)}
                     className="px-3 py-1.5 border border-[#E5E5E7] rounded-lg text-xs text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
@@ -566,6 +652,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                     Hủy
                   </button>
                   <button
+                    id="cf-btn-submit"
                     type="submit"
                     disabled={saving}
                     className="flex items-center gap-1.5 px-4 py-1.5 bg-[#E53E3E] hover:bg-[#C53030] disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors shadow-sm"

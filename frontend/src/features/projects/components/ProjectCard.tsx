@@ -47,6 +47,7 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
             {project.status === 'Active' ? 'Đang hoạt động' : 'Đã đóng'}
           </span>
         </div>
+
         <p className="text-xs text-[#6B6B70] line-clamp-2 mb-4 min-h-[32px] break-words">
           {project.description || <span className="italic text-[#9B9B9F]">Không có mô tả dự án</span>}
         </p>
