@@ -22,6 +22,7 @@ import QuickSearch from './components/shared/QuickSearch';
 import Invitations from './features/members/pages/Invitations';
 import CustomFieldsConfig from './components/admin/CustomFieldsConfig';
 import IssueDetailPage from './features/issues/pages/IssueDetailPage';
+import { ApprovalsPage } from './features/approvals';
 
 import ForgotPassword from './features/auth/pages/ForgotPassword';
 import ResetPassword from './features/auth/pages/ResetPassword';
@@ -58,6 +59,8 @@ export default function App() {
     if (issueKeyParam) {
       setActiveIssueKey(issueKeyParam);
       setCurrentScreen('issue-detail');
+    } else if (window.location.pathname.includes('/approvals')) {
+      setCurrentScreen('approvals' as Screen);
     }
   }, [bootstrap]);
 
@@ -69,6 +72,8 @@ export default function App() {
       if (issueKeyParam) {
         setActiveIssueKey(issueKeyParam);
         setCurrentScreen('issue-detail');
+      } else if (window.location.pathname.includes('/approvals')) {
+        setCurrentScreen('approvals' as Screen);
       }
     }
     window.addEventListener('popstate', handleLocation);
@@ -234,6 +239,8 @@ export default function App() {
         return <MembersRoles role={role} />;
       case 'workflow':
         return <WorkflowConfig />;
+      case ('approvals' as any):
+        return <ApprovalsPage />;
       default:
         return (
           <Dashboard

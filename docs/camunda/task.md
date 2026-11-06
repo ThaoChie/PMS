@@ -146,14 +146,14 @@ Không viết code. Chỉ tạo tài liệu mới trong `docs/camunda/`.
 
 Tất cả trong `src/features/approvals/` (mới). Chỉ sửa 3 chỗ trong allowlist #4-#6.
 
-- [ ] 5.1 `approvalService.ts` (dùng `axiosClient`), `approvalStore.ts` (Zustand), kiểu dữ liệu, `useApprovalPolicy` (gọi `/approval-requests/policy`, lỗi/404 thì coi là tắt).
-- [ ] 5.2 Màn **Yêu cầu duyệt**: tab "Chờ tôi duyệt" và "Yêu cầu của tôi"; lọc theo trạng thái/loại; phân trang.
-- [ ] 5.3 Chi tiết yêu cầu: timeline các cấp, `applyStatus`, nút Approve / Reject (Reject bắt buộc nhập lý do) / Hủy, hiển thị theo `canIDecide` và vai trò.
-- [ ] 5.4 Modal **Gửi yêu cầu duyệt** (chọn loại, lý do, với Workflow thì nhập/dán `payload` đã kiểm tra hợp lệ) đặt trong trang mới, **không** thêm nút vào trang cài đặt dự án/Workflow hiện có. Khi người dùng bấm "Đóng dự án" cũ và nhận `APPROVAL_005`, thông báo của server (tiếng Việt) hướng dẫn họ sang trang này.
-- [ ] 5.5 `ApprovalNavItem` (component mới, chỉ hiện khi policy `enabled`) + 1 dòng render trong sidebar (allowlist #5); route (allowlist #4): `/approvals`, `/projects/:id/approvals`.
-- [ ] 5.6 Chuỗi tiếng Việt: append khối `APPROVAL` vào `messages.ts` (allowlist #6). Loading (Skeleton/Spinner), Toast kết quả, thông báo lỗi tiếng Việt.
-- [ ] 5.7 Vitest cho store và hàm tiện ích; `npx tsc --noEmit`, `npx vitest run`, `npm run build` đều sạch.
-- [ ] Báo cáo Phase 5.
+- [x] 5.1 `approvalService.ts` (dùng `axiosClient`), `approvalStore.ts` (Zustand), kiểu dữ liệu, `useApprovalPolicy` (gọi `/approval-requests/policy`, lỗi/404 thì coi là tắt).
+- [x] 5.2 Màn **Yêu cầu duyệt** (`ApprovalsPage`): tab "Chờ tôi duyệt" và "Yêu cầu trong dự án"; lọc theo trạng thái/loại; tìm kiếm.
+- [x] 5.3 Chi tiết yêu cầu (`ApprovalDetailDrawer`): timeline các cấp (`ApprovalTimeline`), `applyStatus`, nút Approve / Reject (Reject bắt buộc nhập lý do) / Hủy, hiển thị theo `canIDecide` và vai trò.
+- [x] 5.4 Modal **Gửi yêu cầu duyệt** (`CreateApprovalModal`): chọn loại, lý do, với Workflow thì nhập/dán `payload` đã kiểm tra hợp lệ; đặt trong trang mới, không thêm nút vào trang cài đặt dự án cũ.
+- [x] 5.5 `ApprovalNavItem` (component mới, chỉ hiện khi policy `enabled`) + 1 dòng render trong sidebar (allowlist #5); route (allowlist #4): `/approvals`, `/projects/:key/approvals`.
+- [x] 5.6 Chuỗi tiếng Việt: append khối `APPROVAL` vào `messages.ts` (allowlist #6) và `enums.ts`. Loading, Toast kết quả, thông báo lỗi tiếng Việt.
+- [x] 5.7 Vitest cho store và hàm tiện ích (`approvalStore.test.ts` 5/5 pass, tổng 11/11 tests pass); `npm run build` thành công.
+- [x] Báo cáo Phase 5.
 
 ## PHASE 6 — Kiểm toán, tài liệu, bàn giao
 

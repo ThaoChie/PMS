@@ -41,4 +41,10 @@ export const APP_ROUTES: Record<string, RouteConfig> = {
   INVITATIONS: { path: '/invitations', isProtected: true, title: 'Lời mời dự án' },
   PROFILE: { path: '/profile', isProtected: true, title: 'Hồ sơ cá nhân' },
   NOTIFICATIONS: { path: '/notifications', isProtected: true, title: 'Thông báo' },
+  APPROVALS: { path: '/approvals', isProtected: true, title: 'Yêu cầu duyệt' },
+  PROJECT_APPROVALS: {
+    path: '/projects/:key/approvals',
+    isProtected: true,
+    title: 'Yêu cầu duyệt dự án',
+  },
 };

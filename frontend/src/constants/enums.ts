@@ -84,3 +84,30 @@ export const QUICK_FILTER_OPTIONS: ReadonlyArray<{ id: string; label: string }> 
   { id: 'CRITICAL', label: 'Khẩn cấp nhất' },
   { id: 'RECENTLY_UPDATED', label: 'Vừa cập nhật' },
 ];
+
+export enum ApprovalRequestType {
+  PROJECT_CLOSE = 'PROJECT_CLOSE',
+  WORKFLOW_CONFIG_CHANGE = 'WORKFLOW_CONFIG_CHANGE',
+}
+
+export enum ApprovalRequestStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED',
+}
+
+export enum ApprovalStepStatus {
+  WAITING = 'WAITING',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  SKIPPED = 'SKIPPED',
+}
+
+export enum ApprovalApplyStatus {
+  NOT_APPLIED = 'NOT_APPLIED',
+  APPLIED = 'APPLIED',
+  FAILED = 'FAILED',
+}

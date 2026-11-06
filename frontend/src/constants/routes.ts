@@ -16,9 +16,11 @@ export const ROUTES = {
     SETTINGS: (key: string) => `/projects/${key}/settings`,
     MEMBERS: (key: string) => `/projects/${key}/settings/members`,
     WORKFLOW: (key: string) => `/projects/${key}/settings/workflow`,
+    APPROVALS: (key: string) => `/projects/${key}/approvals`,
   },
   FILTERS: '/filters',
   INVITATIONS: '/invitations',
   PROFILE: '/profile',
   NOTIFICATIONS: '/notifications',
+  APPROVALS: '/approvals',
 } as const;

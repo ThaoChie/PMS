@@ -16,6 +16,7 @@ import ProjectSwitcher from './ProjectSwitcher';
 import ProjectBadge from '../../features/projects/components/ProjectBadge';
 import UserMenu from './UserMenu';
 import { useUIStore } from '../../store/uiStore';
+import ApprovalNavItem from '../../features/approvals/components/ApprovalNavItem';
 
 const NAV_ITEMS = [
   { id: 'dashboard' as Screen, label: 'Tổng quan', icon: LayoutDashboard },
@@ -125,6 +126,8 @@ export default function Sidebar({
             {!isSidebarCollapsed && <span className="truncate">{label}</span>}
           </button>
         ))}
+
+        <ApprovalNavItem currentScreen={currentScreen} isCollapsed={isSidebarCollapsed} onNavigate={onNavigate} />
 
         {(canSeeSettings || Boolean(selectedProject?.allowMemberManageCustomFields)) && (
           <>
