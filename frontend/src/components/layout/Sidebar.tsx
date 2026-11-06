@@ -128,7 +128,6 @@ export default function Sidebar({
         ))}
 
         <ApprovalNavItem currentScreen={currentScreen} isCollapsed={isSidebarCollapsed} onNavigate={onNavigate} />
-
         {(canSeeSettings || Boolean(selectedProject?.allowMemberManageCustomFields)) && (
           <>
             <div className="pt-3 pb-1">

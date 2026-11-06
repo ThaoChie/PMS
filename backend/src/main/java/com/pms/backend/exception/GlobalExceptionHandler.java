@@ -22,6 +22,12 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleCustomValidationException(ValidationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Object>> handleBusinessException(BusinessException ex) {
         ErrorCode code = ex.getErrorCode();

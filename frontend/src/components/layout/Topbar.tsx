@@ -190,7 +190,7 @@ export default function Topbar({
         </div>
 
         {/* Create Issue */}
-        <button
+        <button id="topbar-create-issue-btn"
           type="button"
           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
           onClick={onCreateIssue}
