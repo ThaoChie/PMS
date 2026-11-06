@@ -1,0 +1,23 @@
+# Spring profile: camunda
+# Kích hoạt: --spring.profiles.active=camunda
+# Bật Flowable BPMN engine và chính sách bắt buộc duyệt nhiều cấp.
+# Tất cả bí mật đọc từ biến môi trường — KHÔNG hard-code giá trị thật ở đây.
+
+camunda:
+  enabled: true
+
+flowable:
+  datasource:
+    url: ${FLOWABLE_DB_URL:jdbc:postgresql://localhost:5433/epms_flowable}
+    username: ${FLOWABLE_DB_USERNAME:postgres}
+    password: ${FLOWABLE_DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+approval:
+  project-close-enabled: false
+  workflow-change-enabled: false
+  reminder-after-hours: 24
+  escalate-after-hours: 72
+  expire-after-days: 14
+  due-date-reminder-cron: "0 0 8 * * ?"
+  due-date-reminder-hours-before: 24

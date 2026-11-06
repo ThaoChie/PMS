@@ -27,7 +27,14 @@ public enum ErrorCode {
     INVALID_TRANSITION(HttpStatus.BAD_REQUEST, "Invalid status transition"),
     INVITATION_EXPIRED(HttpStatus.UNPROCESSABLE_ENTITY, "Invitation has expired"),
     TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "Too many requests, please try again later"),
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred"),
+    // Approval errors (Camunda integration)
+    APPROVAL_001(HttpStatus.CONFLICT, "Đã có yêu cầu duyệt cùng loại đang chờ xử lý cho dự án này"),
+    APPROVAL_002(HttpStatus.UNPROCESSABLE_ENTITY, "Yêu cầu duyệt không còn ở trạng thái PENDING"),
+    APPROVAL_003(HttpStatus.FORBIDDEN, "Bạn không phải người duyệt ở cấp hiện tại, hoặc không được tự duyệt yêu cầu của mình"),
+    APPROVAL_004(HttpStatus.BAD_REQUEST, "Từ chối yêu cầu bắt buộc phải có lý do (comment)"),
+    APPROVAL_005(HttpStatus.UNPROCESSABLE_ENTITY, "Thao tác này bắt buộc phải thực hiện qua yêu cầu duyệt. Vui lòng vào trang Yêu cầu duyệt để gửi yêu cầu"),
+    APPROVAL_006(HttpStatus.SERVICE_UNAVAILABLE, "Dịch vụ điều phối tạm thời không khả dụng, vui lòng thử lại sau");
 
     private final HttpStatus status;
     private final String defaultMessage;
