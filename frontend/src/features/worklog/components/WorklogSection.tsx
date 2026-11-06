@@ -3,6 +3,7 @@ import { Clock, Plus } from 'lucide-react';
 import type { Role, Worklog } from '../../../types';
 import { worklogService } from '../../../services/worklogService';
 import { mapUserResponseToUser, useAuthStore } from '../../../store/authStore';
+import { useProjectStore } from '../../../store/projectStore';
 import { toast } from '../../../store/toastStore';
 import { MESSAGES } from '../../../constants/messages';
 import { formatDuration, parseDuration } from '../../../utils/duration';
@@ -44,9 +45,13 @@ export default function WorklogSection({
   issueKey,
   estimates,
   assigneeId,
+  role,
   onChanged,
 }: WorklogSectionProps) {
   const currentUser = useAuthStore((s) => s.user);
+  const userRole = useAuthStore((s) => s.role);
+  const currentProject = useProjectStore((s) => s.currentProject);
+  const effectiveRole = role || currentProject?.myRole || userRole || 'member';
 
   const [worklogs, setWorklogs] = useState<Worklog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -86,7 +91,7 @@ export default function WorklogSection({
   // UC008: Assignee hoặc PM/Admin được ghi nhận thời gian (khớp permission.ts issue:logwork)
   const canLog =
     !!currentUser?.id &&
-    (role === 'pm' || role === 'admin' ||
+    (effectiveRole === 'pm' || effectiveRole === 'admin' ||
       (!!assigneeId && String(currentUser.id) === String(assigneeId)));
 
   async function handleLogWork(timeSpent: string, date: string, comment?: string) {

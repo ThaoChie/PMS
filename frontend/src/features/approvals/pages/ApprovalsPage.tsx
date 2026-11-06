@@ -168,7 +168,7 @@ export default function ApprovalsPage() {
                 <span className="text-[#6B6B70] font-medium">Dự án:</span>
                 <select
                   data-testid="filter-project"
-                  value={activeProjectId}
+                  value={activeProjectId ?? ''}
                   onChange={(e) => setSelectedProjectId(Number(e.target.value))}
                   className="text-xs px-2.5 py-1.5 border border-[#E5E5E7] rounded-lg bg-white focus:outline-none"
                 >
@@ -303,7 +303,7 @@ export default function ApprovalsPage() {
       {showCreateModal && (
         <CreateApprovalModal
           projects={projects}
-          defaultProjectId={activeProjectId}
+          defaultProjectId={activeProjectId ?? undefined}
           onClose={() => setShowCreateModal(false)}
           onSuccess={loadData}
         />
