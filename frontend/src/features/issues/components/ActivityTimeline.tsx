@@ -1,3 +1,9 @@
+/**
+ * @deprecated Đã được thay bằng 2 khối nối API thật:
+ *  - features/comments/components/CommentSection.tsx (bình luận + @mention, sửa/xóa)
+ *  - features/worklog/components/WorklogSection.tsx (ghi nhận thời gian + thanh tiến độ)
+ * Giữ lại file để không phá vỡ import của thành viên khác; có thể xóa khi cả nhóm đồng ý.
+ */
 import React, { useState } from 'react';
 import { Clock, Send } from 'lucide-react';
 import type { Comment } from '../../../types';

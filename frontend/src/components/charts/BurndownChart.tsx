@@ -1,3 +1,9 @@
+/**
+ * @deprecated KHÔNG CÒN ĐƯỢC SỬ DỤNG.
+ * Tab Báo cáo tiến độ (features/reports/ProgressTab.tsx) đã tự dựng biểu đồ Burn-down
+ * với 3 đường (lý tưởng / còn lại / đã hoàn thành), legend và tooltip tiếng Việt.
+ * Component này chỉ hỗ trợ 2 đường nên không dùng nữa — có thể xóa file khi cả nhóm đồng ý.
+ */
 import React from 'react';
 import {
   LineChart,

@@ -4,12 +4,14 @@ import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
 import { memberService } from '../../../services/memberService';
 import { useProjectStore } from '../../../store/projectStore';
+import { mapUserResponseToUser } from '../../../store/authStore';
 import type { Role, Issue } from '../../../types';
 import AttributesPanel from './AttributesPanel';
 import SubtaskSection from './SubtaskSection';
 import LinkedIssuesSection from './LinkedIssuesSection';
-import ActivityTimeline from './ActivityTimeline';
 import ShareIssueModal from './ShareIssueModal';
+import CommentSection from '../../comments/components/CommentSection';
+import WorklogSection from '../../worklog/components/WorklogSection';
 
 const STATUS_BADGE: Record<string, string> = {
   'To Do': 'text-[#6B6B70] bg-[#F7F7F8] border-[#E5E5E7]',
@@ -96,24 +98,8 @@ export default function IssueDetailDrawer({
         type: raw.type,
         status: raw.status,
         priority: raw.priority,
-        assignee: raw.assignee
-          ? {
-              id: String(raw.assignee.id),
-              name: raw.assignee.fullName || raw.assignee.name || raw.assignee.email,
-              email: raw.assignee.email,
-              avatarUrl: raw.assignee.avatarUrl,
-              role: 'member',
-            }
-          : undefined,
-        reporter: raw.reporter
-          ? {
-              id: String(raw.reporter.id),
-              name: raw.reporter.fullName || raw.reporter.name || raw.reporter.email,
-              email: raw.reporter.email,
-              avatarUrl: raw.reporter.avatarUrl,
-              role: 'member',
-            }
-          : { id: '0', name: 'Unknown', email: '', role: 'member' },
+        assignee: raw.assignee ? mapUserResponseToUser(raw.assignee) : undefined,
+        reporter: mapUserResponseToUser(raw.reporter),
         labels: raw.labels || [],
         estimates: raw.estimates,
         dueDate: raw.dueDate,
@@ -124,6 +110,7 @@ export default function IssueDetailDrawer({
         comments: raw.comments || [],
         projectId: String(raw.projectId || ''),
         createdAt: raw.createdAt || '',
+        updatedAt: raw.updatedAt || '',
         version: raw.version,
         customFields: (raw.customFields || []).map((cf: any) => ({
           id: cf.id || cf.fieldId,
@@ -185,7 +172,7 @@ export default function IssueDetailDrawer({
 
   if (!issue) return null;
 
-  const isPendingApproval = issue.status === 'Pending Approval' || issue.status === 'Chờ xác nhận';
+  const isPendingApproval = ['pending approval', 'chờ xác nhận'].includes(String(issue.status).trim().toLowerCase());
   const canApprove = (role === 'pm' || role === 'admin') && isPendingApproval;
 
   async function handleExecuteTransition(transition: any) {
@@ -912,8 +899,25 @@ export default function IssueDetailDrawer({
               onSelectIssue={onSelectSubtask}
             />
 
-            {/* Comments & Activity Timeline */}
-            <ActivityTimeline comments={issue.comments} status={issue.status} />
+            {/* Thời gian làm việc (UC008) */}
+            <WorklogSection
+              issueKey={issue.key}
+              estimates={issue.estimates}
+              assigneeId={issue.assignee?.id}
+              role={role}
+              onChanged={async () => {
+                await fetchDetail();
+                onUpdated?.();
+              }}
+            />
+
+            {/* Bình luận & @mention (UC007) */}
+            <CommentSection
+              issueKey={issue.key}
+              projectId={issue.projectId}
+              role={role}
+              onChanged={() => onUpdated?.()}
+            />
           </div>
         )}
       </div>

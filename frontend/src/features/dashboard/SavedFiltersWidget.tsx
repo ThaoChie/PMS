@@ -22,7 +22,7 @@ export const SavedFiltersWidget: React.FC<SavedFiltersWidgetProps> = ({
         </div>
         {onNavigate && (
           <button
-            onClick={() => onNavigate('filters')}
+            onClick={() => onNavigate('saved-filters')}
             className="text-[10px] text-[#6B6B70] hover:text-[#E53E3E] flex items-center gap-1 transition-colors"
           >
             Quản lý <ArrowRight className="w-3 h-3" />
@@ -43,7 +43,7 @@ export const SavedFiltersWidget: React.FC<SavedFiltersWidgetProps> = ({
                 if (onSelectFilter) {
                   onSelectFilter(f.id);
                 } else if (onNavigate) {
-                  onNavigate('filters');
+                  onNavigate('saved-filters');
                 }
               }}
             >
@@ -55,9 +55,11 @@ export const SavedFiltersWidget: React.FC<SavedFiltersWidgetProps> = ({
                   {(f as any).isShared || f.sharedWith?.length > 0 ? 'Chia sẻ với dự án' : 'Riêng tư'}
                 </p>
               </div>
-              <span className="text-[10px] text-[#9B9B9F] bg-[#F7F7F8] border border-[#E5E5E7] px-1.5 py-0.5 rounded">
-                {(f as any).count ?? 0}
-              </span>
+              {f.emailSubscription && (
+                <span className="text-[10px] text-[#6B6B70] bg-[#F7F7F8] border border-[#E5E5E7] px-1.5 py-0.5 rounded">
+                  {f.frequency === 'daily' ? 'email hàng ngày' : 'email hàng tuần'}
+                </span>
+              )}
             </div>
           ))}
         </div>

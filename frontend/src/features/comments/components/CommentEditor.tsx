@@ -3,6 +3,7 @@ import { Send } from 'lucide-react';
 import type { User } from '../../../types';
 import MentionInput from '../../../components/common/MentionInput';
 import UserAvatar from '../../../components/common/UserAvatar';
+import { MESSAGES } from '../../../constants/messages';
 
 interface CommentEditorProps {
   currentUser?: User;
@@ -15,7 +16,7 @@ export default function CommentEditor({
   currentUser,
   members = [],
   onSubmit,
-  placeholder = 'Add a comment or @mention a teammate…',
+  placeholder = MESSAGES.COMMENT.PLACEHOLDER,
 }: CommentEditorProps) {
   const [content, setContent] = useState('');
   const [mentions, setMentions] = useState<string[]>([]);
@@ -47,7 +48,7 @@ export default function CommentEditor({
             onClick={handleSubmit}
             className="flex items-center gap-1 px-3 py-1 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            <Send className="w-3 h-3" /> Comment
+            <Send className="w-3 h-3" /> Gửi bình luận
           </button>
         </div>
       </div>

@@ -18,6 +18,20 @@ export type PermissionAction =
   | 'issue:export';
 
 /**
+ * Chỉ Admin hoặc PM của dự án được mời / đổi vai trò / xóa thành viên (BR-AUTH-03).
+ */
+export function canManageMembers(role: Role | string): boolean {
+  return role === 'admin' || role === 'pm';
+}
+
+/**
+ * Chỉ Admin hoặc PM của dự án được cấu hình Workflow (UC005).
+ */
+export function canManageWorkflow(role: Role | string): boolean {
+  return role === 'admin' || role === 'pm';
+}
+
+/**
  * Checks if a user with a given project role has permission to perform an action.
  * Maps directly to the RBAC matrix in context.md.
  */

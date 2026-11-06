@@ -16,12 +16,14 @@ import { useProjectStore } from '../../../store/projectStore';
 import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
 import { memberService } from '../../../services/memberService';
+import { mapUserResponseToUser } from '../../../store/authStore';
 import type { Issue, Role } from '../../../types';
 import AttributesPanel from '../components/AttributesPanel';
 import SubtaskSection from '../components/SubtaskSection';
 import LinkedIssuesSection from '../components/LinkedIssuesSection';
-import ActivityTimeline from '../components/ActivityTimeline';
 import ShareIssueModal from '../components/ShareIssueModal';
+import CommentSection from '../../comments/components/CommentSection';
+import WorklogSection from '../../worklog/components/WorklogSection';
 
 interface IssueDetailPageProps {
   issueKey: string;
@@ -93,24 +95,8 @@ export default function IssueDetailPage({
         type: raw.type,
         status: raw.status,
         priority: raw.priority,
-        assignee: raw.assignee
-          ? {
-              id: String(raw.assignee.id),
-              name: raw.assignee.fullName || raw.assignee.name || raw.assignee.email,
-              email: raw.assignee.email,
-              avatarUrl: raw.assignee.avatarUrl,
-              role: 'member',
-            }
-          : undefined,
-        reporter: raw.reporter
-          ? {
-              id: String(raw.reporter.id),
-              name: raw.reporter.fullName || raw.reporter.name || raw.reporter.email,
-              email: raw.reporter.email,
-              avatarUrl: raw.reporter.avatarUrl,
-              role: 'member',
-            }
-          : { id: '0', name: 'Unknown', email: '', role: 'member' },
+        assignee: raw.assignee ? mapUserResponseToUser(raw.assignee) : undefined,
+        reporter: mapUserResponseToUser(raw.reporter),
         labels: raw.labels || [],
         estimates: raw.estimates,
         dueDate: raw.dueDate,
@@ -219,11 +205,12 @@ export default function IssueDetailPage({
     }
   }
 
-  async function handleStatusTransition(targetStatus: string) {
-    if (!issue) return;
+  /** Chuyển trạng thái theo đúng transition đã cấu hình trong Workflow (BR-WF-01) */
+  async function handleStatusTransition(transition: any) {
+    if (!issue || !transition?.id) return;
     setActionLoading(true);
     try {
-      await workflowService.transition(issue.key, targetStatus);
+      await workflowService.executeTransition(issue.key, String(transition.id));
       setShowStatusMenu(false);
       await fetchDetail();
     } catch (err: any) {
@@ -413,7 +400,7 @@ export default function IssueDetailPage({
                         <button
                           key={t.id || t.toStatus}
                           type="button"
-                          onClick={() => handleStatusTransition(t.toStatus || t.name)}
+                          onClick={() => handleStatusTransition(t)}
                           className="w-full text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F8] text-[#1A1A1A]"
                         >
                           &rarr; Chuyển sang {t.toStatus || t.name}
@@ -552,9 +539,24 @@ export default function IssueDetailPage({
               />
             </div>
 
-            {/* Comments & Activity Timeline */}
+            {/* Thời gian làm việc (UC008) */}
             <div className="bg-white border border-[#E5E5E7] rounded-xl p-6 shadow-sm">
-              <ActivityTimeline comments={issue.comments} status={issue.status} />
+              <WorklogSection
+                issueKey={issue.key}
+                estimates={issue.estimates}
+                assigneeId={issue.assignee?.id}
+                role={role}
+                onChanged={fetchDetail}
+              />
+            </div>
+
+            {/* Bình luận & @mention (UC007) */}
+            <div className="bg-white border border-[#E5E5E7] rounded-xl p-6 shadow-sm">
+              <CommentSection
+                issueKey={issue.key}
+                projectId={issue.projectId}
+                role={role}
+              />
             </div>
           </div>
 
