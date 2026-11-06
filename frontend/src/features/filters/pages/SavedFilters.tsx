@@ -308,10 +308,23 @@ export default function SavedFilters() {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
+                          title="Áp dụng bộ lọc này để xem công việc"
+                          onClick={() => {
+                            window.history.pushState({}, '', '/');
+                            window.dispatchEvent(new PopStateEvent('popstate'));
+                            toast.success(`Đang mở công việc theo bộ lọc "${f.name}"`);
+                          }}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-[#1A1A1A] text-white rounded-lg text-xs font-medium hover:bg-black transition-colors"
+                        >
+                          <FilterIcon className="w-3 h-3" />
+                          <span>Áp dụng</span>
+                        </button>
+                        <button
+                          type="button"
                           disabled={!owner || busy}
                           title={owner ? 'Chia sẻ bộ lọc' : MESSAGES.FILTER.OWNER_ONLY}
                           onClick={() => setSharingFilter(f)}
-                          className="text-[#9B9B9F] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="text-[#9B9B9F] hover:text-[#1A1A1A] transition-colors disabled:opacity-40 disabled:cursor-not-allowed p-1 rounded"
                         >
                           <Share2 className="w-3.5 h-3.5" />
                         </button>
@@ -320,7 +333,7 @@ export default function SavedFilters() {
                           disabled={!owner || busy}
                           title={owner ? 'Xóa bộ lọc' : MESSAGES.FILTER.OWNER_ONLY}
                           onClick={() => setDeletingId(f.id)}
-                          className="text-[#9B9B9F] hover:text-[#E53E3E] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="text-[#9B9B9F] hover:text-[#E53E3E] transition-colors disabled:opacity-40 disabled:cursor-not-allowed p-1 rounded"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

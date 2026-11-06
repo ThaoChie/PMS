@@ -159,7 +159,12 @@ export default function Topbar({
                         setNotifOpen(false);
                         if (n.type === 'invite') {
                           onNavigate('invitations');
+                        } else if ((n.type as string).toUpperCase() === 'APPROVAL' || n.title?.toLowerCase().includes('phê duyệt') || n.title?.toLowerCase().includes('yêu cầu')) {
+                          onNavigate('approvals' as Screen);
                         } else if (n.sourceId) {
+                          window.history.pushState({}, '', `/issues/${n.sourceId}`);
+                          window.dispatchEvent(new PopStateEvent('popstate'));
+                        } else {
                           onNavigate('board');
                         }
                       }}
