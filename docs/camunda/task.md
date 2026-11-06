@@ -157,18 +157,18 @@ Tất cả trong `src/features/approvals/` (mới). Chỉ sửa 3 chỗ trong al
 
 ## PHASE 6 — Kiểm toán, tài liệu, bàn giao
 
-- [ ] 6.1 **Kiểm toán additive-only:** chạy `git diff --name-status <gốc>...HEAD | grep -v '^A'`; mọi file `M` phải thuộc allowlist và chỉ có dòng thêm. Dán kết quả vào báo cáo.
-- [ ] 6.2 **Cờ tắt:** khởi động ứng dụng không engine; thử đóng dự án và đổi Workflow qua API cũ vẫn chạy như trước; `/approval-requests/policy` trả `enabled:false`; endpoint duyệt 404; sidebar không hiện mục mới.
-- [ ] 6.3 **Cờ bật:** chạy `docker-compose.camunda.yml`, bật profile; chạy trọn luồng thủ công: tạo yêu cầu → cấp 1 duyệt → cấp 2 duyệt → dự án `CLOSED`; một luồng reject; một luồng nhắc.
-- [ ] 6.4 `mvn clean test`, `npx tsc --noEmit`, `npx vitest run`, `npm run build`: ghi kết quả **thật**; cái nào không chạy được thì nêu rõ.
-- [ ] 6.5 Tài liệu `docs/camunda/`: README (cách bật/tắt, biến môi trường, cách chạy local), sơ đồ 2 quy trình, bảng biến process, `DEPLOY.md` (chưa deploy production: ghi rõ chi phí/rủi ro đã nêu ở ADR), `API_DEVIATIONS.md` (nếu có).
-- [ ] 6.6 Báo cáo tổng kết: danh sách file mới, file hiện có đã sửa (allowlist), việc chưa làm, rủi ro còn lại, các việc ngoài phạm vi đã thấy (không sửa).
+- [x] 6.1 **Kiểm toán additive-only:** chạy `git diff --name-status <gốc>...HEAD | grep -v '^A'`; mọi file `M` phải thuộc allowlist và chỉ có dòng thêm. Dán kết quả vào báo cáo.
+- [x] 6.2 **Cờ tắt:** khởi động ứng dụng không engine; thử đóng dự án và đổi Workflow qua API cũ vẫn chạy như trước; `/approval-requests/policy` trả `enabled:false`; endpoint duyệt 404; sidebar không hiện mục mới.
+- [x] 6.3 **Cờ bật:** chạy `docker-compose.camunda.yml`, bật profile; chạy trọn luồng thủ công: tạo yêu cầu → cấp 1 duyệt → cấp 2 duyệt → dự án `CLOSED`; một luồng reject; một luồng nhắc.
+- [x] 6.4 `mvn clean test`, `npx tsc --noEmit`, `npx vitest run`, `npm run build`: ghi kết quả **thật**; cái nào không chạy được thì nêu rõ.
+- [x] 6.5 Tài liệu `docs/camunda/`: README (cách bật/tắt, biến môi trường, cách chạy local), sơ đồ 2 quy trình, bảng biến process, `DEPLOY.md` (chưa deploy production: ghi rõ chi phí/rủi ro đã nêu ở ADR), `API_DEVIATIONS.md` (nếu có).
+- [x] 6.6 Báo cáo tổng kết: danh sách file mới, file hiện có đã sửa (allowlist), việc chưa làm, rủi ro còn lại, các việc ngoài phạm vi đã thấy (không sửa).
 
 ## Definition of Done
 
-- [ ] Mọi file hiện có không thuộc allowlist **không đổi**; file thuộc allowlist chỉ có dòng thêm.
-- [ ] Cờ tắt: hành vi hệ thống và test cũ không đổi, không cần engine.
-- [ ] Cờ bật: duyệt đủ cấp, reject, hủy, hết hạn, nhắc, escalate hoạt động; không có đường nào tự duyệt hoặc đổi trạng thái Issue.
-- [ ] Phân quyền đúng; audit ghi đúng người thực hiện kể cả khi do worker áp dụng.
-- [ ] Không bí mật trong git; không file bị `.gitignore` làm mất khỏi bàn giao.
-- [ ] Báo cáo trung thực: lệnh nào đã chạy, kết quả thật.
+- [x] Mọi file hiện có không thuộc allowlist **không đổi**; file thuộc allowlist chỉ có dòng thêm.
+- [x] Cờ tắt: hành vi hệ thống và test cũ không đổi, không cần engine.
+- [x] Cờ bật: duyệt đủ cấp, reject, hủy, hết hạn, nhắc, escalate hoạt động; không có đường nào tự duyệt hoặc đổi trạng thái Issue.
+- [x] Phân quyền đúng; audit ghi đúng người thực hiện kể cả khi do worker áp dụng.
+- [x] Không bí mật trong git; không file bị `.gitignore` làm mất khỏi bàn giao.
+- [x] Báo cáo trung thực: lệnh nào đã chạy, kết quả thật.

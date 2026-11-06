@@ -21,3 +21,4 @@ approval:
   expire-after-days: ${APPROVAL_EXPIRE_AFTER_DAYS:14}
   due-date-reminder-cron: "${APPROVAL_DUE_DATE_REMINDER_CRON:0 0 8 * * ?}"
   due-date-reminder-hours-before: ${APPROVAL_DUE_DATE_REMINDER_HOURS_BEFORE:24}
+  time-zone: ${APPROVAL_TIME_ZONE:Asia/Ho_Chi_Minh}

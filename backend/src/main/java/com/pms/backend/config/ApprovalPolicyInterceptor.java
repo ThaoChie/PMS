@@ -38,12 +38,13 @@ public class ApprovalPolicyInterceptor implements HandlerInterceptor {
     }
 
     private boolean isProjectCloseUri(String uri) {
-        return uri.matches(".*/api/projects/\\d+/close$");
+        return uri.matches(".*/api/projects/\\d+/close/?$")
+                || uri.matches(".*/projects/\\d+/close/?$");
     }
 
     private boolean isWorkflowUpdateUri(String uri) {
-        return uri.matches(".*/api/projects/\\d+/workflow$")
-                || uri.matches(".*/projects/\\d+/workflow$");
+        return uri.matches(".*/api/projects/\\d+/workflow/?$")
+                || uri.matches(".*/projects/\\d+/workflow/?$");
     }
 
     private boolean rejectWithApproval005(HttpServletResponse response) throws Exception {

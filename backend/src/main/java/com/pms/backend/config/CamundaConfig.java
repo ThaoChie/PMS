@@ -2,6 +2,8 @@ package com.pms.backend.config;
 
 import com.pms.backend.wrapper.FlowableProcessEngineClient;
 import com.pms.backend.wrapper.ProcessEngineClient;
+import org.flowable.common.engine.impl.calendar.CycleBusinessCalendar;
+import org.flowable.common.engine.impl.calendar.MapBusinessCalendarManager;
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.RepositoryService;
@@ -21,6 +23,8 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 import javax.sql.DataSource;
+import java.nio.charset.StandardCharsets;
+import java.util.TimeZone;
 
 @Configuration
 @ConditionalOnProperty(name = "camunda.enabled", havingValue = "true")
@@ -35,7 +39,8 @@ public class CamundaConfig {
             @Value("${flowable.datasource.password:postgres}") String password,
             @Value("${flowable.datasource.driver-class-name:org.postgresql.Driver}") String driverClassName,
             ApplicationContext applicationContext,
-            ResourcePatternResolver resourcePatternResolver) {
+            ResourcePatternResolver resourcePatternResolver,
+            ApprovalProperties approvalProperties) {
         log.info("Initializing embedded Flowable ProcessEngine with isolated DataSource at {}", url);
 
         // DataSource được tạo trực tiếp cho Flowable, KHÔNG đăng ký làm Spring Bean
@@ -55,7 +60,16 @@ public class CamundaConfig {
         cfg.setAsyncExecutorActivate(true);
 
         ProcessEngine engine = cfg.buildProcessEngine();
-        deployBpmnResources(engine, resourcePatternResolver);
+
+        // Cấu hình TimeZone cho Timer Cycle Cron (mặc định Asia/Ho_Chi_Minh)
+        if (cfg.getBusinessCalendarManager() instanceof MapBusinessCalendarManager mbcm) {
+            TimeZone tz = TimeZone.getTimeZone(approvalProperties != null && approvalProperties.getTimeZone() != null
+                    ? approvalProperties.getTimeZone() : "Asia/Ho_Chi_Minh");
+            mbcm.addBusinessCalendar(CycleBusinessCalendar.NAME,
+                    new TimeZoneAwareCycleBusinessCalendar(cfg.getClock(), tz));
+        }
+
+        deployBpmnResources(engine, resourcePatternResolver, approvalProperties);
         return engine;
     }
 
@@ -79,16 +93,25 @@ public class CamundaConfig {
         return new FlowableProcessEngineClient(processEngine, runtimeService);
     }
 
-    private void deployBpmnResources(ProcessEngine processEngine, ResourcePatternResolver resolver) {
+    private void deployBpmnResources(ProcessEngine processEngine, ResourcePatternResolver resolver, ApprovalProperties approvalProperties) {
         try {
             Resource[] resources = resolver.getResources("classpath*:bpmn/*.bpmn");
             if (resources != null && resources.length > 0) {
                 RepositoryService repo = processEngine.getRepositoryService();
                 for (Resource r : resources) {
                     if (r.isReadable()) {
+                        byte[] bytes = r.getInputStream().readAllBytes();
+                        // Nạp cấu hình cron động từ approvalProperties cho quy trình nhắc việc nếu có
+                        if ("due-date-reminder.bpmn".equals(r.getFilename()) && approvalProperties != null
+                                && approvalProperties.getDueDateReminderCron() != null) {
+                            String xml = new String(bytes, StandardCharsets.UTF_8);
+                            xml = xml.replaceAll("<timeCycle>.*?</timeCycle>",
+                                    "<timeCycle>" + approvalProperties.getDueDateReminderCron() + "</timeCycle>");
+                            bytes = xml.getBytes(StandardCharsets.UTF_8);
+                        }
                         repo.createDeployment()
                                 .name(r.getFilename())
-                                .addInputStream(r.getFilename(), r.getInputStream())
+                                .addBytes(r.getFilename(), bytes)
                                 .deploy();
                         log.info("Auto-deployed BPMN process definition from {}", r.getFilename());
                     }
