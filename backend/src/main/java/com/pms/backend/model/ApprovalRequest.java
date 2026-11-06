@@ -40,6 +40,7 @@ public class ApprovalRequest extends BaseEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String reason;
 
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     @Column(name = "payload_json", columnDefinition = "jsonb")
     private String payloadJson;
 

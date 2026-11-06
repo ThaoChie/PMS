@@ -137,10 +137,10 @@ Không viết code. Chỉ tạo tài liệu mới trong `docs/camunda/`.
 
 ## PHASE 4 — Nhắc Issue sắp đến hạn (chạy theo lịch)
 
-- [ ] 4.1 `resources/bpmn/due-date-reminder.bpmn`: Timer Start theo cron cấu hình → worker `scan-due-issues`.
-- [ ] 4.2 DAO mới (read-only) tìm Issue chưa Done có `dueDate` trong N giờ tới; gửi cho Assignee qua `NotificationService`; chống lặp bằng `reminder_log`. **Không sửa dữ liệu Issue**.
-- [ ] 4.3 Test: không gửi lặp trong cùng ngày, bỏ qua Issue đã Done/không có Assignee, không đổi trạng thái Issue.
-- [ ] Báo cáo Phase 4.
+- [x] 4.1 `resources/bpmn/due-date-reminder.bpmn`: Timer Start theo cron cấu hình (`0 0 8 * * ?`) → delegate `scanDueIssuesDelegate`.
+- [x] 4.2 DAO mới (read-only `DueIssueReminderRepository`) tìm Issue chưa Done có `dueDate` trong N giờ tới; gửi cho Assignee qua `NotificationService`; chống lặp bằng `reminder_log` (`ReminderLogRepository`). **Không sửa dữ liệu Issue**.
+- [x] 4.3 Test (`DueDateReminderTest`): không gửi lặp trong cùng ngày, bỏ qua Issue đã Done/không có Assignee, không đổi trạng thái Issue.
+- [x] Báo cáo Phase 4.
 
 ## PHASE 5 — Frontend (có thể chạy song song từ sau Phase 2, dùng mock theo đặc tả)
 

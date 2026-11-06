@@ -5,6 +5,9 @@ import java.util.Optional;
 
 public interface ProcessEngineClient {
     Optional<String> startApprovalProcess(Long requestId, Map<String, Object> variables);
+    default Optional<String> findProcessInstanceIdByBusinessKey(Long requestId) {
+        return Optional.empty();
+    }
     void correlateDecisionMessage(Long requestId, int level, Map<String, Object> variables);
     void cancelProcess(String processInstanceKey, String reason);
     boolean isHealthy();

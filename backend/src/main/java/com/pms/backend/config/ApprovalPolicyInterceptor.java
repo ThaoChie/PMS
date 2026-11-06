@@ -22,13 +22,13 @@ public class ApprovalPolicyInterceptor implements HandlerInterceptor {
         String method = request.getMethod();
         String uri = request.getRequestURI();
 
-        if ("POST".equalsIgnoreCase(method) && isProjectCloseUri(uri)) {
+        if (("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method)) && isProjectCloseUri(uri)) {
             if (approvalProperties.isProjectCloseEnabled()) {
                 return rejectWithApproval005(response);
             }
         }
 
-        if ("PUT".equalsIgnoreCase(method) && isWorkflowUpdateUri(uri)) {
+        if (("PUT".equalsIgnoreCase(method) || "POST".equalsIgnoreCase(method)) && isWorkflowUpdateUri(uri)) {
             if (approvalProperties.isWorkflowChangeEnabled()) {
                 return rejectWithApproval005(response);
             }
