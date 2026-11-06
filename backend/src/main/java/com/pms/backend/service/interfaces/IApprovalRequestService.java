@@ -22,4 +22,12 @@ public interface IApprovalRequestService {
     PageWrapper<ApprovalRequestResponse> findByProject(Long projectId, String status, String type, int page, int size);
 
     List<ApprovalRequestResponse> findPendingForMe();
+
+    void sendReminder(Long requestId);
+
+    void escalate(Long requestId);
+
+    void expire(Long requestId);
+
+    void updateProcessInstanceKey(Long requestId, String processInstanceKey);
 }

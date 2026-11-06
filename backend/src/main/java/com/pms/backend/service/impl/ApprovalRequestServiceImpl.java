@@ -41,8 +41,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.pms.backend.config.ApprovalProperties;
+import com.pms.backend.model.AppAdmin;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -65,6 +72,7 @@ public class ApprovalRequestServiceImpl implements IApprovalRequestService {
     private final IApprovalApplyService applyService;
     private final ObjectMapper objectMapper;
     private final ProjectSecurity projectSecurity;
+    private final ApprovalProperties approvalProperties;
 
     public ApprovalRequestServiceImpl(ApprovalRequestRepository requestRepository,
                                        ApprovalStepRepository stepRepository,
@@ -79,6 +87,27 @@ public class ApprovalRequestServiceImpl implements IApprovalRequestService {
                                        IApprovalApplyService applyService,
                                        ObjectMapper objectMapper,
                                        ProjectSecurity projectSecurity) {
+        this(requestRepository, stepRepository, appAdminRepository, projectRepository,
+                memberRepository, userRepository, approvalHibernateDao, mapper,
+                processEngineClient, notificationService, applyService, objectMapper,
+                projectSecurity, null);
+    }
+
+    @Autowired
+    public ApprovalRequestServiceImpl(ApprovalRequestRepository requestRepository,
+                                       ApprovalStepRepository stepRepository,
+                                       AppAdminRepository appAdminRepository,
+                                       ProjectRepository projectRepository,
+                                       ProjectMemberRepository memberRepository,
+                                       UserRepository userRepository,
+                                       IApprovalRequestHibernateDao approvalHibernateDao,
+                                       ApprovalRequestMapper mapper,
+                                       ProcessEngineClient processEngineClient,
+                                       INotificationService notificationService,
+                                       IApprovalApplyService applyService,
+                                       ObjectMapper objectMapper,
+                                       ProjectSecurity projectSecurity,
+                                       @Autowired(required = false) ApprovalProperties approvalProperties) {
         this.requestRepository = requestRepository;
         this.stepRepository = stepRepository;
         this.appAdminRepository = appAdminRepository;
@@ -92,6 +121,7 @@ public class ApprovalRequestServiceImpl implements IApprovalRequestService {
         this.applyService = applyService;
         this.objectMapper = objectMapper;
         this.projectSecurity = projectSecurity;
+        this.approvalProperties = approvalProperties;
     }
 
     @Override
@@ -152,20 +182,109 @@ public class ApprovalRequestServiceImpl implements IApprovalRequestService {
 
         notifyPendingApprovers(saved, project, requester);
 
-        try {
-            processEngineClient.startApprovalProcess(saved.getId(),
-                    Map.of("requestId", saved.getId(), "projectId", projectId, "type", type.name()))
-                    .ifPresent(key -> {
-                        saved.setProcessInstanceKey(key);
-                        requestRepository.save(saved);
-                    });
-        } catch (Exception e) {
-            log.error("Không thể khởi động quy trình điều phối cho yêu cầu {}: {}", saved.getId(), e.getMessage());
-            throw new BusinessException(ErrorCode.APPROVAL_006,
-                    "Dịch vụ điều phối tạm thời không khả dụng, vui lòng thử lại sau");
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("requestId", saved.getId());
+        vars.put("projectId", projectId);
+        vars.put("type", type.name());
+        vars.put("level1Status", steps.get(0).getStatus().name());
+        vars.put("level2Status", steps.size() > 1 ? steps.get(1).getStatus().name() : "SKIPPED");
+        vars.put("reminderDuration", approvalProperties != null ? "PT" + approvalProperties.getReminderAfterHours() + "H" : "PT24H");
+        vars.put("escalateDuration", approvalProperties != null ? "PT" + approvalProperties.getEscalateAfterHours() + "H" : "PT72H");
+        vars.put("expireDuration", approvalProperties != null ? "P" + approvalProperties.getExpireAfterDays() + "D" : "P14D");
+
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    tryStartProcess(saved.getId(), vars);
+                }
+            });
+        } else {
+            tryStartProcess(saved.getId(), vars);
         }
 
         return mapper.toResponse(saved, principal.getId());
+    }
+
+    public void tryStartProcess(Long requestId, Map<String, Object> vars) {
+        try {
+            processEngineClient.startApprovalProcess(requestId, vars)
+                    .ifPresent(key -> updateProcessInstanceKey(requestId, key));
+        } catch (Exception e) {
+            log.warn("Không thể khởi động quy trình điều phối cho yêu cầu #{}: {}. Yêu cầu vẫn PENDING và sẽ được đối soát kích hoạt lại.", requestId, e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateProcessInstanceKey(Long requestId, String processInstanceKey) {
+        requestRepository.findById(requestId).ifPresent(req -> {
+            req.setProcessInstanceKey(processInstanceKey);
+            requestRepository.save(req);
+        });
+    }
+
+    @Override
+    @Transactional
+    public void sendReminder(Long requestId) {
+        ApprovalRequest request = requestRepository.findByIdWithDetails(requestId).orElse(null);
+        if (request == null || request.getStatus() != ApprovalRequestStatus.PENDING) {
+            return;
+        }
+        ApprovalStep pendingStep = request.getSteps().stream()
+                .filter(s -> s.getStatus() == ApprovalStepStatus.PENDING)
+                .findFirst().orElse(null);
+        if (pendingStep == null) {
+            return;
+        }
+
+        pendingStep.setReminderCount(pendingStep.getReminderCount() + 1);
+        stepRepository.save(pendingStep);
+
+        List<User> approvers = findApproversForStep(pendingStep, request.getProject().getId());
+        if (!approvers.isEmpty()) {
+            String title = "Nhắc nhở duyệt: " + request.getType().name();
+            String message = "Yêu cầu duyệt #" + request.getId() + " cho dự án " + request.getProject().getName()
+                    + " đang chờ bạn phê duyệt (nhắc lần " + pendingStep.getReminderCount() + ").";
+            String link = "/projects/" + request.getProject().getId() + "/approval-requests/" + request.getId();
+            notificationService.notify(NotificationType.APPROVAL_REQUESTED, approvers, title, message, link, null, request.getRequester());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void escalate(Long requestId) {
+        ApprovalRequest request = requestRepository.findByIdWithDetails(requestId).orElse(null);
+        if (request == null || request.getStatus() != ApprovalRequestStatus.PENDING) {
+            return;
+        }
+        List<User> admins = appAdminRepository.findAll().stream()
+                .map(AppAdmin::getUser)
+                .filter(u -> u != null && !u.getId().equals(request.getRequester().getId()))
+                .collect(Collectors.toList());
+        if (!admins.isEmpty()) {
+            String title = "ESCALATE: Yêu cầu duyệt #" + request.getId() + " bị treo quá hạn";
+            String message = "Yêu cầu duyệt " + request.getType().name() + " của dự án "
+                    + request.getProject().getName() + " đã quá hạn xử lý cần can thiệp.";
+            String link = "/projects/" + request.getProject().getId() + "/approval-requests/" + request.getId();
+            notificationService.notify(NotificationType.APPROVAL_REQUESTED, admins, title, message, link, null, null);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void expire(Long requestId) {
+        ApprovalRequest request = requestRepository.findByIdWithDetails(requestId).orElse(null);
+        if (request == null || request.getStatus() != ApprovalRequestStatus.PENDING) {
+            return;
+        }
+        request.setStatus(ApprovalRequestStatus.EXPIRED);
+        request.setCompletedAt(LocalDateTime.now());
+        requestRepository.save(request);
+
+        notifyRequester(request, request.getProject(), request.getRequester(),
+                "Yêu cầu duyệt #" + request.getId() + " đã hết hạn thời gian chờ xử lý và tự động đóng lại.",
+                NotificationType.APPROVAL_RESULT);
     }
 
     @Override

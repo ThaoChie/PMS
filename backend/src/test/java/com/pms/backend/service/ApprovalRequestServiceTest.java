@@ -201,6 +201,30 @@ public class ApprovalRequestServiceTest {
         assertEquals(ErrorCode.APPROVAL_003, ex.getErrorCode());
     }
 
+    @Test
+    void approve_shouldThrow_APPROVAL_003_whenAdminRemovedFromAppAdminsAtDecisionTime() {
+        AuthUserPrincipal adminPrincipal = mock(AuthUserPrincipal.class);
+        when(adminPrincipal.getId()).thenReturn(3L);
+        User formerAdmin = new User();
+        formerAdmin.setId(3L);
+        formerAdmin.setEmail("admin@epms.com");
+
+        when(projectSecurity.getCurrentUser()).thenReturn(adminPrincipal);
+        when(userRepository.findById(3L)).thenReturn(Optional.of(formerAdmin));
+
+        ApprovalRequest request = buildPendingRequest(1L);
+        ApprovalStep step = buildPendingStep(2, ApprovalApproverRole.ADMIN);
+        request.setSteps(new ArrayList<>(List.of(step)));
+
+        when(requestRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(request));
+        // Tại thời điểm duyệt, người này không còn trong app_admins
+        when(appAdminRepository.existsByUserId(3L)).thenReturn(false);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.approve(1L, new ApprovalDecisionRequest()));
+        assertEquals(ErrorCode.APPROVAL_003, ex.getErrorCode());
+    }
+
     // ---- Reject bắt buộc comment ----
 
     @Test
