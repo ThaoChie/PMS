@@ -4,6 +4,7 @@ import { useProjectStore } from '../../store/projectStore';
 import { ProgressTab } from './ProgressTab';
 import { ProductivityTab } from './ProductivityTab';
 import { BugReportTab } from './BugReportTab';
+import ExportButton from '../issues/components/ExportButton';
 
 interface ReportsProps {
   role: Role;
@@ -30,13 +31,20 @@ export default function Reports({ role }: ReportsProps) {
   return (
     <div className="h-full overflow-y-auto bg-white">
       <div className="max-w-5xl mx-auto px-6 sm:px-8 py-8 sm:py-10">
-        <div className="mb-6">
-          <h1 className="text-xl font-bold text-[#1A1A1A]">Báo cáo & Thống kê</h1>
-          <p className="text-sm text-[#6B6B70] mt-0.5">
-            {currentProject
-              ? `Tiến độ và hiệu suất công việc trong dự án: ${currentProject.name} (${currentProject.key})`
-              : 'Tiến độ và hiệu suất công việc trong dự án'}
-          </p>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-[#1A1A1A]">Báo cáo & Thống kê</h1>
+            <p className="text-sm text-[#6B6B70] mt-0.5">
+              {currentProject
+                ? `Tiến độ và hiệu suất công việc trong dự án: ${currentProject.name} (${currentProject.key})`
+                : 'Tiến độ và hiệu suất công việc trong dự án'}
+            </p>
+          </div>
+          {currentProject && (
+            <div className="shrink-0">
+              <ExportButton projectId={currentProject.id} criteria={{ fromDate: from, toDate: to }} />
+            </div>
+          )}
         </div>
 
         {!currentProject ? (
