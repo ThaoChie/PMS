@@ -36,11 +36,12 @@ export default function ApprovalsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Filters
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const activeProjectId = currentProject?.id ? Number(currentProject.id) : (projects[0]?.id ? Number(projects[0].id) : 1);
+  const activeProjectId = selectedProjectId || (currentProject?.id ? Number(currentProject.id) : (projects[0]?.id ? Number(projects[0].id) : null));
 
   const loadData = () => {
     fetchPendingForMe();
@@ -98,6 +99,7 @@ export default function ApprovalsPage() {
             </button>
             <button
               type="button"
+              data-testid="btn-open-create-modal"
               onClick={() => setShowCreateModal(true)}
               className="px-4 py-2 bg-[#1A1A1A] hover:bg-black text-white text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
             >
@@ -110,6 +112,7 @@ export default function ApprovalsPage() {
         <div className="flex items-center gap-6 mt-6 border-b border-[#E5E5E7]">
           <button
             type="button"
+            data-testid="tab-pending-for-me"
             onClick={() => setActiveTab('pending')}
             className={`pb-3 text-sm font-semibold flex items-center gap-2 transition-colors relative ${
               activeTab === 'pending'
@@ -127,6 +130,7 @@ export default function ApprovalsPage() {
           </button>
           <button
             type="button"
+            data-testid="tab-project-requests"
             onClick={() => setActiveTab('my-requests')}
             className={`pb-3 text-sm font-semibold flex items-center gap-2 transition-colors relative ${
               activeTab === 'my-requests'
@@ -149,6 +153,7 @@ export default function ApprovalsPage() {
               <Search className="w-4 h-4 text-[#9B9B9F] absolute left-3 top-2.5" />
               <input
                 type="text"
+                data-testid="input-search-approvals"
                 placeholder="Tìm theo mã yêu cầu, lý do, người gửi..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -158,9 +163,28 @@ export default function ApprovalsPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {projects.length > 0 && (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-[#6B6B70] font-medium">Dự án:</span>
+                <select
+                  data-testid="filter-project"
+                  value={activeProjectId}
+                  onChange={(e) => setSelectedProjectId(Number(e.target.value))}
+                  className="text-xs px-2.5 py-1.5 border border-[#E5E5E7] rounded-lg bg-white focus:outline-none"
+                >
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.key})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="flex items-center gap-2 text-xs">
               <span className="text-[#6B6B70] font-medium">Trạng thái:</span>
               <select
+                data-testid="filter-status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="text-xs px-2.5 py-1.5 border border-[#E5E5E7] rounded-lg bg-white focus:outline-none"
@@ -177,6 +201,7 @@ export default function ApprovalsPage() {
             <div className="flex items-center gap-2 text-xs">
               <span className="text-[#6B6B70] font-medium">Loại:</span>
               <select
+                data-testid="filter-type"
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="text-xs px-2.5 py-1.5 border border-[#E5E5E7] rounded-lg bg-white focus:outline-none"
@@ -216,6 +241,8 @@ export default function ApprovalsPage() {
             {filteredList.map((req) => (
               <div
                 key={req.id}
+                data-testid="approval-request-card"
+                data-request-id={req.id}
                 onClick={() => setSelectedRequest(req)}
                 className="p-5 bg-white rounded-2xl border border-[#E5E5E7] shadow-2xs hover:border-black/30 hover:shadow-xs transition-all cursor-pointer flex items-center justify-between gap-4 flex-wrap"
               >

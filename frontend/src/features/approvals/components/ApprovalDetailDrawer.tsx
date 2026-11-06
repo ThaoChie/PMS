@@ -34,7 +34,7 @@ export const ApprovalDetailDrawer: React.FC<DrawerProps> = ({ request, onClose, 
       onSuccess?.();
       onClose();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Phê duyệt thất bại');
+      toast.error(err?.message || err?.response?.data?.message || 'Phê duyệt thất bại');
     }
   };
 
@@ -50,7 +50,7 @@ export const ApprovalDetailDrawer: React.FC<DrawerProps> = ({ request, onClose, 
       onSuccess?.();
       onClose();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Từ chối thất bại');
+      toast.error(err?.message || err?.response?.data?.message || 'Từ chối thất bại');
     }
   };
 
@@ -62,19 +62,23 @@ export const ApprovalDetailDrawer: React.FC<DrawerProps> = ({ request, onClose, 
       onSuccess?.();
       onClose();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Hủy yêu cầu thất bại');
+      toast.error(err?.message || err?.response?.data?.message || 'Hủy yêu cầu thất bại');
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 flex justify-end animate-fade-in">
-      <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col border-l border-[#E5E5E7] animate-slide-left">
+      <div data-testid="approval-detail-drawer" className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col border-l border-[#E5E5E7] animate-slide-left">
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#E5E5E7] flex items-center justify-between bg-[#F7F7F8]">
           <div className="flex items-center gap-2.5">
             <span className="font-bold text-base text-[#1A1A1A]">Yêu cầu #{request.id}</span>
-            <ApprovalStatusBadge status={request.status} />
-            <ApprovalApplyBadge status={request.applyStatus} />
+            <div data-testid="approval-detail-status">
+              <ApprovalStatusBadge status={request.status} />
+            </div>
+            <div data-testid="approval-detail-apply-status">
+              <ApprovalApplyBadge status={request.applyStatus} />
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -163,6 +167,7 @@ export const ApprovalDetailDrawer: React.FC<DrawerProps> = ({ request, onClose, 
               <div>
                 <input
                   type="text"
+                  data-testid="input-approve-comment"
                   placeholder="Ghi chú nhận xét (tùy chọn)..."
                   value={approveComment}
                   onChange={(e) => setApproveComment(e.target.value)}
@@ -172,6 +177,7 @@ export const ApprovalDetailDrawer: React.FC<DrawerProps> = ({ request, onClose, 
               <div className="flex items-center gap-3 pt-1">
                 <button
                   type="button"
+                  data-testid="btn-approve-request"
                   disabled={isSubmitting}
                   onClick={handleApprove}
                   className="flex-1 py-2 px-4 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
@@ -180,6 +186,7 @@ export const ApprovalDetailDrawer: React.FC<DrawerProps> = ({ request, onClose, 
                 </button>
                 <button
                   type="button"
+                  data-testid="btn-reject-request"
                   disabled={isSubmitting}
                   onClick={() => setRejectModalOpen(true)}
                   className="flex-1 py-2 px-4 bg-[#E53E3E] hover:bg-[#C53030] text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
@@ -196,6 +203,7 @@ export const ApprovalDetailDrawer: React.FC<DrawerProps> = ({ request, onClose, 
           {isPending ? (
             <button
               type="button"
+              data-testid="btn-cancel-request"
               disabled={isSubmitting}
               onClick={handleCancel}
               className="text-xs text-[#E53E3E] hover:text-[#C53030] font-medium flex items-center gap-1 transition-colors"
@@ -207,6 +215,7 @@ export const ApprovalDetailDrawer: React.FC<DrawerProps> = ({ request, onClose, 
           )}
           <button
             type="button"
+            data-testid="btn-close-drawer"
             onClick={onClose}
             className="px-4 py-1.5 bg-white border border-[#E5E5E7] hover:bg-gray-50 text-xs font-medium rounded-lg text-[#1A1A1A] transition-colors"
           >
@@ -218,12 +227,13 @@ export const ApprovalDetailDrawer: React.FC<DrawerProps> = ({ request, onClose, 
       {/* Reject Modal */}
       {rejectModalOpen && (
         <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
+          <div data-testid="reject-approval-modal" className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
             <h3 className="text-sm font-bold text-[#1A1A1A]">Lý do từ chối yêu cầu</h3>
             <p className="text-xs text-[#6B6B70]">
               Vui lòng nhập lý do từ chối để người gửi nắm được thông tin cần điều chỉnh:
             </p>
             <textarea
+              data-testid="textarea-reject-comment"
               rows={3}
               className="w-full text-xs p-3 border border-[#E5E5E7] rounded-lg focus:outline-none focus:ring-1 focus:ring-black"
               placeholder="Nhập lý do từ chối (bắt buộc)..."
@@ -233,7 +243,7 @@ export const ApprovalDetailDrawer: React.FC<DrawerProps> = ({ request, onClose, 
                 setRejectError('');
               }}
             />
-            {rejectError && <p className="text-[11px] text-[#E53E3E]">{rejectError}</p>}
+            {rejectError && <p data-testid="reject-error-message" className="text-[11px] text-[#E53E3E]">{rejectError}</p>}
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
@@ -244,6 +254,7 @@ export const ApprovalDetailDrawer: React.FC<DrawerProps> = ({ request, onClose, 
               </button>
               <button
                 type="button"
+                data-testid="btn-confirm-reject"
                 disabled={isSubmitting}
                 onClick={handleReject}
                 className="px-4 py-1.5 bg-[#E53E3E] hover:bg-[#C53030] text-white text-xs font-semibold rounded-lg disabled:opacity-50"

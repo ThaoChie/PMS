@@ -13,6 +13,7 @@ interface ApprovalState {
   projectRequests: ApprovalRequest[];
   totalProjectRequests: number;
   selectedRequest: ApprovalRequest | null;
+  activeFetchProjectId: number | null;
   isLoading: boolean;
   isSubmitting: boolean;
   error: string | null;
@@ -38,6 +39,7 @@ export const useApprovalStore = create<ApprovalState>((set, get) => ({
   projectRequests: [],
   totalProjectRequests: 0,
   selectedRequest: null,
+  activeFetchProjectId: null,
   isLoading: false,
   isSubmitting: false,
   error: null,
@@ -60,21 +62,25 @@ export const useApprovalStore = create<ApprovalState>((set, get) => ({
       const data = await approvalService.getPendingForMe();
       set({ pendingForMe: Array.isArray(data) ? data : [], isLoading: false });
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Không thể tải danh sách yêu cầu chờ duyệt', isLoading: false });
+      set({ error: err?.message || err?.response?.data?.message || 'Không thể tải danh sách yêu cầu chờ duyệt', isLoading: false });
     }
   },
 
   fetchProjectRequests: async (projectId, params) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, activeFetchProjectId: projectId });
     try {
       const data = await approvalService.getByProject(projectId, params);
-      set({
-        projectRequests: Array.isArray(data?.content) ? data.content : [],
-        totalProjectRequests: data?.totalElements || 0,
-        isLoading: false,
-      });
+      if (get().activeFetchProjectId === projectId) {
+        set({
+          projectRequests: Array.isArray(data?.content) ? data.content : [],
+          totalProjectRequests: data?.totalElements || 0,
+          isLoading: false,
+        });
+      }
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Không thể tải danh sách yêu cầu của dự án', isLoading: false });
+      if (get().activeFetchProjectId === projectId) {
+        set({ error: err?.message || err?.response?.data?.message || 'Không thể tải danh sách yêu cầu của dự án', isLoading: false });
+      }
     }
   },
 
@@ -85,7 +91,7 @@ export const useApprovalStore = create<ApprovalState>((set, get) => ({
       set({ selectedRequest: req, isLoading: false });
       return req;
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Không thể tải chi tiết yêu cầu', isLoading: false });
+      set({ error: err?.message || err?.response?.data?.message || 'Không thể tải chi tiết yêu cầu', isLoading: false });
       throw err;
     }
   },
@@ -101,7 +107,7 @@ export const useApprovalStore = create<ApprovalState>((set, get) => ({
       }));
       return req;
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Không thể tạo yêu cầu duyệt';
+      const msg = err?.message || err?.response?.data?.message || 'Không thể tạo yêu cầu duyệt';
       set({ error: msg, isSubmitting: false });
       throw err;
     }
