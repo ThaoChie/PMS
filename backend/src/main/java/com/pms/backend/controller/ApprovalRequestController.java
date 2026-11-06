@@ -83,4 +83,9 @@ public class ApprovalRequestController {
     public ApiResponse<ApprovalRequestResponse> cancel(@PathVariable Long id) {
         return ApiResponse.success(approvalService.cancel(id));
     }
+
+    @PostMapping({"/api/approval-requests/trigger-due-reminder", "/approval-requests/trigger-due-reminder"})
+    public ApiResponse<String> triggerDueReminder() {
+        return ApiResponse.success(approvalService.triggerDueReminder());
+    }
 }
