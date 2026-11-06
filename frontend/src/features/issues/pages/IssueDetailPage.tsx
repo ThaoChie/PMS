@@ -11,6 +11,7 @@ import {
   Loader2,
   AlertCircle,
   FileText,
+  GitFork,
 } from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
 import { issueService } from '../../../services/issueService';
@@ -21,6 +22,8 @@ import type { Issue, Role } from '../../../types';
 import AttributesPanel from '../components/AttributesPanel';
 import SubtaskSection from '../components/SubtaskSection';
 import LinkedIssuesSection from '../components/LinkedIssuesSection';
+import AttachmentSection from '../components/AttachmentSection';
+import ConvertIssueModal from '../components/ConvertIssueModal';
 import ShareIssueModal from '../components/ShareIssueModal';
 import CommentSection from '../../comments/components/CommentSection';
 import WorklogSection from '../../worklog/components/WorklogSection';
@@ -45,6 +48,7 @@ export default function IssueDetailPage({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
   const [projectMembers, setProjectMembers] = useState<Array<{ id: string; name: string }>>([]);
   const [transitions, setTransitions] = useState<any[]>([]);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
@@ -58,6 +62,7 @@ export default function IssueDetailPage({
     (isSubtask
       ? Boolean(currentProject?.allowMemberDeleteSubtask)
       : Boolean(currentProject?.allowMemberDeleteIssue));
+  const canConvert = isPmOrAdmin || Boolean(currentProject?.allowMemberConvertSubtask);
 
   async function handleDelete() {
     if (!issue) return;
@@ -310,6 +315,18 @@ export default function IssueDetailPage({
               )}
             </button>
 
+            {canConvert && (
+              <button
+                type="button"
+                onClick={() => setShowConvertModal(true)}
+                className="px-2.5 py-1.5 border border-[#E5E5E7] text-[#6B6B70] hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
+                title={isSubtask ? "Tách thành công việc độc lập" : "Chuyển thành Subtask"}
+              >
+                <GitFork className="w-3.5 h-3.5" />
+                <span>{isSubtask ? 'Tách việc' : 'Chuyển Subtask'}</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setShowShareModal(true)}
@@ -534,8 +551,21 @@ export default function IssueDetailPage({
             {/* Linked Issues Section */}
             <div className="bg-white border border-[#E5E5E7] rounded-xl p-6 shadow-sm">
               <LinkedIssuesSection
-                linkedIssues={issue.linkedIssues}
+                issueKey={issue.key}
+                linkedIssues={issue.linkedIssues || []}
+                canEdit={true}
                 onSelectIssue={onSelectSubtask}
+                onChanged={fetchDetail}
+              />
+            </div>
+
+            {/* Tệp đính kèm Section */}
+            <div className="bg-white border border-[#E5E5E7] rounded-xl p-6 shadow-sm">
+              <AttachmentSection
+                issueKey={issue.key}
+                attachments={issue.attachments || []}
+                canEdit={true}
+                onChanged={fetchDetail}
               />
             </div>
 
@@ -582,6 +612,15 @@ export default function IssueDetailPage({
           issueKey={issue.key}
           issueSummary={issue.summary}
           onClose={() => setShowShareModal(false)}
+        />
+      )}
+
+      {showConvertModal && (
+        <ConvertIssueModal
+          issueKey={issue.key}
+          isSubtask={isSubtask}
+          onClose={() => setShowConvertModal(false)}
+          onSuccess={fetchDetail}
         />
       )}
     </div>

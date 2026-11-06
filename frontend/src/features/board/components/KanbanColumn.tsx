@@ -7,6 +7,8 @@ interface KanbanColumnProps {
   label: string;
   issues: Issue[];
   isDragTarget?: boolean;
+  onDragStart?: (issue: Issue) => void;
+  onDragEnd?: () => void;
   onDragOver?: (e: React.DragEvent) => void;
   onDragLeave?: () => void;
   onDrop?: () => void;
@@ -18,6 +20,8 @@ export default function KanbanColumn({
   label,
   issues,
   isDragTarget,
+  onDragStart,
+  onDragEnd,
   onDragOver,
   onDragLeave,
   onDrop,
@@ -65,7 +69,16 @@ export default function KanbanColumn({
           </div>
         ) : (
           issues.map((issue) => (
-            <div key={issue.id} draggable onDragStart={() => {}}>
+            <div
+              key={issue.id}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('text/plain', issue.key || issue.id);
+                onDragStart?.(issue);
+              }}
+              onDragEnd={() => onDragEnd?.()}
+              className="cursor-grab active:cursor-grabbing transition-transform"
+            >
               <IssueCard issue={issue} onClick={() => onSelectIssue(issue.key || issue.id)} />
             </div>
           ))

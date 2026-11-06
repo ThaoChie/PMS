@@ -632,6 +632,29 @@ public class IssueServiceImpl implements IIssueService {
                 "Converted " + issueKey + " to subtask of " + parentKey);
     }
 
+    @Override
+    @Transactional
+    public void convertToIssue(String issueKey, IssueType targetType, User currentUser) {
+        Issue issue = findIssue(issueKey);
+        projectSecurity.assertProjectWritable(issue.getProject());
+
+        if (issue.getType() != IssueType.SUB_TASK && issue.getParent() == null) {
+            throw new ValidationException("Chỉ có thể chuyển Sub-task thành công việc độc lập");
+        }
+
+        IssueType newType = targetType != null ? targetType : IssueType.TASK;
+        if (newType == IssueType.SUB_TASK) {
+            newType = IssueType.TASK;
+        }
+
+        issue.setParent(null);
+        issue.setType(newType);
+        issueRepository.save(issue);
+
+        auditService.log("CONVERT_TO_ISSUE", "ISSUE", issue.getId(), issue.getProject().getId(), issueKey,
+                "Converted subtask " + issueKey + " to standalone issue (" + newType + ")");
+    }
+
     @Transactional
     public ShareIssueResponse shareIssue(String issueKey, ShareIssueRequest request, User currentUser) {
         Issue issue = findIssue(issueKey);

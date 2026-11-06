@@ -247,6 +247,16 @@ public class IssueController {
         return ApiResponse.success(null);
     }
 
+    @PostMapping({"/api/issues/{issueKey}/convert-to-issue", "/issues/{issueKey}/convert-to-issue"})
+    @PreAuthorize("@issueSecurity.canConvert(#issueKey)")
+    public ApiResponse<Void> convertToIssue(
+            @PathVariable String issueKey,
+            @RequestParam(required = false, defaultValue = "TASK") IssueType targetType
+    ) {
+        issueService.convertToIssue(issueKey, targetType, getCurrentUser());
+        return ApiResponse.success(null);
+    }
+
     // --- Share Issue ---
 
     @PostMapping({"/api/issues/{issueKey}/share", "/issues/{issueKey}/share"})
