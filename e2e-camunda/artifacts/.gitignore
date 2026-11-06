@@ -1,4 +1,0 @@
-# Ignore screenshots and run logs, keep folder tracked
-*.png
-*.log
-!.gitignore

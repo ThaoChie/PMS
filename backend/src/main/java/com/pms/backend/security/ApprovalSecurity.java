@@ -21,6 +21,7 @@ public class ApprovalSecurity {
     }
 
     public boolean isPmOnProject(Long projectId) {
+        if (projectId == null) return false;
         AuthUserPrincipal user = projectSecurity.getCurrentUser();
         if (user == null) return false;
         return memberRepository.findByProjectIdAndUserId(projectId, user.getId())
@@ -35,10 +36,16 @@ public class ApprovalSecurity {
     }
 
     public boolean isMemberOrAdmin(Long projectId) {
+        if (projectId == null) return false;
         AuthUserPrincipal user = projectSecurity.getCurrentUser();
         if (user == null) return false;
         boolean admin = appAdminRepository.existsByUserId(user.getId());
         boolean member = memberRepository.existsByProjectIdAndUserId(projectId, user.getId());
         return admin || member;
+    }
+
+    public boolean canCreateRequest(Long projectId) {
+        if (projectId == null) return false;
+        return isPmOnProject(projectId) || isAdmin();
     }
 }

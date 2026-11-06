@@ -8,6 +8,7 @@ import com.pms.backend.service.interfaces.IApprovalRequestService;
 import com.pms.backend.wrapper.PageWrapper;
 import jakarta.validation.Valid;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class ApprovalRequestController {
     }
 
     @PostMapping({"/api/projects/{projectId}/approval-requests", "/projects/{projectId}/approval-requests"})
+    @PreAuthorize("@approvalSecurity.canCreateRequest(#projectId)")
     public ApiResponse<ApprovalRequestResponse> create(
             @PathVariable Long projectId,
             @Valid @RequestBody CreateApprovalRequestRequest request) {
@@ -30,6 +32,7 @@ public class ApprovalRequestController {
     }
 
     @PostMapping({"/api/approval-requests", "/approval-requests"})
+    @PreAuthorize("@approvalSecurity.canCreateRequest(#projectId != null ? #projectId : #request.projectId)")
     public ApiResponse<ApprovalRequestResponse> createDirect(
             @RequestParam(required = false) Long projectId,
             @Valid @RequestBody CreateApprovalRequestRequest request) {
