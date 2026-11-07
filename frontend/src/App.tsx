@@ -49,15 +49,24 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
     if (typeof window !== 'undefined') {
       const p = window.location.pathname;
+      if (p === '/dashboard' || p === '/') return 'dashboard';
+      if (p === '/board') return 'board';
+      if (p === '/issues') return 'issues';
+      if (p === '/saved-filters') return 'saved-filters';
+      if (p === '/reports') return 'reports';
       if (p === '/profile') return 'profile';
       if (p === '/projects') return 'projects';
       if (p.includes('/invitations')) return 'invitations';
+      if (p.includes('/approvals')) return 'approvals' as Screen;
+      if (p.match(/^\/projects\/[^/]+\/board/)) return 'board';
+      if (p.match(/^\/projects\/[^/]+\/issues/)) return 'issues';
+      if (p.match(/^\/projects\/[^/]+\/reports/)) return 'reports';
       if (p.match(/^\/projects\/[^/]+\/members/)) return 'members-roles';
       if (p.match(/^\/projects\/[^/]+\/settings/)) return 'project-settings';
       if (p.match(/^\/projects\/[^/]+\/(workflows|workflow)/)) return 'workflow';
       if (p.match(/^\/projects\/[^/]+\/custom-fields/)) return 'custom-fields';
     }
-    return 'projects';
+    return 'dashboard';
   });
 
   const [role, setRole] = useState<Role>('pm');
@@ -93,6 +102,26 @@ export default function App() {
     }
 
     // 2. Global app routes
+    if (pathname === '/dashboard' || pathname === '/') {
+      setCurrentScreen('dashboard');
+      return;
+    }
+    if (pathname === '/board') {
+      setCurrentScreen('board');
+      return;
+    }
+    if (pathname === '/issues') {
+      setCurrentScreen('issues');
+      return;
+    }
+    if (pathname === '/saved-filters') {
+      setCurrentScreen('saved-filters');
+      return;
+    }
+    if (pathname === '/reports') {
+      setCurrentScreen('reports');
+      return;
+    }
     if (pathname === '/profile') {
       setCurrentScreen('profile');
       return;
@@ -105,9 +134,13 @@ export default function App() {
       setCurrentScreen('invitations');
       return;
     }
+    if (pathname.includes('/approvals')) {
+      setCurrentScreen('approvals' as Screen);
+      return;
+    }
 
-    // 3. Project scoped routes (/projects/:id/(members|settings|workflows|custom-fields))
-    const projectSubMatch = pathname.match(/^\/projects\/([^/]+)\/(members|settings|workflows|workflow|custom-fields)/);
+    // 3. Project scoped routes (/projects/:id/(board|issues|reports|members|settings|workflows|custom-fields))
+    const projectSubMatch = pathname.match(/^\/projects\/([^/]+)\/(board|issues|reports|members|settings|workflows|workflow|custom-fields)/);
     if (projectSubMatch) {
       const projIdOrKey = decodeURIComponent(projectSubMatch[1]);
       const sub = projectSubMatch[2];
@@ -121,7 +154,10 @@ export default function App() {
         }
       }
 
-      if (sub === 'members') setCurrentScreen('members-roles');
+      if (sub === 'board') setCurrentScreen('board');
+      else if (sub === 'issues') setCurrentScreen('issues');
+      else if (sub === 'reports') setCurrentScreen('reports');
+      else if (sub === 'members') setCurrentScreen('members-roles');
       else if (sub === 'settings') setCurrentScreen('project-settings');
       else if (sub === 'workflows' || sub === 'workflow') setCurrentScreen('workflow');
       else if (sub === 'custom-fields') setCurrentScreen('custom-fields');
@@ -137,9 +173,9 @@ export default function App() {
       return;
     }
 
-    // 5. Approvals route
-    if (pathname.includes('/approvals')) {
-      setCurrentScreen('approvals' as Screen);
+    // Fallback: Nếu không match route nào và pathname không rỗng
+    if (pathname && pathname !== '/') {
+      setCurrentScreen('dashboard');
       return;
     }
   }, [projects, currentProject, setCurrentProject]);
@@ -182,6 +218,28 @@ export default function App() {
     }
   }, [currentProject]);
 
+  // Guard: Khi chưa đăng nhập -> Nếu URL không phải trang auth, chuẩn hóa URL về /login
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      const p = window.location.pathname;
+      if (p !== '/login' && p !== '/register' && p !== '/forgot-password' && p !== '/reset-password') {
+        window.history.replaceState({}, '', '/login');
+        setAuthView('login');
+      }
+    }
+  }, [authLoading, isAuthenticated]);
+
+  // Guard: Khi đã đăng nhập -> Nếu URL đang là trang auth hoặc root /, chuyển hướng về /dashboard
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      const p = window.location.pathname;
+      if (p === '/login' || p === '/register' || p === '/forgot-password' || p === '/reset-password' || p === '/') {
+        window.history.replaceState({}, '', '/dashboard');
+        setCurrentScreen('dashboard');
+      }
+    }
+  }, [authLoading, isAuthenticated]);
+
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -195,7 +253,13 @@ export default function App() {
 
   function handleLogin() {
     setAuthView('login');
-    syncRouteFromLocation();
+    const p = window.location.pathname;
+    if (p === '/login' || p === '/register' || p === '/forgot-password' || p === '/reset-password' || p === '/') {
+      window.history.pushState({}, '', '/dashboard');
+      setCurrentScreen('dashboard');
+    } else {
+      syncRouteFromLocation();
+    }
   }
 
   async function handleLogout() {
@@ -207,10 +271,21 @@ export default function App() {
 
   function handleSelectIssue(id: string) {
     setSelectedIssueId(id);
+    window.history.pushState({}, '', `/issues/${id}`);
   }
 
   function handleCloseIssue() {
     setSelectedIssueId(null);
+    if (window.location.pathname.startsWith('/issues/')) {
+      const pid = currentProject?.id || (projects.length > 0 ? projects[0].id : null);
+      if (currentScreen === 'board') {
+        window.history.pushState({}, '', pid ? `/projects/${pid}/board` : '/board');
+      } else if (currentScreen === 'issues') {
+        window.history.pushState({}, '', pid ? `/projects/${pid}/issues` : '/issues');
+      } else {
+        window.history.pushState({}, '', pid ? `/projects/${pid}/board` : '/dashboard');
+      }
+    }
   }
 
   function handleCreateProject() {
@@ -224,6 +299,33 @@ export default function App() {
     const pid = currentProject?.id || (projects.length > 0 ? projects[0].id : null);
 
     switch (screen) {
+      case 'dashboard':
+        window.history.pushState({}, '', '/dashboard');
+        break;
+      case 'board':
+        if (pid) {
+          window.history.pushState({}, '', `/projects/${pid}/board`);
+        } else {
+          window.history.pushState({}, '', '/board');
+        }
+        break;
+      case 'issues':
+        if (pid) {
+          window.history.pushState({}, '', `/projects/${pid}/issues`);
+        } else {
+          window.history.pushState({}, '', '/issues');
+        }
+        break;
+      case 'saved-filters':
+        window.history.pushState({}, '', '/saved-filters');
+        break;
+      case 'reports':
+        if (pid) {
+          window.history.pushState({}, '', `/projects/${pid}/reports`);
+        } else {
+          window.history.pushState({}, '', '/reports');
+        }
+        break;
       case 'profile':
         window.history.pushState({}, '', '/profile');
         break;
@@ -261,9 +363,6 @@ export default function App() {
       case 'invitations':
         window.history.pushState({}, '', '/invitations');
         break;
-      case 'dashboard':
-        window.history.pushState({}, '', '/dashboard');
-        break;
       case 'approvals' as Screen:
         window.history.pushState({}, '', '/approvals');
         break;
@@ -282,8 +381,13 @@ export default function App() {
       window.history.pushState({}, '', `/projects/${proj.id}/workflows`);
     } else if (currentScreen === 'custom-fields') {
       window.history.pushState({}, '', `/projects/${proj.id}/custom-fields`);
+    } else if (currentScreen === 'issues') {
+      window.history.pushState({}, '', `/projects/${proj.id}/issues`);
+    } else if (currentScreen === 'reports') {
+      window.history.pushState({}, '', `/projects/${proj.id}/reports`);
     } else {
       setCurrentScreen('board');
+      window.history.pushState({}, '', `/projects/${proj.id}/board`);
     }
   }
 
@@ -408,7 +512,8 @@ export default function App() {
             issueKey={activeIssueKey || ''}
             role={role}
             onBack={() => {
-              window.history.pushState({}, '', '/');
+              const pid = currentProject?.id || (projects.length > 0 ? projects[0].id : null);
+              window.history.pushState({}, '', pid ? `/projects/${pid}/issues` : '/issues');
               setCurrentScreen('issues');
               setActiveIssueKey(null);
             }}
