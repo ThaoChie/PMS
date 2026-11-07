@@ -310,7 +310,7 @@ export default function SavedFilters() {
                           type="button"
                           title="Áp dụng bộ lọc này để xem công việc"
                           onClick={() => {
-                            window.history.pushState({}, '', '/');
+                            window.history.pushState({}, '', '/board');
                             window.dispatchEvent(new PopStateEvent('popstate'));
                             toast.success(`Đang mở công việc theo bộ lọc "${f.name}"`);
                           }}
