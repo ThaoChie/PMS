@@ -6,7 +6,7 @@ import { PROJECT_COLORS, PROJECT_ICONS } from '../constants/projectBranding';
 
 interface CreateProjectModalProps {
   onClose: () => void;
-  onSubmitSuccess?: () => void;
+  onSubmitSuccess?: (createdProject?: any) => void;
 }
 
 export function generateBaseKey(name: string): string {
@@ -147,9 +147,9 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
 
         if (res.data.inviteResults && Object.keys(res.data.inviteResults).length > 0) {
           setInviteResults(res.data.inviteResults);
-          onSubmitSuccess?.();
+          onSubmitSuccess?.(createdProject);
         } else {
-          onSubmitSuccess?.();
+          onSubmitSuccess?.(createdProject);
           onClose();
         }
       }

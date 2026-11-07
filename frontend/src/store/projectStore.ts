@@ -62,7 +62,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }),
   setProjects: (projects) => {
     const cur = get().currentProject;
-    const target = cur && projects.some((p) => p.id === cur.id) ? cur : projects[0] || null;
+    const target = cur && projects.some((p) => String(p.id) === String(cur.id))
+      ? projects.find((p) => String(p.id) === String(cur.id)) || cur
+      : projects[0] || null;
     set({
       projects,
       currentProject: target,
@@ -73,16 +75,16 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   addProject: (project) =>
     set((state) => ({
-      projects: [project, ...state.projects],
+      projects: [project, ...state.projects.filter((p) => String(p.id) !== String(project.id))],
       currentProject: project,
       myProjectRole: project.myRole || 'pm',
     })),
 
   updateProject: (id, data) =>
     set((state) => ({
-      projects: state.projects.map((p) => (p.id === id ? { ...p, ...data } : p)),
+      projects: state.projects.map((p) => (String(p.id) === String(id) ? { ...p, ...data } : p)),
       currentProject:
-        state.currentProject?.id === id
+        state.currentProject && String(state.currentProject.id) === String(id)
           ? { ...state.currentProject, ...data }
           : state.currentProject,
     })),
@@ -94,7 +96,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const rawList = res?.data?.content || (res?.data as any)?.items || (Array.isArray(res?.data) ? res.data : []);
       const list = rawList.map(mapProjectResponseToProject);
       const cur = get().currentProject;
-      const target = cur && list.some((p) => p.id === cur.id) ? cur : list[0] || null;
+      const target = cur && list.some((p) => String(p.id) === String(cur.id))
+        ? list.find((p) => String(p.id) === String(cur.id)) || cur
+        : list[0] || null;
       set({
         projects: list,
         currentProject: target,
