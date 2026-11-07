@@ -42,6 +42,7 @@ interface SidebarProps {
   selectedProject: Project | null;
   onNavigate: (screen: Screen) => void;
   onSelectProject: (project: Project) => void;
+  onCreateProject?: () => void;
   onLogout: () => void;
 }
 
@@ -53,6 +54,7 @@ export default function Sidebar({
   selectedProject,
   onNavigate,
   onSelectProject,
+  onCreateProject,
   onLogout,
 }: SidebarProps) {
   const isSidebarCollapsed = useUIStore((s) => s.isSidebarCollapsed);
@@ -86,7 +88,7 @@ export default function Sidebar({
             projects={projects}
             selectedProject={selectedProject}
             onSelectProject={onSelectProject}
-            onCreateProject={() => onNavigate('projects')}
+            onCreateProject={onCreateProject || (() => onNavigate('projects'))}
           />
         </div>
       ) : (

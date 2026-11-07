@@ -149,7 +149,7 @@ export default function App() {
         const found = projectList.find(
           (p) => String(p.id) === projIdOrKey || p.key.toLowerCase() === projIdOrKey.toLowerCase()
         );
-        if (found && (!currentProject || currentProject.id !== found.id)) {
+        if (found && (!currentProject || String(currentProject.id) !== String(found.id))) {
           setCurrentProject(found);
         }
       }
@@ -207,7 +207,8 @@ export default function App() {
     if (projects.length > 0) {
       syncRouteFromLocation(projects);
     }
-  }, [projects, syncRouteFromLocation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects]);
 
   // Sync active role with current project role
   useEffect(() => {
@@ -373,21 +374,23 @@ export default function App() {
 
   function handleSelectProject(proj: Project) {
     setCurrentProject(proj);
-    if (currentScreen === 'members-roles') {
-      window.history.pushState({}, '', `/projects/${proj.id}/members`);
-    } else if (currentScreen === 'project-settings') {
-      window.history.pushState({}, '', `/projects/${proj.id}/settings`);
-    } else if (currentScreen === 'workflow') {
-      window.history.pushState({}, '', `/projects/${proj.id}/workflows`);
-    } else if (currentScreen === 'custom-fields') {
-      window.history.pushState({}, '', `/projects/${proj.id}/custom-fields`);
+    const pid = proj.id;
+    if (currentScreen === 'dashboard') {
+      window.history.pushState({}, '', '/dashboard');
+    } else if (currentScreen === 'board') {
+      window.history.pushState({}, '', `/projects/${pid}/board`);
     } else if (currentScreen === 'issues') {
-      window.history.pushState({}, '', `/projects/${proj.id}/issues`);
+      window.history.pushState({}, '', `/projects/${pid}/issues`);
     } else if (currentScreen === 'reports') {
-      window.history.pushState({}, '', `/projects/${proj.id}/reports`);
-    } else {
-      setCurrentScreen('board');
-      window.history.pushState({}, '', `/projects/${proj.id}/board`);
+      window.history.pushState({}, '', `/projects/${pid}/reports`);
+    } else if (currentScreen === 'members-roles') {
+      window.history.pushState({}, '', `/projects/${pid}/members`);
+    } else if (currentScreen === 'project-settings') {
+      window.history.pushState({}, '', `/projects/${pid}/settings`);
+    } else if (currentScreen === 'workflow') {
+      window.history.pushState({}, '', `/projects/${pid}/workflows`);
+    } else if (currentScreen === 'custom-fields') {
+      window.history.pushState({}, '', `/projects/${pid}/custom-fields`);
     }
   }
 
@@ -552,6 +555,8 @@ export default function App() {
         onRoleChange={setRole}
         onCreateIssue={() => setShowCreateIssue(true)}
         onSearch={() => setShowQuickSearch(true)}
+        onSelectProject={handleSelectProject}
+        onCreateProject={handleCreateProject}
         onLogout={handleLogout}
       >
         <div className="h-full relative">
@@ -573,7 +578,14 @@ export default function App() {
       {showCreateProject && (
         <CreateProjectModal
           onClose={() => setShowCreateProject(false)}
-          onSubmitSuccess={() => fetchProjects()}
+          onSubmitSuccess={(newProj?: any) => {
+            fetchProjects().then((list) => {
+              if (newProj) {
+                const matched = list.find((p) => String(p.id) === String(newProj.id)) || newProj;
+                handleSelectProject(matched);
+              }
+            });
+          }}
         />
       )}
       {showQuickSearch && (

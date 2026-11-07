@@ -16,6 +16,8 @@ interface AppShellProps {
   onCreateIssue: () => void;
   onSearch: () => void;
   onLogout: () => void;
+  onSelectProject?: (project: Project) => void;
+  onCreateProject?: () => void;
   projects?: Project[];
   selectedProject?: Project | null;
   currentUser?: User;
@@ -31,6 +33,8 @@ export default function AppShell({
   onCreateIssue,
   onSearch,
   onLogout,
+  onSelectProject: propOnSelectProject,
+  onCreateProject: propOnCreateProject,
   projects: propProjects,
   selectedProject: propSelectedProject,
   currentUser: propUser,
@@ -47,6 +51,13 @@ export default function AppShell({
   const projects = propProjects || storeProjects;
   const selectedProject = propSelectedProject || currentProject || projects[0] || null;
   const notifications = propNotifications && propNotifications.length > 0 ? propNotifications : storeNotifications;
+
+  const handleSelectProject = (project: Project) => {
+    setCurrentProject(project);
+    if (propOnSelectProject) {
+      propOnSelectProject(project);
+    }
+  };
 
   const currentUser: User = propUser || authUser || {
     id: '',
@@ -67,7 +78,8 @@ export default function AppShell({
         projects={projects}
         selectedProject={selectedProject}
         onNavigate={onNavigate}
-        onSelectProject={setCurrentProject}
+        onSelectProject={handleSelectProject}
+        onCreateProject={propOnCreateProject}
         onLogout={onLogout}
       />
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Plus } from 'lucide-react';
 import type { Project } from '../../types';
 import ProjectBadge from '../../features/projects/components/ProjectBadge';
@@ -17,9 +17,21 @@ export default function ProjectSwitcher({
   onCreateProject,
 }: ProjectSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <button
         type="button"
         className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-[#E5E5E7] text-sm hover:bg-white/80 transition-colors"
@@ -51,7 +63,7 @@ export default function ProjectSwitcher({
                 key={p.id}
                 type="button"
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left hover:bg-[#F7F7F8] transition-colors ${
-                  p.id === selectedProject?.id ? 'bg-[#F7F7F8]' : ''
+                  String(p.id) === String(selectedProject?.id) ? 'bg-[#F7F7F8]' : ''
                 }`}
                 onClick={() => {
                   onSelectProject(p);
