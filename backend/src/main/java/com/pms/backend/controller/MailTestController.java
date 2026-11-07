@@ -1,7 +1,7 @@
 package com.pms.backend.controller;
 
 import com.pms.backend.config.AppProperties;
-import com.pms.backend.service.impl.MailServiceImpl;
+import com.pms.backend.service.interfaces.IMailService;
 import org.springframework.boot.autoconfigure.mail.MailProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,11 +16,11 @@ import java.util.Map;
 @RequestMapping("/api/test")
 public class MailTestController {
 
-    private final MailServiceImpl mailService;
+    private final IMailService mailService;
     private final MailProperties mailProperties;
     private final AppProperties appProperties;
 
-    public MailTestController(MailServiceImpl mailService, MailProperties mailProperties, AppProperties appProperties) {
+    public MailTestController(IMailService mailService, MailProperties mailProperties, AppProperties appProperties) {
         this.mailService = mailService;
         this.mailProperties = mailProperties;
         this.appProperties = appProperties;
