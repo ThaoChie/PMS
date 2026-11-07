@@ -38,12 +38,21 @@ public class MailConfig {
         } else {
             sender.setDefaultEncoding("UTF-8");
         }
+        Properties javaMailProps = new Properties();
+        javaMailProps.put("mail.smtp.auth", "true");
+        javaMailProps.put("mail.smtp.starttls.enable", "true");
+        javaMailProps.put("mail.smtp.starttls.required", "true");
+        javaMailProps.put("mail.smtp.ssl.trust", "*");
+        javaMailProps.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
+        javaMailProps.put("mail.smtp.connectiontimeout", "10000");
+        javaMailProps.put("mail.smtp.timeout", "10000");
+        javaMailProps.put("mail.smtp.writetimeout", "10000");
+
         Map<String, String> propMap = properties.getProperties();
         if (propMap != null && !propMap.isEmpty()) {
-            Properties javaMailProps = new Properties();
             javaMailProps.putAll(propMap);
-            sender.setJavaMailProperties(javaMailProps);
         }
+        sender.setJavaMailProperties(javaMailProps);
         return sender;
     }
 }

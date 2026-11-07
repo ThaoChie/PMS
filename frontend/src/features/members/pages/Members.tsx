@@ -144,15 +144,13 @@ export default function Members({ role }: MembersProps) {
     try {
       await invitationService.inviteMember(currentProject.id, email.trim(), inviteRole);
       setShowInvite(false);
+      setToastMessage(`Đã gửi lời mời tham gia dự án tới email ${email.trim()}`);
+      setTimeout(() => setToastMessage(null), 4000);
       await loadData();
     } catch (err: any) {
       const code = err?.response?.data?.code;
-      if (code === 'USER_NOT_FOUND' || err?.response?.status === 422) {
-        setError('Không tìm thấy người dùng với email này trong hệ thống.');
-      } else if (code === 'MEMBER_ALREADY_EXISTS') {
+      if (code === 'MEMBER_ALREADY_EXISTS') {
         setError('Người dùng đã là thành viên của dự án.');
-      } else if (code === 'PENDING_INVITATION_EXISTS') {
-        setError('Đã có lời mời đang chờ xử lý gửi tới email này.');
       } else {
         setError(err?.response?.data?.message || err?.message || 'Không thể gửi lời mời.');
       }

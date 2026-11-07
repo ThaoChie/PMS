@@ -44,6 +44,11 @@ public class MailServiceImpl implements IMailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
 
             String fromAddress = appProperties.getMail().getFrom();
+            if (mailSender instanceof org.springframework.mail.javamail.JavaMailSenderImpl impl && impl.getUsername() != null && !impl.getUsername().isBlank()) {
+                if (fromAddress == null || fromAddress.isBlank() || fromAddress.contains("no-reply@epms.com")) {
+                    fromAddress = impl.getUsername();
+                }
+            }
             helper.setFrom(fromAddress, "Hệ thống Quản lý Dự án EPMS");
             helper.setTo(to);
             helper.setSubject(subject);
@@ -52,7 +57,7 @@ public class MailServiceImpl implements IMailService {
             mailSender.send(message);
             log.info("Email sent successfully to {} with subject '{}'", to, subject);
         } catch (Exception ex) {
-            log.error("Failed to send email to {} with subject '{}': {}", to, subject, ex.getMessage());
+            log.error("Failed to send email to {} with subject '{}': {}", to, subject, ex.getMessage(), ex);
             // Intentionally not re-throwing to avoid rolling back transaction
         }
     }
