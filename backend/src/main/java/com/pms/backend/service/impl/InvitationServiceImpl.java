@@ -116,7 +116,8 @@ public class InvitationServiceImpl implements IInvitationService {
                 inviter
         );
 
-        String acceptUrl = "http://localhost:5173/invitations";
+        String frontendBase = appProperties.getFrontendUrl() != null ? appProperties.getFrontendUrl().replaceAll("/+$", "") : "https://pms-chi-self.vercel.app";
+        String acceptUrl = frontendBase + "/invitations";
         mailService.sendMailAsync(
                 email,
                 "[EPMS] Lời mời tham gia dự án " + project.getName(),

@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.pms.backend.config.AppProperties;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -31,15 +32,18 @@ public class PasswordResetServiceImpl implements IPasswordResetService {
     private final UserRepository userRepository;
     private final IMailService mailService;
     private final PasswordEncoder passwordEncoder;
+    private final AppProperties appProperties;
 
     public PasswordResetServiceImpl(PasswordResetTokenRepository tokenRepository,
                                 UserRepository userRepository,
                                 IMailService mailService,
-                                PasswordEncoder passwordEncoder) {
+                                PasswordEncoder passwordEncoder,
+                                AppProperties appProperties) {
         this.tokenRepository = tokenRepository;
         this.userRepository = userRepository;
         this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
+        this.appProperties = appProperties;
     }
 
     private String hashToken(String rawToken) {
@@ -74,7 +78,8 @@ public class PasswordResetServiceImpl implements IPasswordResetService {
         tokenRepository.save(resetToken);
 
         // Send email with reset URL
-        String resetUrl = "http://localhost:3000/reset-password?token=" + rawToken;
+        String frontendBase = appProperties.getFrontendUrl() != null ? appProperties.getFrontendUrl().replaceAll("/+$", "") : "https://pms-chi-self.vercel.app";
+        String resetUrl = frontendBase + "/reset-password?token=" + rawToken;
         mailService.sendMailAsync(
                 user.getEmail(),
                 "[EPMS] Yêu cầu đặt lại mật khẩu",

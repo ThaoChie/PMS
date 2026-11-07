@@ -37,7 +37,7 @@ public class InvitationController {
     }
 
     @PostMapping({"/api/projects/{projectId}/invitations", "/projects/{projectId}/invitations"})
-    @PreAuthorize("@projectSecurity.isPmOrAdmin(#projectId)")
+    @PreAuthorize("@projectSecurity.canInviteMember(#projectId)")
     public ApiResponse<InvitationResponse> createInvitation(@PathVariable Long projectId,
                                                            @Valid @RequestBody InviteMemberRequest request) {
         User currentUser = getCurrentUser();
@@ -46,7 +46,7 @@ public class InvitationController {
     }
 
     @GetMapping({"/api/projects/{projectId}/invitations", "/projects/{projectId}/invitations"})
-    @PreAuthorize("@projectSecurity.isPmOrAdmin(#projectId)")
+    @PreAuthorize("@projectSecurity.canInviteMember(#projectId)")
     public ApiResponse<List<InvitationResponse>> getProjectInvitations(@PathVariable Long projectId) {
         List<Invitation> invitations = invitationService.getProjectInvitations(projectId);
         return ApiResponse.success(invitations.stream().map(InvitationResponse::from).collect(Collectors.toList()));

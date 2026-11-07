@@ -15,6 +15,7 @@ public class AppProperties {
     private Invitation invitation = new Invitation();
     private Notification notification = new Notification();
     private Mail mail = new Mail();
+    private String frontendUrl = "https://pms-chi-self.vercel.app";
 
     public static class Jwt {
         private String secret = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
@@ -82,4 +83,6 @@ public class AppProperties {
     public void setNotification(Notification notification) { this.notification = notification; }
     public Mail getMail() { return mail; }
     public void setMail(Mail mail) { this.mail = mail; }
+    public String getFrontendUrl() { return frontendUrl; }
+    public void setFrontendUrl(String frontendUrl) { this.frontendUrl = frontendUrl; }
 }
