@@ -174,9 +174,19 @@ public class ProjectServiceImpl implements IProjectService {
                 Map<Long, String> roleByProjectId = memberships.stream()
                         .filter(pm -> pm.getProject() != null && pm.getProject().getId() != null)
                         .collect(Collectors.toMap(pm -> pm.getProject().getId(), pm -> pm.getRole().name(), (r1, r2) -> r1));
+                List<Project> pageProjects = projectRepository.findAllById(projectIds);
+                Map<Long, Project> projectById = pageProjects.stream()
+                        .collect(Collectors.toMap(Project::getId, p -> p, (p1, p2) -> p1));
+
                 for (ProjectResponse pr : pageWrapper.getContent()) {
                     String role = roleByProjectId.get(pr.getId());
-                    if (role != null) {
+                    Project proj = projectById.get(pr.getId());
+                    boolean isCreator = proj != null && proj.getCreatedBy() != null &&
+                            proj.getCreatedBy().getId() != null && proj.getCreatedBy().getId().equals(userId);
+
+                    if (isCreator) {
+                        pr.setMyRole("PM");
+                    } else if (role != null) {
                         pr.setMyRole(role);
                     }
                 }
@@ -220,8 +230,17 @@ public class ProjectServiceImpl implements IProjectService {
         ProjectResponse res = ProjectResponse.from(project);
         AuthUserPrincipal principal = projectSecurity.getCurrentUser();
         if (principal != null) {
-            projectMemberRepository.findByProjectIdAndUserId(projectId, principal.getId())
-                    .ifPresent(pm -> res.setMyRole(pm.getRole().name()));
+            boolean isCreator = project.getCreatedBy() != null && (
+                    (project.getCreatedBy().getId() != null && project.getCreatedBy().getId().equals(principal.getId())) ||
+                    (project.getCreatedBy().getEmail() != null && principal.getEmail() != null &&
+                            project.getCreatedBy().getEmail().trim().equalsIgnoreCase(principal.getEmail().trim()))
+            );
+            if (isCreator) {
+                res.setMyRole("PM");
+            } else {
+                projectMemberRepository.findByProjectIdAndUserId(projectId, principal.getId())
+                        .ifPresent(pm -> res.setMyRole(pm.getRole().name()));
+            }
         }
         try {
             res.setMemberCount((int) projectMemberRepository.countByProjectId(projectId));
@@ -298,8 +317,17 @@ public class ProjectServiceImpl implements IProjectService {
         ProjectResponse res = ProjectResponse.from(project);
         AuthUserPrincipal principal = projectSecurity.getCurrentUser();
         if (principal != null) {
-            projectMemberRepository.findByProjectIdAndUserId(projectId, principal.getId())
-                    .ifPresent(pm -> res.setMyRole(pm.getRole().name()));
+            boolean isCreator = project.getCreatedBy() != null && (
+                    (project.getCreatedBy().getId() != null && project.getCreatedBy().getId().equals(principal.getId())) ||
+                    (project.getCreatedBy().getEmail() != null && principal.getEmail() != null &&
+                            project.getCreatedBy().getEmail().trim().equalsIgnoreCase(principal.getEmail().trim()))
+            );
+            if (isCreator) {
+                res.setMyRole("PM");
+            } else {
+                projectMemberRepository.findByProjectIdAndUserId(projectId, principal.getId())
+                        .ifPresent(pm -> res.setMyRole(pm.getRole().name()));
+            }
         }
         try {
             res.setMemberCount((int) projectMemberRepository.countByProjectId(projectId));

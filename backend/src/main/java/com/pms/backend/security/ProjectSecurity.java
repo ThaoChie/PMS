@@ -34,22 +34,61 @@ public class ProjectSecurity {
         }
         return null;
     }
-    // Kểm tra xem người dùng có phải là thành viên của dự án không
+
+    public boolean isSystemAdmin(AuthUserPrincipal user) {
+        if (user == null || user.getAuthorities() == null) {
+            return false;
+        }
+        return user.getAuthorities().stream().anyMatch(a ->
+                a.getAuthority().equalsIgnoreCase("ROLE_ADMIN") ||
+                a.getAuthority().equalsIgnoreCase("ADMIN"));
+    }
+
+    public boolean isProjectCreator(Long projectId, AuthUserPrincipal user) {
+        if (projectId == null || user == null) {
+            return false;
+        }
+        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        if (projectOpt.isEmpty()) {
+            return false;
+        }
+        Project project = projectOpt.get();
+        if (project.getCreatedBy() == null) {
+            return false;
+        }
+        if (project.getCreatedBy().getId() != null && project.getCreatedBy().getId().equals(user.getId())) {
+            return true;
+        }
+        return project.getCreatedBy().getEmail() != null && user.getEmail() != null &&
+                project.getCreatedBy().getEmail().trim().equalsIgnoreCase(user.getEmail().trim());
+    }
+
+    // Kiểm tra xem người dùng có phải là thành viên của dự án không
     public boolean isMember(Long projectId) {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) {
             return false;
-        } 
-        
+        }
+
+        // Quản trị viên hệ thống hoặc Người tạo dự án luôn được xem là thành viên
+        if (isSystemAdmin(user) || isProjectCreator(projectId, user)) {
+            return true;
+        }
+
         return projectMemberRepository.existsByProjectIdAndUserId(projectId, user.getId());
     }
-    // Kiem tra xem người dùng có vai trò cụ thể trong dự án không
+
+    // Kiểm tra xem người dùng có vai trò cụ thể trong dự án không
     public boolean hasRole(Long projectId, String... roles) {
         AuthUserPrincipal user = getCurrentUser();
         if (user == null) {
             return false;
         }
-        
+
+        boolean checkPm = Arrays.stream(roles).anyMatch(r -> r.equalsIgnoreCase("PM"));
+        if (checkPm && (isSystemAdmin(user) || isProjectCreator(projectId, user))) {
+            return true;
+        }
 
         Optional<ProjectMember> memberOpt = projectMemberRepository.findByProjectIdAndUserId(projectId, user.getId());
         if (memberOpt.isEmpty()) {
@@ -59,9 +98,27 @@ public class ProjectSecurity {
         ProjectRole userRole = memberOpt.get().getRole();
         return Arrays.stream(roles).anyMatch(r -> r.equalsIgnoreCase(userRole.name()));
     }
-    // Kiem tra xem người dùng có vai trò PM
+
+    // Kiểm tra xem người dùng có vai trò PM hoặc Admin hoặc Creator
     public boolean isPmOrAdmin(Long projectId) {
+        AuthUserPrincipal user = getCurrentUser();
+        if (user == null) {
+            return false;
+        }
+
+        if (isSystemAdmin(user) || isProjectCreator(projectId, user)) {
+            return true;
+        }
+
         return hasRole(projectId, "PM");
+    }
+
+    // Kiểm tra quyền mời thành viên: Cho phép PM, Admin, Creator hoặc bất kỳ thành viên nào của dự án
+    public boolean canInviteMember(Long projectId) {
+        if (isPmOrAdmin(projectId)) {
+            return true;
+        }
+        return isMember(projectId);
     }
 
     public boolean canManageCustomFields(Long projectId) {

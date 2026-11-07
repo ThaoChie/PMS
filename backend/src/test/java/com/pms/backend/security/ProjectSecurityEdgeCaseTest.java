@@ -137,4 +137,58 @@ public class ProjectSecurityEdgeCaseTest {
         boolean canManage = projectSecurity.canManageCustomFields(1L);
         assertFalse(canManage);
     }
+
+    @Test
+    public void testIsPmOrAdmin_WhenProjectCreator_ReturnsTrueEvenIfRoleIsMember() {
+        mockAuthUser(5L, "creator@epms.com");
+
+        com.pms.backend.model.User creatorUser = new com.pms.backend.model.User();
+        creatorUser.setId(5L);
+        creatorUser.setEmail("creator@epms.com");
+        activeProject.setCreatedBy(creatorUser);
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(activeProject));
+
+        assertTrue(projectSecurity.isPmOrAdmin(1L));
+        assertTrue(projectSecurity.canInviteMember(1L));
+    }
+
+    @Test
+    public void testIsPmOrAdmin_WhenSystemAdmin_ReturnsTrue() {
+        AuthUserPrincipal adminPrincipal = new AuthUserPrincipal(
+                999L, "admin@epms.com", "", true,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+        );
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(adminPrincipal, null, adminPrincipal.getAuthorities())
+        );
+
+        assertTrue(projectSecurity.isPmOrAdmin(1L));
+        assertTrue(projectSecurity.canInviteMember(1L));
+    }
+
+    @Test
+    public void testCanInviteMember_WhenProjectMember_ReturnsTrue() {
+        mockAuthUser(30L, "member@epms.com");
+
+        ProjectMember member = new ProjectMember();
+        member.setRole(ProjectRole.MEMBER);
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(activeProject));
+        when(memberRepository.findByProjectIdAndUserId(1L, 30L)).thenReturn(Optional.of(member));
+        when(memberRepository.existsByProjectIdAndUserId(1L, 30L)).thenReturn(true);
+
+        assertTrue(projectSecurity.canInviteMember(1L));
+    }
+
+    @Test
+    public void testCanInviteMember_WhenNonMember_ReturnsFalse() {
+        mockAuthUser(40L, "stranger@epms.com");
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(activeProject));
+        when(memberRepository.findByProjectIdAndUserId(1L, 40L)).thenReturn(Optional.empty());
+        when(memberRepository.existsByProjectIdAndUserId(1L, 40L)).thenReturn(false);
+
+        assertFalse(projectSecurity.canInviteMember(1L));
+    }
 }
