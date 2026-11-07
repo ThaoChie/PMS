@@ -71,51 +71,53 @@ public class InvitationServiceImpl implements IInvitationService {
 
         String email = request.getEmail().trim().toLowerCase();
 
-        // 1. Check if user exists in the system
-        User recipient = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Người dùng với email '" + email + "' chưa có tài khoản trong hệ thống"));
+        // 1. Check if user already exists
+        Optional<User> recipientOpt = userRepository.findByEmailIgnoreCase(email);
 
         // 2. Check if already a project member
-        if (memberRepository.existsByProjectIdAndUserId(projectId, recipient.getId())) {
-            throw new BusinessException(ErrorCode.MEMBER_ALREADY_EXISTS, "Người dùng này đã là thành viên của dự án");
-        }
-
-        // 3. Check for existing PENDING invitation
-        Optional<Invitation> pendingOpt = invitationRepository.findByProjectIdAndEmailIgnoreCaseAndStatus(projectId, email, InvitationStatus.PENDING);
-        if (pendingOpt.isPresent()) {
-            Invitation existing = pendingOpt.get();
-            if (existing.getExpiresAt().isAfter(LocalDateTime.now())) {
-                throw new BusinessException(ErrorCode.CONFLICT, "Đã có lời mời đang chờ xử lý gửi tới email này");
-            } else {
-                existing.setStatus(InvitationStatus.EXPIRED);
-                invitationRepository.save(existing);
+        if (recipientOpt.isPresent()) {
+            User recipient = recipientOpt.get();
+            if (memberRepository.existsByProjectIdAndUserId(projectId, recipient.getId())) {
+                throw new BusinessException(ErrorCode.MEMBER_ALREADY_EXISTS, "Người dùng này đã là thành viên của dự án");
             }
         }
 
-        // 4. Create new invitation
+        // 3. Check for existing PENDING invitation - if exists, refresh expiry and resend email
         int expiryDays = appProperties.getInvitation().getExpiryDays();
-        Invitation invitation = new Invitation();
-        invitation.setProject(project);
-        invitation.setEmail(email);
-        invitation.setRole(request.getRole() != null ? request.getRole() : ProjectRole.MEMBER);
-        invitation.setToken(UUID.randomUUID().toString());
-        invitation.setStatus(InvitationStatus.PENDING);
-        invitation.setExpiresAt(LocalDateTime.now().plusDays(expiryDays));
-        invitation.setInvitedBy(inviter);
+        Optional<Invitation> pendingOpt = invitationRepository.findByProjectIdAndEmailIgnoreCaseAndStatus(projectId, email, InvitationStatus.PENDING);
+        Invitation invitation;
+        if (pendingOpt.isPresent()) {
+            invitation = pendingOpt.get();
+            invitation.setRole(request.getRole() != null ? request.getRole() : ProjectRole.MEMBER);
+            invitation.setExpiresAt(LocalDateTime.now().plusDays(expiryDays));
+            invitation.setInvitedBy(inviter);
+            invitation = invitationRepository.save(invitation);
+        } else {
+            invitation = new Invitation();
+            invitation.setProject(project);
+            invitation.setEmail(email);
+            invitation.setRole(request.getRole() != null ? request.getRole() : ProjectRole.MEMBER);
+            invitation.setToken(UUID.randomUUID().toString());
+            invitation.setStatus(InvitationStatus.PENDING);
+            invitation.setExpiresAt(LocalDateTime.now().plusDays(expiryDays));
+            invitation.setInvitedBy(inviter);
+            invitation = invitationRepository.save(invitation);
+        }
 
-        invitation = invitationRepository.save(invitation);
+        // 4. Send in-app notification if recipient has an existing account
+        if (recipientOpt.isPresent()) {
+            notificationService.notify(
+                    NotificationType.INVITE_RECEIVED,
+                    List.of(recipientOpt.get()),
+                    "Lời mời tham gia dự án: " + project.getName(),
+                    "Bạn được mời tham gia dự án " + project.getName() + " với vai trò " + invitation.getRole().name(),
+                    "/invitations",
+                    String.valueOf(invitation.getId()),
+                    inviter
+            );
+        }
 
-        // 5. Send notification + email
-        notificationService.notify(
-                NotificationType.INVITE_RECEIVED,
-                List.of(recipient),
-                "Lời mời tham gia dự án: " + project.getName(),
-                "Bạn được mời tham gia dự án " + project.getName() + " với vai trò " + invitation.getRole().name(),
-                "/invitations",
-                String.valueOf(invitation.getId()),
-                inviter
-        );
-
+        // 5. Send invitation email (works for both existing users and new external email invites)
         String frontendBase = appProperties.getFrontendUrl() != null ? appProperties.getFrontendUrl().replaceAll("/+$", "") : "https://pms-chi-self.vercel.app";
         String acceptUrl = frontendBase + "/invitations";
         mailService.sendMailAsync(
