@@ -139,10 +139,12 @@ public class InvitationServiceImpl implements IInvitationService {
         return invitation;
     }
 
+    @Transactional(readOnly = true)
     public List<Invitation> getProjectInvitations(Long projectId) {
         return invitationRepository.findByProjectId(projectId);
     }
 
+    @Transactional(readOnly = true)
     public List<Invitation> getMyInvitations(String userEmail) {
         return invitationRepository.findByEmailIgnoreCaseAndStatus(userEmail, InvitationStatus.PENDING);
     }
