@@ -1,5 +1,6 @@
 package com.pms.backend.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pms.backend.config.AppProperties;
 import com.pms.backend.config.MailConfig;
 import com.pms.backend.service.interfaces.IMailService;
@@ -15,7 +16,12 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -27,6 +33,7 @@ public class MailServiceImpl implements IMailService {
     private final TemplateEngine templateEngine;
     private final AppProperties appProperties;
     private final MailProperties mailProperties;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public MailServiceImpl(JavaMailSender mailSender, TemplateEngine templateEngine, AppProperties appProperties, MailProperties mailProperties) {
         this.mailSender = mailSender;
@@ -57,15 +64,20 @@ public class MailServiceImpl implements IMailService {
         String htmlContent = templateEngine.process("mail/" + templateName, context);
         String fromAddress = resolveFromAddress();
 
-        // Attempt 1: Using primary configured mailSender
+        // 1. Priority 1: Check HTTPS Email API (Brevo / Resend) - bypasses Render SMTP port blocks (port 443 is never blocked)
+        if (trySendViaHttpApi(fromAddress, to, subject, htmlContent)) {
+            return;
+        }
+
+        // 2. Priority 2: Traditional SMTP (port 587 STARTTLS or configured port)
         try {
             sendWithSender(this.mailSender, fromAddress, to, subject, htmlContent);
-            log.info("Email sent successfully to {} with subject '{}'", to, subject);
+            log.info("Email sent successfully via SMTP to {} with subject '{}'", to, subject);
             return;
         } catch (Exception ex) {
-            log.warn("Primary mail sender failed for {}: {}. Attempting fallback...", to, ex.getMessage());
+            log.warn("Primary SMTP sender failed for {}: {}. Attempting fallback SMTP...", to, ex.getMessage());
 
-            // Attempt 2: If primary was 587 -> try 465 SSL; if primary was 465 -> try 587 STARTTLS
+            // 3. Fallback: If primary was 587 -> try 465 SSL; if primary was 465 -> try 587 STARTTLS
             int currentPort = mailProperties.getPort() != null ? mailProperties.getPort() : 587;
             int fallbackPort = (currentPort == 465) ? 587 : 465;
             boolean fallbackSsl = (fallbackPort == 465);
@@ -73,8 +85,109 @@ public class MailServiceImpl implements IMailService {
             log.info("Attempting mail fallback on port {} (ssl={})", fallbackPort, fallbackSsl);
             JavaMailSenderImpl fallbackSender = MailConfig.buildSender(mailProperties, fallbackPort, fallbackSsl);
             sendWithSender(fallbackSender, fromAddress, to, subject, htmlContent);
-            log.info("Fallback email sent successfully to {} on port {}", to, fallbackPort);
+            log.info("Fallback email sent successfully via SMTP to {} on port {}", to, fallbackPort);
         }
+    }
+
+    private boolean trySendViaHttpApi(String fromAddress, String to, String subject, String htmlContent) {
+        String brevoKey = System.getenv("BREVO_API_KEY");
+        if (brevoKey != null && !brevoKey.isBlank()) {
+            try {
+                sendViaBrevo(brevoKey.trim(), fromAddress, to, subject, htmlContent);
+                log.info("Email sent successfully via Brevo HTTPS API to {}", to);
+                return true;
+            } catch (Exception ex) {
+                log.error("Failed to send email via Brevo API: {}", ex.getMessage(), ex);
+            }
+        }
+
+        String resendKey = System.getenv("RESEND_API_KEY");
+        if (resendKey != null && !resendKey.isBlank()) {
+            try {
+                sendViaResend(resendKey.trim(), fromAddress, to, subject, htmlContent);
+                log.info("Email sent successfully via Resend HTTPS API to {}", to);
+                return true;
+            } catch (Exception ex) {
+                log.error("Failed to send email via Resend API: {}", ex.getMessage(), ex);
+            }
+        }
+
+        return false;
+    }
+
+    private void sendViaBrevo(String apiKey, String fromAddress, String to, String subject, String htmlContent) throws Exception {
+        URI uri = URI.create("https://api.brevo.com/v3/smtp/email");
+        HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("api-key", apiKey);
+        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        conn.setRequestProperty("Accept", "application/json");
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(10000);
+        conn.setDoOutput(true);
+
+        Map<String, Object> body = Map.of(
+                "sender", Map.of("name", "Hệ thống Quản lý Dự án EPMS", "email", fromAddress),
+                "to", List.of(Map.of("email", to)),
+                "subject", subject,
+                "htmlContent", htmlContent
+        );
+
+        String json = objectMapper.writeValueAsString(body);
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(json.getBytes(StandardCharsets.UTF_8));
+        }
+
+        int code = conn.getResponseCode();
+        if (code >= 200 && code < 300) {
+            return;
+        }
+        String errorResp = "";
+        try (InputStream is = conn.getErrorStream()) {
+            if (is != null) {
+                errorResp = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            }
+        }
+        throw new RuntimeException("Brevo API error HTTP " + code + ": " + errorResp);
+    }
+
+    private void sendViaResend(String apiKey, String fromAddress, String to, String subject, String htmlContent) throws Exception {
+        URI uri = URI.create("https://api.resend.com/emails");
+        HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(10000);
+        conn.setDoOutput(true);
+
+        String from = fromAddress.contains("@") && !fromAddress.endsWith("@gmail.com")
+                ? "EPMS <" + fromAddress + ">"
+                : "EPMS <onboarding@resend.dev>";
+
+        Map<String, Object> body = Map.of(
+                "from", from,
+                "to", List.of(to),
+                "subject", subject,
+                "html", htmlContent
+        );
+
+        String json = objectMapper.writeValueAsString(body);
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(json.getBytes(StandardCharsets.UTF_8));
+        }
+
+        int code = conn.getResponseCode();
+        if (code >= 200 && code < 300) {
+            return;
+        }
+        String errorResp = "";
+        try (InputStream is = conn.getErrorStream()) {
+            if (is != null) {
+                errorResp = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            }
+        }
+        throw new RuntimeException("Resend API error HTTP " + code + ": " + errorResp);
     }
 
     private void sendWithSender(JavaMailSender sender, String fromAddress, String to, String subject, String htmlContent) throws Exception {
