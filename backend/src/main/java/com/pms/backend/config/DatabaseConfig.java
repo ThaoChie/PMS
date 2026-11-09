@@ -164,13 +164,18 @@ public class DatabaseConfig {
     public org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy flywayMigrationStrategy() {
         return flyway -> {
             try {
-                log.info("Running Flyway repair to clean any prior failed migration states...");
-                flyway.repair();
+                log.info("Running Flyway migrations...");
+                flyway.migrate();
             } catch (Exception e) {
-                log.warn("Flyway repair encountered an issue (ignoring): {}", e.getMessage());
+                log.warn("Flyway migration encountered an issue: {}. Attempting repair and retry...", e.getMessage());
+                try {
+                    flyway.repair();
+                    flyway.migrate();
+                } catch (Exception ex) {
+                    log.error("Flyway repair and retry failed: {}", ex.getMessage(), ex);
+                    throw ex;
+                }
             }
-            log.info("Running Flyway migrations...");
-            flyway.migrate();
         };
     }
 }
