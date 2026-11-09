@@ -31,7 +31,11 @@ public class InvitationResponse {
         res.setStatus(invitation.getStatus() != null ? invitation.getStatus().name() : "PENDING");
         res.setExpiresAt(invitation.getExpiresAt());
         if (invitation.getInvitedBy() != null) {
-            res.setInviterName(invitation.getInvitedBy().getFullName());
+            try {
+                res.setInviterName(invitation.getInvitedBy().getFullName());
+            } catch (Exception ignored) {
+                res.setInviterName("Quản trị viên");
+            }
         }
         return res;
     }

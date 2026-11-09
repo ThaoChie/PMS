@@ -17,7 +17,7 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:${DATABASE_PASSWORD:pms_password}}
     driver-class-name: org.postgresql.Driver
   jpa:
-    open-in-view: false
+    open-in-view: true
     hibernate:
       ddl-auto: none
     properties:
