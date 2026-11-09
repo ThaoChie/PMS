@@ -33,6 +33,9 @@ public class MailTestController {
             recipient = "phuongthao.me69@gmail.com";
         }
 
+        String brevoKey = System.getenv("BREVO_API_KEY");
+        String resendKey = System.getenv("RESEND_API_KEY");
+
         Map<String, Object> configInfo = new LinkedHashMap<>();
         configInfo.put("host", mailProperties.getHost());
         configInfo.put("port", mailProperties.getPort());
@@ -41,6 +44,8 @@ public class MailTestController {
         String pw = mailProperties.getPassword();
         configInfo.put("passwordLength", pw != null ? pw.length() : 0);
         configInfo.put("passwordPreview", pw != null && pw.length() >= 4 ? "****" + pw.substring(pw.length() - 4) : "NULL");
+        configInfo.put("hasBrevoApiKey", brevoKey != null && !brevoKey.isBlank());
+        configInfo.put("hasResendApiKey", resendKey != null && !resendKey.isBlank());
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("testedRecipient", recipient);
@@ -53,7 +58,7 @@ public class MailTestController {
                     "invitation",
                     Map.of(
                             "recipientEmail", recipient,
-                            "projectName", "Dự án Thử Nghiệm",
+                            "projectName", "Dự án Thử Nghiệm EPMS",
                             "role", "MEMBER",
                             "inviterName", "Hệ thống EPMS",
                             "acceptUrl", "https://pms-chi-self.vercel.app/invitations",
@@ -61,7 +66,12 @@ public class MailTestController {
                     )
             );
             response.put("success", true);
-            response.put("message", "Email test đã được gửi thành công tới " + recipient + "! Cả 2 cổng 587 và 465 đều sẵn sàng.");
+            String channel = (brevoKey != null && !brevoKey.isBlank())
+                    ? "Brevo HTTPS API (Cổng 443 - không bị chặn bởi Render)"
+                    : ((resendKey != null && !resendKey.isBlank())
+                    ? "Resend HTTPS API (Cổng 443 - không bị chặn bởi Render)"
+                    : "SMTP thông thường (Cổng " + mailProperties.getPort() + ")");
+            response.put("message", "Email test đã được gửi thành công tới " + recipient + " qua kênh: " + channel);
             return ResponseEntity.ok(response);
         } catch (Exception ex) {
             response.put("success", false);
@@ -69,12 +79,14 @@ public class MailTestController {
             response.put("errorMessage", ex.getMessage());
             response.put("rootCause", ex.getCause() != null ? ex.getCause().getMessage() : null);
 
-            String hint = "Kiểm tra cấu hình SMTP.";
+            String hint;
             String msg = (ex.getMessage() + " " + (ex.getCause() != null ? ex.getCause().getMessage() : "")).toLowerCase();
             if (msg.contains("authenticationfailed") || msg.contains("535") || msg.contains("username and password not accepted")) {
-                hint = "LỖI XÁC THỰC GMAIL (535): Google từ chối tài khoản hoặc mật khẩu! Vui lòng kiểm tra trên Render: 1) SPRING_MAIL_USERNAME phải là địa chỉ Gmail đầy đủ ('phuongthao.me69@gmail.com') chứ không được là chuỗi khác. 2) SPRING_MAIL_PASSWORD phải là Mật khẩu ứng dụng (App Password 16 chữ cái tạo trong Google Account > Security > 2-Step Verification > App Passwords).";
+                hint = "LỖI XÁC THỰC GMAIL (535): Google từ chối tài khoản hoặc mật khẩu! Vui lòng kiểm tra trên Render: 1) SPRING_MAIL_USERNAME phải là địa chỉ Gmail đầy đủ ('phuongthao.me69@gmail.com'). 2) SPRING_MAIL_PASSWORD phải là Mật khẩu ứng dụng (App Password 16 chữ cái).";
             } else if (msg.contains("connectexception") || msg.contains("timed out") || msg.contains("timeout") || msg.contains("could not connect")) {
-                hint = "LỖI KẾT NỐI TỚI SMTP SERVER: Render có thể đang chặn hoặc timeout kết nối tới Google SMTP. Hệ thống đã thử cả 587 và 465 nhưng đều không phản hồi.";
+                hint = "LỖI CHẶN CỔNG SMTP TRÊN RENDER: Render gói Free chặn toàn bộ kết nối ra ngoài qua các cổng SMTP 25, 465, 587. Để gửi được email trên Render Free, bạn chỉ cần tạo 1 API key miễn phí tại Brevo (https://brevo.com - miễn phí 300 email/ngày) và thêm biến môi trường BREVO_API_KEY trên Render. Hệ thống sẽ tự động chuyển sang gửi qua cổng 443 HTTPS không bao giờ bị chặn!";
+            } else {
+                hint = "Kiểm tra chi tiết lỗi bên trên.";
             }
             response.put("diagnosticHint", hint);
             return ResponseEntity.status(500).body(response);
