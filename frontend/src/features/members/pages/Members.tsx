@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, AlertTriangle, AlertCircle, ShieldAlert, Check, Loader2, Save } from 'lucide-react';
+import { Plus, AlertTriangle, AlertCircle, ShieldAlert, Check, Loader2, Save, Mail, X } from 'lucide-react';
 import type { Role, User, ProjectPermissions } from '../../../types';
 import MemberTable from '../components/MemberTable';
 import InviteMemberPanel from '../components/InviteMemberPanel';
@@ -8,6 +8,7 @@ import { useProjectStore } from '../../../store/projectStore';
 import { memberService } from '../../../services/memberService';
 import { invitationService } from '../../../services/invitationService';
 import { projectService } from '../../../services/projectService';
+import { mailTestService, type MailTestResult } from '../../../services/mailTestService';
 
 interface MembersProps {
   role: Role;
@@ -31,6 +32,28 @@ export default function Members({ role }: MembersProps) {
   const [savingPermission, setSavingPermission] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const [testingMail, setTestingMail] = useState(false);
+  const [mailTestResult, setMailTestResult] = useState<MailTestResult | null>(null);
+  const [showMailTestModal, setShowMailTestModal] = useState(false);
+
+  async function handleTestMail() {
+    setTestingMail(true);
+    setShowMailTestModal(true);
+    setMailTestResult(null);
+    try {
+      const res = await mailTestService.testMail();
+      setMailTestResult(res);
+    } catch (err: any) {
+      setMailTestResult({
+        success: false,
+        errorMessage: err?.message || 'Không thể gửi yêu cầu kiểm tra email',
+        diagnosticHint: 'Hãy kiểm tra xem backend Render có đang chạy không.',
+      });
+    } finally {
+      setTestingMail(false);
+    }
+  }
 
   useEffect(() => {
     if (currentProject) {
@@ -213,13 +236,25 @@ export default function Members({ role }: MembersProps) {
             </p>
           </div>
           {canManage && (
-            <button
-              type="button"
-              onClick={() => setShowInvite(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" /> Mời thành viên
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleTestMail}
+                disabled={testingMail}
+                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-[#E5E5E7] text-[#1A1A1A] hover:bg-[#F7F7F8] text-xs font-medium rounded-lg transition-colors"
+                title="Kiểm tra hệ thống gửi email trên production"
+              >
+                {testingMail ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E53E3E]" /> : <Mail className="w-3.5 h-3.5 text-[#6B6B70]" />}
+                Kiểm tra Email
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowInvite(true)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Mời thành viên
+              </button>
+            </div>
           )}
         </div>
 
@@ -476,6 +511,108 @@ export default function Members({ role }: MembersProps) {
         onConfirm={handleConfirmSave}
         onCancel={handleCancelPermissions}
       />
+
+      {/* Mail Test Diagnostics Modal */}
+      {showMailTestModal && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 modal-backdrop"
+          onClick={() => setShowMailTestModal(false)}
+        >
+          <div
+            className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl border border-[#E5E5E7] max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E7] mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-red-50 text-[#E53E3E] flex items-center justify-center">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-[#1A1A1A]">Kiểm tra hệ thống gửi Email</h3>
+                  <p className="text-[11px] text-[#6B6B70]">Chẩn đoán kết nối gửi email trên môi trường Production</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMailTestModal(false)}
+                className="text-[#6B6B70] hover:text-[#1A1A1A] p-1 rounded-md"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {testingMail ? (
+              <div className="py-8 flex flex-col items-center justify-center gap-3 text-center">
+                <Loader2 className="w-8 h-8 text-[#E53E3E] animate-spin" />
+                <p className="text-xs font-medium text-[#1A1A1A]">Đang thử nghiệm gửi email qua máy chủ...</p>
+                <p className="text-[11px] text-[#6B6B70] max-w-xs">
+                  Hệ thống đang thử các kênh: Brevo HTTPS API (cổng 443) và SMTP (587/465).
+                </p>
+              </div>
+            ) : mailTestResult ? (
+              <div className="space-y-4">
+                {mailTestResult.success ? (
+                  <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold">{mailTestResult.message || 'Gửi email thành công!'}</p>
+                      <p className="text-[11px] text-emerald-700 mt-0.5">
+                        Một email thử nghiệm đã được gửi đến: <b>{mailTestResult.testedRecipient}</b>. Hãy kiểm tra hộp thư đến (hoặc thư mục Spam).
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-lg text-xs space-y-2">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold">Gửi email thất bại</p>
+                        <p className="text-[11px] text-red-700 font-mono mt-1 break-all">
+                          {mailTestResult.errorMessage || 'Lỗi không xác định'}
+                        </p>
+                      </div>
+                    </div>
+                    {mailTestResult.diagnosticHint && (
+                      <div className="pt-2 border-t border-red-200/60 text-[11px] text-red-900 bg-white/50 p-2 rounded">
+                        <b>Hướng dẫn khắc phục:</b> {mailTestResult.diagnosticHint}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {mailTestResult.config && (
+                  <div className="p-3 bg-[#F7F7F8] border border-[#E5E5E7] rounded-lg text-xs space-y-1.5 font-mono text-[11px]">
+                    <div className="font-sans font-semibold text-[#1A1A1A] pb-1 border-b border-[#E5E5E7]">
+                      Thông số nạp trên máy chủ:
+                    </div>
+                    <div>Host: {mailTestResult.config.host || 'smtp.gmail.com'}</div>
+                    <div>Port: {mailTestResult.config.port || 587}</div>
+                    <div>Username: {mailTestResult.config.username || '(chưa nạp)'}</div>
+                    <div>Brevo API Key: {mailTestResult.config.hasBrevoApiKey ? '✅ Đã cấu hình (HTTPS 443)' : '❌ Chưa cấu hình'}</div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleTestMail}
+                    className="px-3.5 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
+                  >
+                    Thử gửi lại
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowMailTestModal(false)}
+                    className="px-3.5 py-2 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toastMessage && (
