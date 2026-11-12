@@ -3,6 +3,7 @@ package com.pms.backend.service.impl;
 import com.pms.backend.service.interfaces.*;
 
 import com.pms.backend.dao.NotificationRepository;
+import com.pms.backend.exception.ResourceNotFoundException;
 import com.pms.backend.enu.NotificationGroup;
 import com.pms.backend.enu.NotificationType;
 import com.pms.backend.model.Notification;
@@ -60,13 +61,14 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     @Transactional
     public void markAsRead(Long notificationId, Long recipientId) {
-        notificationRepository.findById(notificationId).ifPresent(n -> {
-            // Chống IDOR: chỉ chủ sở hữu thông báo mới được đánh dấu đã đọc
-            if (n.getRecipient() != null && n.getRecipient().getId().equals(recipientId)) {
-                n.setRead(true);
-                notificationRepository.save(n);
-            }
-        });
+        // Chống IDOR: thông báo không tồn tại HOẶC không thuộc người dùng -> 404 (không lộ sự tồn tại)
+        Notification n = notificationRepository.findById(notificationId)
+                .filter(x -> x.getRecipient() != null && x.getRecipient().getId().equals(recipientId))
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found: " + notificationId));
+        if (!n.isRead()) {
+            n.setRead(true);
+            notificationRepository.save(n);
+        }
     }
 
     @Override

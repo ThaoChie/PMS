@@ -38,6 +38,13 @@ public class ReportServiceImpl implements IReportService {
     }
 
     public ProgressReportResponse getProgressReport(Long projectId, LocalDate from, LocalDate to, String metric) {
+        // Chỉ có 2 đơn vị: số lượng công việc (issues) hoặc giờ (hours)
+        if (metric != null && !metric.isBlank()
+                && !"issues".equalsIgnoreCase(metric.trim()) && !"hours".equalsIgnoreCase(metric.trim())) {
+            throw new com.pms.backend.exception.BusinessException(
+                    com.pms.backend.enu.ErrorCode.VALIDATION_ERROR,
+                    "Đơn vị báo cáo không hợp lệ, chỉ chấp nhận issues hoặc hours");
+        }
         return progressReportHibernateDao.generateProgressReport(projectId, from, to, metric);
     }
 
