@@ -90,6 +90,7 @@ public class SavedFilterServiceImpl implements ISavedFilterService {
         if (criteriaStr == null || criteriaStr.isBlank()) {
             criteriaStr = "{}";
         }
+        assertValidCriteriaJson(criteriaStr);
 
         SavedFilter filter = new SavedFilter(request.getName(), criteriaStr, currentUser);
 
@@ -143,6 +144,7 @@ public class SavedFilterServiceImpl implements ISavedFilterService {
             }
         }
         if (criteriaStr != null && !criteriaStr.isBlank()) {
+            assertValidCriteriaJson(criteriaStr);
             filter.setCriteria(criteriaStr);
         }
 
@@ -276,6 +278,20 @@ public class SavedFilterServiceImpl implements ISavedFilterService {
             }
         } catch (Exception ignored) {}
         return result;
+    }
+
+    /** criteria phải là JSON object hợp lệ (cột lưu dạng TEXT) — tránh lưu dữ liệu hỏng làm lỗi trang Bộ lọc. */
+    private void assertValidCriteriaJson(String criteriaJson) {
+        try {
+            JsonNode node = objectMapper.readTree(criteriaJson);
+            if (node == null || !node.isObject()) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Điều kiện lọc không hợp lệ (phải là JSON object)");
+            }
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Điều kiện lọc không hợp lệ (phải là JSON object)");
+        }
     }
 
     private void validateFrequency(String frequency) {
