@@ -87,7 +87,10 @@ export default function WorklogSection({
 
   // UC008 / BR-COL-04: Người được phân công (Assignee), PM của dự án, hoặc Admin được ghi nhận thời gian
   const isAssignee = !!currentUser?.id && !!assigneeId && String(currentUser.id) === String(assigneeId);
-  const isPmOrAdmin = role === 'pm' || currentUser?.systemRole === 'ADMIN' || (currentUser as any)?.role === 'ADMIN';
+  // Luu y: authStore.mapUserResponseToUser chuan hoa role ve CHU THUONG
+  // ('admin' | 'pm' | 'member'). So sanh voi 'ADMIN' chu hoa luon sai,
+  // va 'systemRole' khong ton tai -> truoc day Admin khong bao gio ghi nhan duoc thoi gian.
+  const isPmOrAdmin = role === 'pm' || role === 'admin' || currentUser?.role === 'admin';
   const canLog = isAssignee || isPmOrAdmin;
 
   async function handleLogWork(timeSpent: string, date: string, comment?: string) {
