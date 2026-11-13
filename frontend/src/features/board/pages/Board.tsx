@@ -159,7 +159,9 @@ export default function Board({ role, onSelectIssue }: BoardProps) {
 
       if (!targetTrans) {
         // Check if issue is already at targetStatus in DB (e.g. concurrent or prior update)
-        const currentDetail = await issueService.getIssueDetail(issueKey).catch(() => null);
+        // Ten dung la getIssue (getIssueDetail khong ton tai -> TypeError dong bo,
+        // khong bi .catch() bat, lam hong luong keo-tha tren bang Kanban).
+        const currentDetail = await issueService.getIssue(issueKey).catch(() => null);
         const currentDbStatus = currentDetail?.data?.status;
         if (currentDbStatus && currentDbStatus.toLowerCase() === targetStatusName.toLowerCase()) {
           toast.success(`Đã chuyển trạng thái ${issueKey} sang "${targetStatusName}"`);
