@@ -84,20 +84,20 @@ export default function WorklogSection({
     estimateMinutes > 0 ? Math.min(100, Math.round((spentMinutes / estimateMinutes) * 100)) : 0;
   const isOverBudget = estimateMinutes > 0 && spentMinutes > estimateMinutes;
 
-  // UC008 / BR-COL-04: chỉ người được phân công (Assignee) được ghi nhận thời gian.
-  // Phải khớp backend (WorklogServiceImpl.logWork) — nếu hiện nút cho PM/Admin, bấm Lưu sẽ bị 403.
-  const canLog =
-    !!currentUser?.id && !!assigneeId && String(currentUser.id) === String(assigneeId);
+  // UC008 / BR-COL-04: Người được phân công (Assignee), PM của dự án, hoặc Admin được ghi nhận thời gian
+  const isAssignee = !!currentUser?.id && !!assigneeId && String(currentUser.id) === String(assigneeId);
+  const isPmOrAdmin = role === 'pm' || currentUser?.systemRole === 'ADMIN' || (currentUser as any)?.role === 'ADMIN';
+  const canLog = isAssignee || isPmOrAdmin;
 
   async function handleLogWork(timeSpent: string, date: string, comment?: string) {
     const minutes = parseDuration(timeSpent);
     if (minutes <= 0) {
       toast.error(MESSAGES.WORKLOG.TIME_INVALID);
-      return;
+      throw new Error(MESSAGES.WORKLOG.TIME_INVALID);
     }
     if (date > todayIso()) {
       toast.error(MESSAGES.WORKLOG.DATE_IN_FUTURE);
-      return;
+      throw new Error(MESSAGES.WORKLOG.DATE_IN_FUTURE);
     }
     try {
       await worklogService.createWorklog(issueKey, { timeSpent, date, comment });
@@ -105,7 +105,14 @@ export default function WorklogSection({
       await fetchWorklogs();
       onChanged?.();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || MESSAGES.COMMON.ACTION_FAILED);
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.data?.message ||
+        err?.message ||
+        (typeof err === 'string' ? err : null) ||
+        MESSAGES.COMMON.ACTION_FAILED;
+      toast.error(errMsg);
+      throw new Error(errMsg);
     }
   }
 
