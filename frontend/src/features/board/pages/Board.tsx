@@ -124,13 +124,18 @@ export default function Board({ role, onSelectIssue }: BoardProps) {
     });
   }, [issues, onlyMyIssues, selectedType, searchKeyword, currentUser?.id]);
 
+  const isDroppingRef = React.useRef(false);
+
   // Handle Drag & Drop with API transition and revert on failure
   async function handleDrop(targetStatusName: string) {
     setDragOver(null);
-    if (!draggedIssue || draggedIssue.status?.toLowerCase() === targetStatusName.toLowerCase()) {
+    if (!draggedIssue) return;
+    if (draggedIssue.status?.toLowerCase() === targetStatusName.toLowerCase()) {
       setDraggedIssue(null);
       return;
     }
+    if (isDroppingRef.current) return;
+    isDroppingRef.current = true;
 
     const prevStatus = draggedIssue.status;
     const issueKey = draggedIssue.key;
@@ -153,6 +158,15 @@ export default function Board({ role, onSelectIssue }: BoardProps) {
       );
 
       if (!targetTrans) {
+        // Check if issue is already at targetStatus in DB (e.g. concurrent or prior update)
+        const currentDetail = await issueService.getIssueDetail(issueKey).catch(() => null);
+        const currentDbStatus = currentDetail?.data?.status;
+        if (currentDbStatus && currentDbStatus.toLowerCase() === targetStatusName.toLowerCase()) {
+          toast.success(`Đã chuyển trạng thái ${issueKey} sang "${targetStatusName}"`);
+          loadData();
+          return;
+        }
+
         // Special case: Approve / Reject transitions
         if (targetStatusName.toLowerCase() === 'done' && (role === 'pm' || role === 'admin')) {
           await workflowService.approveIssue(issueKey, 'Approved via Board');
@@ -164,6 +178,9 @@ export default function Board({ role, onSelectIssue }: BoardProps) {
         await workflowService.executeTransition(issueKey, String(targetTrans.id));
         toast.success(`Đã chuyển trạng thái ${issueKey} sang "${targetStatusName}"`);
       }
+
+      // Refresh board data to keep all columns in sync
+      loadData();
     } catch (err: any) {
       // Revert state
       setIssues((prev) =>
@@ -175,6 +192,7 @@ export default function Board({ role, onSelectIssue }: BoardProps) {
       setTimeout(() => setErrorMessage(null), 5000);
     } finally {
       setDraggedIssue(null);
+      isDroppingRef.current = false;
     }
   }
 
@@ -296,12 +314,6 @@ export default function Board({ role, onSelectIssue }: BoardProps) {
             return (
               <div
                 key={col.id || col.name}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOver(col.name);
-                }}
-                onDragLeave={() => setDragOver(null)}
-                onDrop={() => handleDrop(col.name)}
                 className="h-full flex"
               >
                 <KanbanColumn
@@ -313,10 +325,18 @@ export default function Board({ role, onSelectIssue }: BoardProps) {
                   onDragEnd={() => setDraggedIssue(null)}
                   onDragOver={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     setDragOver(col.name);
                   }}
-                  onDragLeave={() => setDragOver(null)}
-                  onDrop={() => handleDrop(col.name)}
+                  onDragLeave={(e) => {
+                    e.stopPropagation();
+                    setDragOver((prev) => (prev === col.name ? null : prev));
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDrop(col.name);
+                  }}
                   onSelectIssue={(id) => {
                     const found = issues.find((x) => x.id === id);
                     onSelectIssue(found ? found.key : id);
