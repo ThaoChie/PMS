@@ -3,7 +3,6 @@ import { Clock, Plus } from 'lucide-react';
 import type { Role, Worklog } from '../../../types';
 import { worklogService } from '../../../services/worklogService';
 import { mapUserResponseToUser, useAuthStore } from '../../../store/authStore';
-import { useProjectStore } from '../../../store/projectStore';
 import { toast } from '../../../store/toastStore';
 import { MESSAGES } from '../../../constants/messages';
 import { formatDuration, parseDuration } from '../../../utils/duration';
@@ -19,6 +18,7 @@ interface WorklogSectionProps {
   estimates?: string;
   /** Id người được phân công — chỉ người này được ghi nhận thời gian (UC008) */
   assigneeId?: string;
+  /** @deprecated Không còn dùng để phân quyền (chỉ Assignee được log work) — giữ để không phải sửa nơi gọi */
   role?: Role;
   /** Gọi lại sau khi ghi nhận thời gian (để cha tải lại Issue vì remaining estimate đã đổi) */
   onChanged?: () => void;
@@ -45,13 +45,9 @@ export default function WorklogSection({
   issueKey,
   estimates,
   assigneeId,
-  role,
   onChanged,
 }: WorklogSectionProps) {
   const currentUser = useAuthStore((s) => s.user);
-  const userRole = useAuthStore((s) => s.role);
-  const currentProject = useProjectStore((s) => s.currentProject);
-  const effectiveRole = role || currentProject?.myRole || userRole || 'member';
 
   const [worklogs, setWorklogs] = useState<Worklog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -88,11 +84,10 @@ export default function WorklogSection({
     estimateMinutes > 0 ? Math.min(100, Math.round((spentMinutes / estimateMinutes) * 100)) : 0;
   const isOverBudget = estimateMinutes > 0 && spentMinutes > estimateMinutes;
 
-  // UC008: Assignee hoặc PM/Admin được ghi nhận thời gian (khớp permission.ts issue:logwork)
+  // UC008 / BR-COL-04: chỉ người được phân công (Assignee) được ghi nhận thời gian.
+  // Phải khớp backend (WorklogServiceImpl.logWork) — nếu hiện nút cho PM/Admin, bấm Lưu sẽ bị 403.
   const canLog =
-    !!currentUser?.id &&
-    (effectiveRole === 'pm' || effectiveRole === 'admin' ||
-      (!!assigneeId && String(currentUser.id) === String(assigneeId)));
+    !!currentUser?.id && !!assigneeId && String(currentUser.id) === String(assigneeId);
 
   async function handleLogWork(timeSpent: string, date: string, comment?: string) {
     const minutes = parseDuration(timeSpent);
