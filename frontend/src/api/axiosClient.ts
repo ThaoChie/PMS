@@ -69,6 +69,27 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+/**
+ * Lỗi trả về cho nơi gọi: giữ nguyên dạng cũ (body `{ success, message, ... }`) để code đang đọc
+ * `err.message` không đổi, đồng thời gắn thêm `response` (không liệt kê khi log/JSON) để các chỗ
+ * đọc `err.response.data.message` / `err.response.status` lấy được đúng lý do lỗi từ backend
+ * thay vì luôn rơi về câu chung "Thao tác không thành công".
+ */
+export function toRejectPayload(error: AxiosError): unknown {
+  const data = error.response?.data;
+  if (data && typeof data === 'object') {
+    if (!('response' in (data as object))) {
+      Object.defineProperty(data, 'response', {
+        value: error.response,
+        enumerable: false,
+        configurable: true,
+      });
+    }
+    return data;
+  }
+  return error;
+}
+
 // Response interceptor: handle 401 refresh once -> logout
 axiosClient.interceptors.response.use(
   (response) => response.data,
@@ -88,7 +109,7 @@ axiosClient.interceptors.response.use(
       requestUrl.includes('/auth/forgot-password') ||
       requestUrl.includes('/auth/reset-password')
     ) {
-      return Promise.reject(error.response?.data || error);
+      return Promise.reject(toRejectPayload(error));
     }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -138,7 +159,7 @@ axiosClient.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error.response?.data || error);
+    return Promise.reject(toRejectPayload(error));
   },
 );
 

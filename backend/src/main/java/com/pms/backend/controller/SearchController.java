@@ -80,6 +80,13 @@ public class SearchController {
             @RequestParam(defaultValue = "xlsx") String format
     ) {
         if (request == null) request = new IssueSearchRequest();
+        // Chỉ hỗ trợ xlsx/csv; chặn luôn ký tự lạ lọt vào header Content-Disposition
+        format = format == null ? "xlsx" : format.trim().toLowerCase();
+        if (!"xlsx".equals(format) && !"csv".equals(format)) {
+            throw new com.pms.backend.exception.BusinessException(
+                    com.pms.backend.enu.ErrorCode.VALIDATION_ERROR,
+                    "Định dạng xuất không hỗ trợ, chỉ chấp nhận xlsx hoặc csv");
+        }
 
         User user = getCurrentUser();
         List<Long> accessibleProjectIds = getAccessibleProjectIds(user);

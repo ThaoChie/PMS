@@ -2,6 +2,7 @@ package com.pms.backend.service;
 
 import com.pms.backend.dao.NotificationRepository;
 import com.pms.backend.enu.NotificationType;
+import com.pms.backend.exception.ResourceNotFoundException;
 import com.pms.backend.model.Notification;
 import com.pms.backend.model.User;
 import com.pms.backend.service.impl.NotificationServiceImpl;
@@ -97,8 +98,8 @@ public class NotificationServiceTest {
 
         when(notificationRepository.findById(7L)).thenReturn(Optional.of(other));
 
-        // Người khác (id 999) cố đánh dấu đã đọc -> không được phép
-        notificationService.markAsRead(7L, 999L);
+        // Người khác (id 999) đánh dấu -> 404 (ResourceNotFound), dữ liệu không đổi
+        assertThrows(ResourceNotFoundException.class, () -> notificationService.markAsRead(7L, 999L));
         assertFalse(other.isRead());
         verify(notificationRepository, never()).save(any(Notification.class));
 
@@ -106,6 +107,13 @@ public class NotificationServiceTest {
         notificationService.markAsRead(7L, recipient.getId());
         assertTrue(other.isRead());
         verify(notificationRepository, times(1)).save(other);
+    }
+
+    @Test
+    void markAsRead_thongBaoKhongTonTai_tra404() {
+        when(notificationRepository.findById(404L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> notificationService.markAsRead(404L, 1L));
+        verify(notificationRepository, never()).save(any(Notification.class));
     }
 
     @Test
