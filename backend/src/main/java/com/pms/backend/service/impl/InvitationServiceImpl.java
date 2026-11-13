@@ -116,7 +116,7 @@ public class InvitationServiceImpl implements IInvitationService {
                     List.of(recipientOpt.get()),
                     "Lời mời tham gia dự án: " + project.getName(),
                     "Bạn được mời tham gia dự án " + project.getName() + " với vai trò " + invitation.getRole().name(),
-                    "/invitations",
+                    "/notifications?tab=invite",
                     String.valueOf(invitation.getId()),
                     inviter
             );
@@ -124,7 +124,7 @@ public class InvitationServiceImpl implements IInvitationService {
 
         // 5. Send invitation email (works for both existing users and new external email invites)
         String frontendBase = appProperties.getFrontendUrl() != null ? appProperties.getFrontendUrl().replaceAll("/+$", "") : "https://pms-chi-self.vercel.app";
-        String acceptUrl = frontendBase + "/invitations";
+        String acceptUrl = frontendBase + "/notifications?tab=invite&invitation=" + invitation.getId();
         mailService.sendMailAsync(
                 email,
                 "[EPMS] Lời mời tham gia dự án " + project.getName(),

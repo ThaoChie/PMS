@@ -134,6 +134,10 @@ export default function App() {
       setCurrentScreen('invitations');
       return;
     }
+    if (pathname.includes('/notifications')) {
+      setCurrentScreen('notifications');
+      return;
+    }
     if (pathname.includes('/approvals')) {
       setCurrentScreen('approvals' as Screen);
       return;
@@ -219,27 +223,45 @@ export default function App() {
     }
   }, [currentProject]);
 
-  // Guard: Khi chưa đăng nhập -> Nếu URL không phải trang auth, chuẩn hóa URL về /login
+  // Guard: Khi chưa đăng nhập -> Nếu URL không phải trang auth, lưu lại URL đích và chuyển hướng về /login
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       const p = window.location.pathname;
       if (p !== '/login' && p !== '/register' && p !== '/forgot-password' && p !== '/reset-password') {
-        window.history.replaceState({}, '', '/login');
+        const fullTarget = window.location.pathname + window.location.search + window.location.hash;
+        if (fullTarget && fullTarget !== '/' && !fullTarget.startsWith('/login')) {
+          sessionStorage.setItem('epms_redirect_after_login', fullTarget);
+          window.history.replaceState({}, '', `/login?redirect=${encodeURIComponent(fullTarget)}`);
+        } else {
+          window.history.replaceState({}, '', '/login');
+        }
         setAuthView('login');
       }
     }
   }, [authLoading, isAuthenticated]);
 
-  // Guard: Khi đã đăng nhập -> Nếu URL đang là trang auth hoặc root /, chuyển hướng về /dashboard
+  // Guard: Khi đã đăng nhập -> Nếu URL đang là trang auth hoặc root /, chuyển hướng về trang đích đã lưu (hoặc /dashboard)
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       const p = window.location.pathname;
       if (p === '/login' || p === '/register' || p === '/forgot-password' || p === '/reset-password' || p === '/') {
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirectParam = searchParams.get('redirect');
+        const savedRedirect = sessionStorage.getItem('epms_redirect_after_login');
+        const target = redirectParam || savedRedirect;
+
+        if (target && !target.startsWith('/login') && !target.startsWith('/register')) {
+          sessionStorage.removeItem('epms_redirect_after_login');
+          window.history.replaceState({}, '', target);
+          syncRouteFromLocation();
+          return;
+        }
+
         window.history.replaceState({}, '', '/dashboard');
         setCurrentScreen('dashboard');
       }
     }
-  }, [authLoading, isAuthenticated]);
+  }, [authLoading, isAuthenticated, syncRouteFromLocation]);
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
@@ -254,6 +276,18 @@ export default function App() {
 
   function handleLogin() {
     setAuthView('login');
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectParam = searchParams.get('redirect');
+    const savedRedirect = sessionStorage.getItem('epms_redirect_after_login');
+    const target = redirectParam || savedRedirect;
+
+    if (target && !target.startsWith('/login') && !target.startsWith('/register')) {
+      sessionStorage.removeItem('epms_redirect_after_login');
+      window.history.pushState({}, '', target);
+      syncRouteFromLocation();
+      return;
+    }
+
     const p = window.location.pathname;
     if (p === '/login' || p === '/register' || p === '/forgot-password' || p === '/reset-password' || p === '/') {
       window.history.pushState({}, '', '/dashboard');
@@ -363,6 +397,9 @@ export default function App() {
         break;
       case 'invitations':
         window.history.pushState({}, '', '/invitations');
+        break;
+      case 'notifications':
+        window.history.pushState({}, '', '/notifications');
         break;
       case 'approvals' as Screen:
         window.history.pushState({}, '', '/approvals');

@@ -29,6 +29,15 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
   const [declinedInviteNotifIds, setDeclinedInviteNotifIds] = useState<Set<string>>(new Set());
   const [statusFeedback, setStatusFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    const invId = params.get('invitation');
+    if (tab === 'invite' || invId) {
+      setActiveFilter('invite');
+    }
+  }, []);
+
   const loadPendingInvitations = async () => {
     try {
       const res = await invitationService.getMyInvitations();
@@ -170,32 +179,72 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
 
         {/* Pending invitations callout banner */}
         {pendingInvitations.length > 0 && (
-          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 shrink-0 mt-0.5 sm:mt-0">
-                <Mail className="w-4 h-4" />
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl shadow-xs space-y-3">
+            <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 shrink-0 mt-0.5 sm:mt-0">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-amber-900">
+                    Bạn có {pendingInvitations.length} lời mời tham gia dự án đang chờ phản hồi
+                  </p>
+                  <p className="text-[11px] text-amber-700 mt-0.5">
+                    Hãy chấp nhận để bắt đầu làm việc cùng nhóm
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-amber-900">
-                  Bạn có {pendingInvitations.length} lời mời tham gia dự án đang chờ phản hồi
-                </p>
-                <p className="text-[11px] text-amber-700 mt-0.5">
-                  Dự án:{' '}
-                  <span className="font-medium">
-                    {pendingInvitations.map((inv) => inv.projectName || 'Dự án').join(', ')}
-                  </span>
-                </p>
-              </div>
+              {onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('invitations')}
+                  className="text-xs text-amber-800 hover:text-amber-950 font-medium underline inline-flex items-center gap-1"
+                >
+                  Mở trang Lời mời <ArrowRight className="w-3 h-3" />
+                </button>
+              )}
             </div>
-            {onNavigate && (
-              <button
-                type="button"
-                onClick={() => onNavigate('invitations')}
-                className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#1A1A1A] text-white text-xs font-medium rounded-lg hover:bg-black transition-colors shrink-0 self-end sm:self-center"
-              >
-                Xem chi tiết lời mời <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
+
+            <div className="space-y-2 pt-1 border-t border-amber-200/60">
+              {pendingInvitations.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-white/80 rounded-lg border border-amber-200"
+                >
+                  <div>
+                    <span className="text-xs font-semibold text-[#1A1A1A]">
+                      {inv.projectName || 'Dự án'}
+                    </span>
+                    <span className="text-[11px] text-[#6B6B70] ml-2">
+                      Vai trò: <strong className="text-amber-800">{inv.role || 'MEMBER'}</strong>
+                    </span>
+                    {inv.inviterName && (
+                      <span className="text-[10px] text-[#9B9B9F] ml-2">
+                        (từ {inv.inviterName})
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      disabled={actionLoadingId === String(inv.id)}
+                      onClick={() => handleAcceptInvite(String(inv.id), `inv-${inv.id}`, inv.projectName)}
+                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 inline-flex items-center gap-1"
+                    >
+                      <Check className="w-3 h-3" /> Chấp nhận lời mời
+                    </button>
+                    <button
+                      type="button"
+                      disabled={actionLoadingId === String(inv.id)}
+                      onClick={() => handleDeclineInvite(String(inv.id), `inv-${inv.id}`)}
+                      className="px-2.5 py-1 border border-gray-300 hover:bg-gray-100 text-gray-700 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      Từ chối
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
