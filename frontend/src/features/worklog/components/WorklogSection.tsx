@@ -45,6 +45,7 @@ export default function WorklogSection({
   issueKey,
   estimates,
   assigneeId,
+  role,
   onChanged,
 }: WorklogSectionProps) {
   const currentUser = useAuthStore((s) => s.user);
