@@ -71,6 +71,11 @@ public class InvitationServiceImpl implements IInvitationService {
 
         String email = request.getEmail().trim().toLowerCase();
 
+        // 0. Prevent inviting self
+        if (inviter != null && inviter.getEmail() != null && email.equalsIgnoreCase(inviter.getEmail().trim())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Bạn không thể tự mời chính mình vào dự án");
+        }
+
         // 1. Check if user already exists
         Optional<User> recipientOpt = userRepository.findByEmailIgnoreCase(email);
 
