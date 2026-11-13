@@ -84,8 +84,14 @@ public class NotificationServiceImpl implements INotificationService {
 
         for (User recipient : recipients) {
             // Do not notify self
-            if (sender != null && sender.getId() != null && sender.getId().equals(recipient.getId())) {
-                continue;
+            if (sender != null) {
+                if (sender.getId() != null && sender.getId().equals(recipient.getId())) {
+                    continue;
+                }
+                if (sender.getEmail() != null && recipient.getEmail() != null 
+                        && sender.getEmail().trim().equalsIgnoreCase(recipient.getEmail().trim())) {
+                    continue;
+                }
             }
 
             try {
@@ -101,14 +107,14 @@ public class NotificationServiceImpl implements INotificationService {
 
                 notificationRepository.save(notification);
 
-                // Dispatch email
-                if (recipient.getEmail() != null) {
+                // Dispatch email (Skip generic notification email for INVITE_RECEIVED as InvitationService sends dedicated invitation email template)
+                if (type != NotificationType.INVITE_RECEIVED && recipient.getEmail() != null && !recipient.getEmail().isBlank()) {
                     mailService.sendMailAsync(
                             recipient.getEmail(),
                             "[EPMS] " + title,
                             "notification",
                             Map.of(
-                                    "recipientName", recipient.getFullName(),
+                                    "recipientName", recipient.getFullName() != null ? recipient.getFullName() : recipient.getEmail(),
                                     "title", title,
                                     "message", message != null ? message : "",
                                     "link", link != null ? link : "#"
