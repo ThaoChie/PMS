@@ -144,10 +144,13 @@ public class IssueSearchDao {
 
         // Keyword: ILIKE on lower(summary) and lower(description)
         if (request.getKeyword() != null && !request.getKeyword().isBlank()) {
-            String likePattern = "%" + request.getKeyword().trim().toLowerCase() + "%";
-            Predicate summaryLike = cb.like(cb.lower(root.get("summary")), likePattern);
-            Predicate descLike = cb.like(cb.lower(cb.coalesce(root.get("description"), "")), likePattern);
-            Predicate keyLike = cb.like(cb.lower(root.get("issueKey")), likePattern);
+            // Escape ký tự đại diện của LIKE (\ % _) để "%" hay "_" được tìm đúng nghĩa đen
+            String kw = request.getKeyword().trim().toLowerCase()
+                    .replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+            String likePattern = "%" + kw + "%";
+            Predicate summaryLike = cb.like(cb.lower(root.get("summary")), likePattern, '\\');
+            Predicate descLike = cb.like(cb.lower(cb.coalesce(root.get("description"), "")), likePattern, '\\');
+            Predicate keyLike = cb.like(cb.lower(root.get("issueKey")), likePattern, '\\');
             predicates.add(cb.or(summaryLike, descLike, keyLike));
         }
 
@@ -229,8 +232,15 @@ public class IssueSearchDao {
                         predicates.add(cb.disjunction());
                     }
                     break;
-                default:
+                case "RECENTLY_CREATED":
+                case "RECENTLY_UPDATED":
+                case "RECENTLY-UPDATED":
+                    // Chỉ thay đổi thứ tự sắp xếp (xem applyOrdering)
                     break;
+                default:
+                    throw new com.pms.backend.exception.BusinessException(
+                            com.pms.backend.enu.ErrorCode.VALIDATION_ERROR,
+                            "Bộ lọc nhanh không hợp lệ: " + request.getQuick());
             }
         }
 
