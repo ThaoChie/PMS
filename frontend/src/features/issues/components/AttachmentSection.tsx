@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Paperclip, Upload, Trash2, Download, Eye, X, FileText, Image as ImageIcon, FileArchive, Loader2 } from 'lucide-react';
 import { issueService } from '../../../services/issueService';
 import { toast } from '../../../store/toastStore';
+import { API_BASE_URL } from '../../../api/axiosClient';
 
 export interface AttachmentItem {
   id: string | number;
@@ -42,6 +43,15 @@ function getFileIcon(filename: string, contentType?: string) {
     return <FileArchive className="w-4 h-4 text-amber-600 shrink-0" />;
   }
   return <FileText className="w-4 h-4 text-blue-600 shrink-0" />;
+}
+
+export function resolveAttachmentUrl(url?: string): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const base = API_BASE_URL.replace(/\/api\/?$/, '');
+  if (url.startsWith('/api/')) return `${base}${url}`;
+  if (url.startsWith('/')) return `${base}/api${url}`;
+  return `${base}/api/attachments/files/${url}`;
 }
 
 export default function AttachmentSection({
@@ -167,6 +177,7 @@ export default function AttachmentSection({
               ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(
                 att.fileName.split('.').pop()?.toLowerCase() || ''
               ) || att.contentType?.startsWith('image/');
+            const directUrl = resolveAttachmentUrl(att.fileUrl);
 
             return (
               <div
@@ -187,10 +198,10 @@ export default function AttachmentSection({
 
                 <div className="flex items-center gap-2 shrink-0">
                   {/* Image preview button */}
-                  {isImg && att.fileUrl && (
+                  {isImg && directUrl && (
                     <button
                       type="button"
-                      onClick={() => setPreviewUrl(att.fileUrl || null)}
+                      onClick={() => setPreviewUrl(directUrl)}
                       className="text-[#6B6B70] hover:text-[#1A1A1A] p-1 rounded hover:bg-white transition-colors"
                       title="Xem trước ảnh"
                     >
@@ -199,9 +210,9 @@ export default function AttachmentSection({
                   )}
 
                   {/* Download button */}
-                  {att.fileUrl && (
+                  {directUrl && (
                     <a
-                      href={att.fileUrl}
+                      href={directUrl}
                       download={att.fileName}
                       target="_blank"
                       rel="noopener noreferrer"

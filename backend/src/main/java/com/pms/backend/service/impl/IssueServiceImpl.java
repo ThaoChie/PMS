@@ -560,7 +560,8 @@ public class IssueServiceImpl implements IIssueService {
         }
 
         // Store file
-        String fileUrl = fileStorageService.uploadFile(file);
+        String fileName = fileStorageService.uploadFile(file);
+        String fileUrl = fileStorageService.getFileUrl(fileName);
 
         IssueAttachment attachment = new IssueAttachment();
         attachment.setIssue(issue);
@@ -583,6 +584,7 @@ public class IssueServiceImpl implements IIssueService {
 
         projectSecurity.assertProjectWritable(attachment.getIssue().getProject());
 
+        fileStorageService.deleteFile(attachment.getFileUrl());
         attachmentRepository.delete(attachment);
         auditService.log("DELETE_ATTACHMENT", "ISSUE", attachment.getIssue().getId(), attachment.getIssue().getProject().getId(), null, "Deleted attachment: " + attachment.getFileName());
     }
