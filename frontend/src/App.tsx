@@ -57,7 +57,13 @@ export default function App() {
       if (p === '/profile') return 'profile';
       if (p === '/projects') return 'projects';
       if (p.includes('/invitations')) return 'invitations';
+      if (p.includes('/notifications')) return 'notifications';
       if (p.includes('/approvals')) return 'approvals' as Screen;
+
+      // Issue detail initial detection: /projects/:proj/issues/:key OR /issues/:key
+      const issueInitMatch = p.match(/\/issues\/([A-Za-z0-9_-]+)/);
+      if (issueInitMatch && issueInitMatch[1].toLowerCase() !== 'issues') return 'issue-detail';
+
       if (p.match(/^\/projects\/[^/]+\/board/)) return 'board';
       if (p.match(/^\/projects\/[^/]+\/issues/)) return 'issues';
       if (p.match(/^\/projects\/[^/]+\/reports/)) return 'reports';
@@ -74,7 +80,15 @@ export default function App() {
   const [showCreateIssue, setShowCreateIssue] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [showQuickSearch, setShowQuickSearch] = useState(false);
-  const [activeIssueKey, setActiveIssueKey] = useState<string | null>(null);
+  const [activeIssueKey, setActiveIssueKey] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const m = window.location.pathname.match(/\/issues\/([A-Za-z0-9_-]+)/);
+      if (m && m[1].toLowerCase() !== 'issues') return m[1];
+      const searchParams = new URLSearchParams(window.location.search);
+      return searchParams.get('issue');
+    }
+    return null;
+  });
 
   // Sync route from window.location
   const syncRouteFromLocation = useCallback((projectList = projects) => {
@@ -143,7 +157,29 @@ export default function App() {
       return;
     }
 
-    // 3. Project scoped routes (/projects/:id/(board|issues|reports|members|settings|workflows|custom-fields))
+    // 3. Issue detail route: /projects/:projKey/issues/:issueKey OR /issues/:issueKey OR ?issue=key
+    // (Must check BEFORE /projects/:proj/issues to avoid greedily matching as issue list)
+    const issueMatch = pathname.match(/\/issues\/([A-Za-z0-9_-]+)/);
+    const queryIssue = searchParams.get('issue');
+    const targetIssueKey = issueMatch ? issueMatch[1] : queryIssue;
+
+    if (targetIssueKey && targetIssueKey.toLowerCase() !== 'issues') {
+      const projMatch = pathname.match(/^\/projects\/([^/]+)\/issues/);
+      if (projMatch && projectList && projectList.length > 0) {
+        const projIdOrKey = decodeURIComponent(projMatch[1]);
+        const found = projectList.find(
+          (p) => String(p.id) === projIdOrKey || p.key.toLowerCase() === projIdOrKey.toLowerCase()
+        );
+        if (found && (!currentProject || String(currentProject.id) !== String(found.id))) {
+          setCurrentProject(found);
+        }
+      }
+      setActiveIssueKey(targetIssueKey);
+      setCurrentScreen('issue-detail');
+      return;
+    }
+
+    // 4. Project scoped routes (/projects/:id/(board|issues|reports|members|settings|workflows|custom-fields))
     const projectSubMatch = pathname.match(/^\/projects\/([^/]+)\/(board|issues|reports|members|settings|workflows|workflow|custom-fields)/);
     if (projectSubMatch) {
       const projIdOrKey = decodeURIComponent(projectSubMatch[1]);
@@ -165,15 +201,6 @@ export default function App() {
       else if (sub === 'settings') setCurrentScreen('project-settings');
       else if (sub === 'workflows' || sub === 'workflow') setCurrentScreen('workflow');
       else if (sub === 'custom-fields') setCurrentScreen('custom-fields');
-      return;
-    }
-
-    // 4. Issue detail route
-    const pathMatch = pathname.match(/\/issues\/([A-Za-z0-9_-]+)/);
-    const issueKeyParam = pathMatch ? pathMatch[1] : searchParams.get('issue');
-    if (issueKeyParam) {
-      setActiveIssueKey(issueKeyParam);
-      setCurrentScreen('issue-detail');
       return;
     }
 

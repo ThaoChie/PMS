@@ -2,6 +2,7 @@ package com.pms.backend.service.impl;
 
 import com.pms.backend.service.interfaces.*;
 
+import com.pms.backend.config.AppProperties;
 import com.pms.backend.dao.NotificationRepository;
 import com.pms.backend.exception.ResourceNotFoundException;
 import com.pms.backend.enu.NotificationGroup;
@@ -25,10 +26,12 @@ public class NotificationServiceImpl implements INotificationService {
 
     private final NotificationRepository notificationRepository;
     private final IMailService mailService;
+    private final AppProperties appProperties;
 
-    public NotificationServiceImpl(NotificationRepository notificationRepository, IMailService mailService) {
+    public NotificationServiceImpl(NotificationRepository notificationRepository, IMailService mailService, AppProperties appProperties) {
         this.notificationRepository = notificationRepository;
         this.mailService = mailService;
+        this.appProperties = appProperties;
     }
 
     @Override
@@ -111,6 +114,22 @@ public class NotificationServiceImpl implements INotificationService {
 
                 // Dispatch email (Skip generic notification email for INVITE_RECEIVED as InvitationService sends dedicated invitation email template)
                 if (type != NotificationType.INVITE_RECEIVED && recipient.getEmail() != null && !recipient.getEmail().isBlank()) {
+                    String frontendBase = appProperties != null && appProperties.getFrontendUrl() != null 
+                            ? appProperties.getFrontendUrl().replaceAll("/+$", "") 
+                            : "https://pms-chi-self.vercel.app";
+
+                    String emailActionLink = link;
+                    if (emailActionLink != null && !emailActionLink.isBlank() && !emailActionLink.equals("#")) {
+                        if (!emailActionLink.startsWith("http://") && !emailActionLink.startsWith("https://")) {
+                            if (!emailActionLink.startsWith("/")) {
+                                emailActionLink = "/" + emailActionLink;
+                            }
+                            emailActionLink = frontendBase + emailActionLink;
+                        }
+                    } else {
+                        emailActionLink = frontendBase + "/dashboard";
+                    }
+
                     mailService.sendMailAsync(
                             recipient.getEmail(),
                             "[EPMS] " + title,
@@ -119,7 +138,7 @@ public class NotificationServiceImpl implements INotificationService {
                                     "recipientName", recipient.getFullName() != null ? recipient.getFullName() : recipient.getEmail(),
                                     "title", title,
                                     "message", message != null ? message : "",
-                                    "link", link != null ? link : "#"
+                                    "link", emailActionLink
                             )
                     );
                 }
