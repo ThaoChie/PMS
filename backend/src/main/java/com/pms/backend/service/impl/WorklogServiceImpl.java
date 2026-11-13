@@ -81,20 +81,29 @@ public class WorklogServiceImpl implements IWorklogService {
             projectSecurity.assertProjectWritable(issue.getProject());
         }
 
-        // Only assignee can log work (BR-COL-04)
-        if (issue.getAssignee() == null || !issue.getAssignee().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException(ErrorCode.FORBIDDEN, "Chỉ người được giao việc mới có quyền ghi nhận thời gian làm việc");
+        // Check permission: Assignee, Project Manager or System Admin can log work
+        boolean isAssignee = issue.getAssignee() != null && issue.getAssignee().getId().equals(currentUser.getId());
+        boolean isPmOrAdmin = projectSecurity != null && projectSecurity.isPmOrAdmin(issue.getProject().getId());
+
+        if (!isAssignee && !isPmOrAdmin) {
+            throw new ForbiddenException(ErrorCode.FORBIDDEN, "Chỉ người được giao việc hoặc Quản trị viên dự án mới có quyền ghi nhận thời gian làm việc");
+        }
+
+        // If issue was unassigned, assign to currentUser who is logging work
+        if (issue.getAssignee() == null) {
+            issue.setAssignee(currentUser);
         }
 
         // Parse time spent
         int spentMinutes = DurationParser.parseToMinutes(request.getTimeSpent());
         if (spentMinutes <= 0) {
-            throw new ValidationException("Thời gian làm việc phải lớn hơn 0");
+            throw new ValidationException("Thời gian làm việc không hợp lệ hoặc phải lớn hơn 0");
         }
 
-        // Validate date <= today
+        // Validate date <= today (with 1-day timezone tolerance to account for UTC server vs UTC+7 client)
         LocalDate workDate = request.getDate() != null ? request.getDate() : LocalDate.now();
-        if (workDate.isAfter(LocalDate.now())) {
+        LocalDate maxAllowedDate = LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).plusDays(1);
+        if (workDate.isAfter(maxAllowedDate)) {
             throw new ValidationException("Ngày ghi nhận công việc không được vượt quá hôm nay");
         }
 
