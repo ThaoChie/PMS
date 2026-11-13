@@ -1,4 +1,4 @@
--- V20__create_attachment_blobs.sql
+-- V21__create_attachment_blobs.sql
 -- Persistent database storage fallback for attachments when external S3/MinIO is unavailable
 
 CREATE TABLE IF NOT EXISTS attachment_blobs (
