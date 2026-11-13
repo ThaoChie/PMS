@@ -22,7 +22,12 @@ public class AttachmentBlob {
     @Column(name = "file_size", nullable = false)
     private Long fileSize;
 
+    // PostgreSQL: cot "data" la BYTEA.
+    // KHONG dung @Lob o day: Hibernate 6 se map @Lob byte[] sang Large Object (OID/bigint)
+    // va sinh loi "column data is of type bytea but expression is of type bigint".
+    // VARBINARY la kieu JDBC duy nhat map dung sang BYTEA.
     @JdbcTypeCode(SqlTypes.VARBINARY)
+    @Column(name = "data", nullable = false, columnDefinition = "bytea")
     private byte[] data;
 
     @Column(name = "created_at", nullable = false, updatable = false)
