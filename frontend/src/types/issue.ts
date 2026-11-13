@@ -12,6 +12,26 @@ export interface SubTask {
   assignee?: User;
 }
 
+/**
+ * Tep dinh kem cua cong viec.
+ * Backend tra ve mang OBJECT (AttachmentResponse), khong phai mang chuoi.
+ * Giu kieu string de tuong thich nguoc voi du lieu cu / mock.
+ */
+export interface IssueAttachment {
+  id: string | number;
+  fileName: string;
+  fileUrl?: string;
+  fileSize?: number;
+  contentType?: string;
+  uploadedBy?: {
+    id: string | number;
+    name?: string;
+    fullName?: string;
+    email?: string;
+  };
+  createdAt?: string;
+}
+
 export interface LinkedIssue {
   id: string;
   key: string;
@@ -56,7 +76,7 @@ export interface Issue {
   estimates?: string;
   dueDate?: string;
   environment?: string;
-  attachments: string[];
+  attachments: Array<IssueAttachment | string>;
   subtasks: SubTask[];
   linkedIssues: LinkedIssue[];
   comments: Comment[];

@@ -437,15 +437,42 @@ export default function AttributesPanel({
       {issue.attachments && issue.attachments.length > 0 && (
         <AttrRow label="Tệp đính kèm">
           <div className="space-y-1 py-1">
-            {issue.attachments.map((a) => (
-              <div
-                key={a}
-                className="flex items-center gap-1.5 text-[#6B6B70] hover:text-[#1A1A1A] cursor-pointer"
-              >
-                <Paperclip className="w-3 h-3" />
-                <span className="text-[11px]">{a}</span>
-              </div>
-            ))}
+            {issue.attachments.map((a, idx) => {
+              // Backend tra ve object AttachmentResponse, khong phai chuoi.
+              // Render thang object se lam React vo trang ("Objects are not valid as a React child").
+              const isText = typeof a === 'string';
+              const name = isText ? a : a?.fileName || a?.fileUrl || 'Tệp đính kèm';
+              const href = isText ? undefined : a?.fileUrl;
+              const key = isText ? `${a}-${idx}` : String(a?.id ?? a?.fileUrl ?? idx);
+
+              const content = (
+                <>
+                  <Paperclip className="w-3 h-3 shrink-0" />
+                  <span className="text-[11px] truncate">{name}</span>
+                </>
+              );
+
+              return href ? (
+                <a
+                  key={key}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={name}
+                  className="flex items-center gap-1.5 text-[#6B6B70] hover:text-[#1A1A1A] hover:underline cursor-pointer"
+                >
+                  {content}
+                </a>
+              ) : (
+                <div
+                  key={key}
+                  title={name}
+                  className="flex items-center gap-1.5 text-[#6B6B70]"
+                >
+                  {content}
+                </div>
+              );
+            })}
           </div>
         </AttrRow>
       )}
