@@ -87,8 +87,7 @@ export function can(
       return !!context?.isAssignee;
 
     case 'issue:logwork':
-      // Assignee or PM can log work
-      if (role === 'pm') return true;
+      // Only Assignee can log work (UC008 / BR-COL-04, khớp backend WorklogServiceImpl)
       return !!context?.isAssignee;
 
     default:
