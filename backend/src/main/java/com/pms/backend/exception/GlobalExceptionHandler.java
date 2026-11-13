@@ -81,11 +81,95 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Endpoint không tồn tại: " + ex.getResourcePath()));
     }
 
+    /**
+     * Vi pham rang buoc toan ven du lieu.
+     *
+     * TRUOC DAY: moi vi pham deu tra ve "Email hoac thong tin da ton tai trong he thong",
+     * ke ca khi khong lien quan gi den email (vi du ghi nhan thoi gian lam viec).
+     * Thong bao sai lam nguoi dung hoang mang va che mat ten rang buoc that su,
+     * khien lap trinh vien khong the chan doan duoc loi.
+     *
+     * NAY: doi chieu ten rang buoc de tra thong bao dung ngu canh, dong thoi
+     * ghi ca ten rang buoc va nguyen nhan goc vao log de con truy vet.
+     */
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Object>> handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException ex) {
-        log.warn("Data integrity violation: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error("Email hoặc thông tin đã tồn tại trong hệ thống."));
+        String constraint = extractConstraintName(ex);
+        String rootCause = rootCauseMessage(ex);
+
+        // Ghi day du de con truy vet tren may chu (khong lo ra cho nguoi dung).
+        log.error("Data integrity violation [constraint={}]: {}", constraint, rootCause, ex);
+
+        String message = messageForConstraint(constraint, rootCause);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(message));
+    }
+
+    private String rootCauseMessage(Throwable ex) {
+        Throwable cur = ex;
+        while (cur.getCause() != null && cur.getCause() != cur) {
+            cur = cur.getCause();
+        }
+        return cur.getMessage() != null ? cur.getMessage() : ex.toString();
+    }
+
+    /** Lay ten rang buoc tu ConstraintViolationException cua Hibernate, hoac do tu thong bao cua PostgreSQL. */
+    private String extractConstraintName(Throwable ex) {
+        Throwable cur = ex;
+        while (cur != null) {
+            if (cur instanceof org.hibernate.exception.ConstraintViolationException cve
+                    && cve.getConstraintName() != null) {
+                return cve.getConstraintName().toLowerCase();
+            }
+            cur = cur.getCause() != cur ? cur.getCause() : null;
+        }
+        String msg = rootCauseMessage(ex);
+        java.util.regex.Matcher m =
+                java.util.regex.Pattern.compile("constraint \"([^\"]+)\"").matcher(msg);
+        return m.find() ? m.group(1).toLowerCase() : "";
+    }
+
+    private String messageForConstraint(String constraint, String rootCause) {
+        if (constraint.contains("users_lower_email") || constraint.contains("users_email")) {
+            return "Email này đã được sử dụng trong hệ thống.";
+        }
+        if (constraint.contains("project_member")) {
+            return "Người dùng này đã là thành viên của dự án.";
+        }
+        if (constraint.contains("issue_watchers")) {
+            return "Bạn đã theo dõi công việc này rồi.";
+        }
+        if (constraint.contains("recent_views")) {
+            return "Không thể cập nhật lịch sử truy cập. Vui lòng thử lại.";
+        }
+        if (constraint.contains("project_key") || constraint.contains("projects_project")) {
+            return "Mã dự án này đã tồn tại.";
+        }
+        if (constraint.contains("issue_key") || constraint.contains("issues_issue")) {
+            return "Mã công việc này đã tồn tại.";
+        }
+        if (constraint.contains("labels_project_name")) {
+            return "Nhãn này đã tồn tại trong dự án.";
+        }
+        if (constraint.contains("issue_link")) {
+            return "Liên kết giữa hai công việc này đã tồn tại.";
+        }
+        if (constraint.contains("attachment_blobs")) {
+            return "Tệp đính kèm này đã tồn tại.";
+        }
+        if (constraint.contains("custom_field")) {
+            return "Trường tùy chỉnh này đã tồn tại.";
+        }
+
+        // Chua biet ro rang buoc nao: phan loai theo kieu vi pham,
+        // tuyet doi KHONG doan bua la loi email.
+        String lower = rootCause == null ? "" : rootCause.toLowerCase();
+        if (lower.contains("null value") || lower.contains("not-null")) {
+            return "Thiếu thông tin bắt buộc. Vui lòng kiểm tra lại dữ liệu nhập.";
+        }
+        if (lower.contains("foreign key") || lower.contains("violates foreign key")) {
+            return "Dữ liệu liên quan không tồn tại hoặc đang được sử dụng ở nơi khác.";
+        }
+        return "Thao tác xung đột với dữ liệu hiện có. Vui lòng tải lại trang và thử lại.";
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
