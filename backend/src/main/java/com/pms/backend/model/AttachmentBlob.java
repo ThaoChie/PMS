@@ -2,6 +2,8 @@ package com.pms.backend.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "attachment_blobs")
@@ -20,8 +22,7 @@ public class AttachmentBlob {
     @Column(name = "file_size", nullable = false)
     private Long fileSize;
 
-    @Lob
-    @Column(name = "data", nullable = false)
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     private byte[] data;
 
     @Column(name = "created_at", nullable = false, updatable = false)
