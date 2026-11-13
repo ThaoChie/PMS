@@ -10,8 +10,8 @@ interface KanbanColumnProps {
   onDragStart?: (issue: Issue) => void;
   onDragEnd?: () => void;
   onDragOver?: (e: React.DragEvent) => void;
-  onDragLeave?: () => void;
-  onDrop?: () => void;
+  onDragLeave?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
   onSelectIssue: (id: string) => void;
 }
 
@@ -30,9 +30,18 @@ export default function KanbanColumn({
   return (
     <div
       className="flex flex-col w-64 shrink-0"
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
+      onDragOver={(e) => {
+        e.preventDefault();
+        onDragOver?.(e);
+      }}
+      onDragLeave={(e) => {
+        onDragLeave?.(e);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onDrop?.(e);
+      }}
     >
       {/* Column header */}
       <div className="flex items-center gap-2 mb-3 px-1">
