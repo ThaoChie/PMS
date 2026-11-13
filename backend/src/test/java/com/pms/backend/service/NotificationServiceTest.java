@@ -32,6 +32,7 @@ public class NotificationServiceTest {
 
     @Mock private NotificationRepository notificationRepository;
     @Mock private IMailService mailService;
+    @Mock private com.pms.backend.config.AppProperties appProperties;
 
     @InjectMocks
     private NotificationServiceImpl notificationService;
