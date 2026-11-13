@@ -11,6 +11,14 @@ spring:
     jpa:
       repositories:
         bootstrap-mode: default
+  servlet:
+    multipart:
+      enabled: true
+      # Phai >= app.upload.max-file-size (10MB), neu khong Spring chan file
+      # ngay tu tang servlet (mac dinh chi 1MB) truoc khi vao controller.
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:10MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:12MB}
+      file-size-threshold: 0
   datasource:
     url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://localhost:5432/pms}}
     username: ${SPRING_DATASOURCE_USERNAME:${DATABASE_USERNAME:pms_user}}

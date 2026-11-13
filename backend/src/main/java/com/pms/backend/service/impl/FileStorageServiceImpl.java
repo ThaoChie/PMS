@@ -127,8 +127,9 @@ public class FileStorageServiceImpl implements IFileStorageService {
 
             return fileName;
         } catch (Exception e) {
+            // Ghi chi tiet ky thuat vao log, KHONG tra SQL/stacktrace ve cho nguoi dung.
             log.error("Fatal error storing file {}: {}", fileName, e.getMessage(), e);
-            throw new RuntimeException("Không thể lưu trữ tệp đính kèm: " + e.getMessage(), e);
+            throw new RuntimeException("Không thể lưu trữ tệp đính kèm. Vui lòng thử lại hoặc liên hệ quản trị viên.", e);
         }
     }
 

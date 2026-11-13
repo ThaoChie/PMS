@@ -95,6 +95,19 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    /**
+     * Tep vuot qua gioi han multipart cua servlet.
+     * Mac dinh Spring nem loi nay ra handler chung -> tra ve HTTP 500 "loi he thong",
+     * khien nguoi dung tuong la loi server. Tra 413 kem thong bao ro rang hon.
+     */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMaxUploadSize(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+        log.warn("Upload rejected, file exceeds multipart limit: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(ApiResponse.error("Tệp tải lên vượt quá dung lượng cho phép (tối đa 10MB)."));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex) {
         log.error("Unhandled exception caught in GlobalExceptionHandler", ex);
