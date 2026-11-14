@@ -9,6 +9,7 @@ import type { SavedFilter, SavedFilterCriteria, User } from '../../../types';
 import { filterService } from '../../../services/filterService';
 import { memberService } from '../../../services/memberService';
 import { mapUserResponseToUser, useAuthStore } from '../../../store/authStore';
+import { mapMemberToUser } from '../../../utils/member';
 import { useProjectStore } from '../../../store/projectStore';
 import { toast } from '../../../store/toastStore';
 import { MESSAGES } from '../../../constants/messages';
@@ -104,7 +105,8 @@ export default function SavedFilters() {
         if (!active) return;
         const raw: any = res?.data;
         const list: any[] = Array.isArray(raw) ? raw : raw?.content || [];
-        setMembers(list.map((m: any) => mapUserResponseToUser(m?.user || m)));
+        // Dùng mã NGƯỜI DÙNG (userId) để chia sẻ bộ lọc, không phải mã thành viên dự án (id)
+        setMembers(list.map(mapMemberToUser));
       })
       .catch(() => {
         if (active) setMembers([]);

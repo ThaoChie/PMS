@@ -4,6 +4,7 @@ import type { Comment, Role, User } from '../../../types';
 import { commentService } from '../../../services/commentService';
 import { memberService } from '../../../services/memberService';
 import { mapUserResponseToUser, useAuthStore } from '../../../store/authStore';
+import { collectMentionIds, mapMemberToUser } from '../../../utils/member';
 import { toast } from '../../../store/toastStore';
 import { MESSAGES } from '../../../constants/messages';
 import LoadingSkeleton from '../../../components/common/LoadingSkeleton';
@@ -86,7 +87,8 @@ export default function CommentSection({
         if (!active) return;
         const raw: any = res?.data;
         const list: any[] = Array.isArray(raw) ? raw : raw?.content || [];
-        setMembers(list.map((m: any) => mapUserResponseToUser(m?.user || m)));
+        // Dùng mã NGƯỜI DÙNG (userId), không phải mã thành viên dự án (id)
+        setMembers(list.map(mapMemberToUser));
       })
       .catch(() => {
         if (active) setMembers([]);
@@ -108,9 +110,8 @@ export default function CommentSection({
     }
     setSubmitting(true);
     try {
-      // Chỉ giữ người được nhắc thực sự là thành viên dự án (BR-COL-02)
-      const memberIds = new Set(members.map((m) => String(m.id)));
-      const validMentions = (mentions || []).filter((id) => memberIds.has(String(id)));
+      // Người được chọn từ gợi ý + người được gõ tay "@Tên"; chỉ giữ thành viên dự án (BR-COL-02)
+      const validMentions = collectMentionIds(content, members, mentions || []);
       await commentService.createComment(issueKey, content.trim(), validMentions);
       toast.success(MESSAGES.COMMENT.CREATE_SUCCESS);
       await fetchComments();
