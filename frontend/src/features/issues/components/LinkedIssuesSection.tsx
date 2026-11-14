@@ -82,57 +82,86 @@ export default function LinkedIssuesSection({
         {canEdit && (
           <button
             type="button"
-            onClick={() => setIsAdding((prev) => !prev)}
-            className="flex items-center gap-1 px-2.5 py-1 border border-[#E5E5E7] text-[10px] font-medium text-[#1A1A1A] rounded-lg hover:bg-[#F7F7F8] transition-colors"
+            onClick={() => {
+              setIsAdding((prev) => !prev);
+              setTargetKey('');
+            }}
+            className="flex items-center gap-1 text-[11px] font-medium text-[#1A1A1A] hover:text-[#C5221F] transition-colors"
           >
-            {isAdding ? <X className="w-3 h-3 text-[#6B6B70]" /> : <Plus className="w-3 h-3 text-[#6B6B70]" />}
-            <span>{isAdding ? 'Đóng' : 'Thêm liên kết'}</span>
+            {isAdding ? (
+              <>
+                <X className="w-3.5 h-3.5 text-[#6B6B70]" />
+                <span className="text-[#6B6B70]">Đóng</span>
+              </>
+            ) : (
+              <>
+                <Plus className="w-3.5 h-3.5 text-[#6B6B70]" />
+                <span>Thêm liên kết</span>
+              </>
+            )}
           </button>
         )}
       </div>
 
       {/* Form thêm liên kết */}
       {isAdding && (
-        <form onSubmit={handleCreateLink} className="p-3 bg-[#F9FAFB] border border-[#E5E5E7] rounded-xl mb-3 space-y-2.5 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <form
+          onSubmit={handleCreateLink}
+          className="p-3.5 bg-[#FAF9F8] border border-[#E5E5E7] rounded-xl mb-3 space-y-3 animate-in fade-in duration-150"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-[#6B6B70] mb-1">Loại liên kết</label>
+              <label className="block text-[11px] font-medium text-[#475569] mb-1.5">
+                Loại liên kết
+              </label>
               <select
                 value={relation}
                 onChange={(e) => setRelation(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-white border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
+                className="w-full h-8 px-2.5 py-1 bg-white border border-[#D1D5DB] rounded-lg text-xs text-[#1E293B] focus:outline-none focus:border-[#C5221F] focus:ring-1 focus:ring-[#C5221F] transition-all cursor-pointer"
               >
                 {RELATION_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-[11px] font-medium text-[#6B6B70] mb-1">Mã công việc đích (ví dụ: PROJ-12)</label>
+              <label className="block text-[11px] font-medium text-[#475569] mb-1.5">
+                Mã công việc đích
+              </label>
               <input
                 type="text"
-                placeholder="PROJ-12"
+                placeholder="Ví dụ: PROJ-12"
                 value={targetKey}
                 onChange={(e) => setTargetKey(e.target.value)}
                 required
-                className="w-full px-2.5 py-1.5 bg-white border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] uppercase focus:outline-none focus:border-[#1A1A1A]"
+                className="w-full h-8 px-2.5 py-1 bg-white border border-[#D1D5DB] rounded-lg text-xs text-[#1E293B] font-mono uppercase placeholder:font-sans placeholder:normal-case placeholder:text-[#94A3B8] focus:outline-none focus:border-[#C5221F] focus:ring-1 focus:ring-[#C5221F] transition-all"
               />
             </div>
           </div>
-          <div className="flex justify-end gap-2 pt-1">
+
+          <div className="flex items-center justify-end gap-2 pt-1 border-t border-[#E5E5E7]/60">
             <button
               type="button"
-              onClick={() => setIsAdding(false)}
-              className="px-2.5 py-1 text-xs text-[#6B6B70] hover:text-[#1A1A1A]"
+              onClick={() => {
+                setIsAdding(false);
+                setTargetKey('');
+              }}
+              className="px-3 py-1.5 text-xs text-[#6B6B70] hover:text-[#1A1A1A] rounded-lg hover:bg-[#F0F0F1] transition-colors"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={submitting || !targetKey.trim()}
-              className="px-3 py-1 bg-[#1A1A1A] text-white text-xs font-medium rounded-lg hover:bg-black disabled:opacity-50 flex items-center gap-1"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1A1A1A] hover:bg-[#333333] disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-all shadow-xs"
             >
-              {submitting && <Loader2 className="w-3 h-3 animate-spin" />}
+              {submitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <LinkIcon className="w-3.5 h-3.5" />
+              )}
               <span>Liên kết</span>
             </button>
           </div>
@@ -142,43 +171,67 @@ export default function LinkedIssuesSection({
       {/* Danh sách liên kết */}
       {linkedIssues.length === 0 ? (
         !isAdding && (
-          <div className="border border-dashed border-[#E5E5E7] rounded-xl p-3 text-center bg-[#FAF9F6]">
-            <p className="text-xs text-[#9B9B9F]">Chưa có liên kết với công việc nào</p>
-          </div>
+          canEdit ? (
+            <button
+              type="button"
+              onClick={() => setIsAdding(true)}
+              className="w-full border border-dashed border-[#E5E5E7] hover:border-[#C5C5C8] rounded-xl py-2 px-3 text-xs text-[#9B9B9F] hover:text-[#1A1A1A] transition-colors text-center flex items-center justify-center gap-1 bg-[#FAF9F6] hover:bg-[#F5F5F7]"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Thêm liên kết công việc đầu tiên</span>
+            </button>
+          ) : (
+            <div className="border border-dashed border-[#E5E5E7] rounded-xl p-3 text-center bg-[#FAF9F6]">
+              <p className="text-xs text-[#9B9B9F]">Chưa có liên kết với công việc nào</p>
+            </div>
+          )
         )
       ) : (
-        <div className="border border-[#E5E5E7] rounded-lg overflow-hidden divide-y divide-[#F0F0F1] bg-white">
-          {linkedIssues.map((li) => (
-            <div
-              key={li.id}
-              onClick={() => onSelectIssue?.(li.key)}
-              className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-[#F7F7F8] cursor-pointer transition-colors group"
-            >
-              <div className="flex items-center gap-2.5 truncate min-w-0">
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-                  {li.relation}
-                </span>
-                <span className="text-[11px] font-mono text-[#1A1A1A] font-semibold shrink-0">{li.key}</span>
-                <span className="text-xs text-[#4B5563] truncate flex-1">{li.summary}</span>
-              </div>
+        <div className="border border-[#E5E5E7] rounded-xl overflow-hidden divide-y divide-[#F0F0F1] bg-white shadow-2xs">
+          {linkedIssues.map((li) => {
+            const rel = li.relation.toLowerCase();
+            const badgeClass = rel.includes('block')
+              ? 'bg-amber-50 text-amber-700 border-amber-200'
+              : rel.includes('duplicate')
+              ? 'bg-purple-50 text-purple-700 border-purple-200'
+              : 'bg-blue-50 text-blue-700 border-blue-200';
 
-              {canEdit && (
-                <button
-                  type="button"
-                  disabled={deletingId === li.id}
-                  onClick={(e) => handleRemoveLink(li.id, e)}
-                  className="opacity-0 group-hover:opacity-100 text-[#9B9B9F] hover:text-[#E53E3E] p-1 rounded transition-all shrink-0"
-                  title="Gỡ liên kết"
-                >
-                  {deletingId === li.id ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E53E3E]" />
-                  ) : (
-                    <Trash2 className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              )}
-            </div>
-          ))}
+            return (
+              <div
+                key={li.id}
+                onClick={() => onSelectIssue?.(li.key)}
+                className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-[#F7F7F8] cursor-pointer transition-colors group"
+              >
+                <div className="flex items-center gap-2.5 truncate min-w-0">
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-md border shrink-0 ${badgeClass}`}>
+                    {li.relation}
+                  </span>
+                  <span className="text-[11px] font-mono text-[#1A1A1A] font-semibold shrink-0">
+                    {li.key}
+                  </span>
+                  <span className="text-xs text-[#4B5563] truncate flex-1">
+                    {li.summary}
+                  </span>
+                </div>
+
+                {canEdit && (
+                  <button
+                    type="button"
+                    disabled={deletingId === li.id}
+                    onClick={(e) => handleRemoveLink(li.id, e)}
+                    className="opacity-0 group-hover:opacity-100 text-[#9B9B9F] hover:text-[#E53E3E] p-1 rounded-md hover:bg-red-50 transition-all shrink-0"
+                    title="Gỡ liên kết"
+                  >
+                    {deletingId === li.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E53E3E]" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
