@@ -131,7 +131,16 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
     setSaving(true);
     setError(null);
     try {
-      const validEmails = memberEmails.map((e) => e.trim()).filter(Boolean);
+      const validEmails = Array.from(
+        new Set(memberEmails.map((e) => e.trim().toLowerCase()).filter(Boolean))
+      );
+      for (const em of validEmails) {
+        if (!em.includes('@') || !em.includes('.')) {
+          setError(`Email '${em}' không đúng định dạng.`);
+          setSaving(false);
+          return;
+        }
+      }
       const res = await projectService.createProject({
         name: name.trim(),
         projectKey: key.trim().toUpperCase(),
@@ -374,9 +383,12 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
             </div>
 
             <div>
-              <label className="flex items-center gap-1 text-xs font-medium text-[#1A1A1A] mb-1.5">
+              <label className="flex items-center gap-1 text-xs font-medium text-[#1A1A1A] mb-1">
                 Mời thành viên ban đầu <span className="text-[10px] text-[#9B9B9F] font-normal">(tùy chọn)</span>
               </label>
+              <p className="text-[11px] text-[#6B6B70] mb-2 leading-relaxed">
+                Hệ thống sẽ gửi email lời mời kèm liên kết tham gia. Người chưa có tài khoản có thể bấm vào liên kết để đăng ký và tự động vào dự án.
+              </p>
               <div className="space-y-2">
                 {memberEmails.map((email, i) => (
                   <div key={i} className="flex gap-2">
