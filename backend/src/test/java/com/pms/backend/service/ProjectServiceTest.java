@@ -135,11 +135,11 @@ public class ProjectServiceTest {
     }
 
     @Test
-    public void testCreateProject_WithInitialEmails_HandlesUserNotFoundAndSelfWithoutError() {
+    public void testCreateProject_WithInitialEmails_InvitesNonExistingUsersAndRejectsSelf() {
         CreateProjectRequest request = new CreateProjectRequest();
         request.setName("Project With Invites");
         request.setProjectKey("PWI");
-        request.setInitialEmails(List.of("pm@epms.com", "notfound@epms.com"));
+        request.setInitialEmails(List.of("pm@epms.com", "external@epms.com"));
 
         when(projectRepository.existsByProjectKeyIgnoreCase("PWI")).thenReturn(false);
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> {
@@ -147,16 +147,16 @@ public class ProjectServiceTest {
             p.setId(30L);
             return p;
         });
-        when(userRepository.findByEmailIgnoreCase("notfound@epms.com")).thenReturn(java.util.Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("external@epms.com")).thenReturn(java.util.Optional.empty());
 
         ProjectResponse response = projectService.createProject(request, pmUser);
 
         assertNotNull(response);
         assertNotNull(response.getInviteResults());
         assertEquals("MEMBER_ALREADY_EXISTS", response.getInviteResults().get("pm@epms.com"));
-        assertEquals("USER_NOT_FOUND", response.getInviteResults().get("notfound@epms.com"));
-        // Notice: invitationService.createInvitation should NOT be called for these invalid cases!
-        verify(invitationService, never()).createInvitation(anyLong(), any(), any());
+        assertEquals("SUCCESS", response.getInviteResults().get("external@epms.com"));
+        // InvitationService.createInvitation should be called for external unregistered email
+        verify(invitationService, times(1)).createInvitation(eq(30L), any(), eq(pmUser));
     }
 
     @Test
