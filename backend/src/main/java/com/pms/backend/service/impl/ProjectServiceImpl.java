@@ -28,6 +28,9 @@ import com.pms.backend.wrapper.PageWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -111,9 +114,10 @@ public class ProjectServiceImpl implements IProjectService {
         // Initial invitations per A-12
         Map<String, String> inviteResults = new HashMap<>();
         if (request.getInitialEmails() != null) {
+            Set<String> processedEmails = new HashSet<>();
             for (String rawEmail : request.getInitialEmails()) {
                 String email = rawEmail != null ? rawEmail.trim().toLowerCase() : "";
-                if (email.isEmpty()) continue;
+                if (email.isEmpty() || !processedEmails.add(email)) continue;
 
                 // 1. Check if email is the creator themselves
                 if (creator.getEmail() != null && email.equalsIgnoreCase(creator.getEmail().trim().toLowerCase())) {
@@ -121,21 +125,17 @@ public class ProjectServiceImpl implements IProjectService {
                     continue;
                 }
 
-                // 2. Check if user exists in the system
+                // 2. If user exists in the system, check if already a project member
                 Optional<User> recipientOpt = userRepository.findByEmailIgnoreCase(email);
-                if (recipientOpt.isEmpty()) {
-                    inviteResults.put(email, "USER_NOT_FOUND");
-                    continue;
+                if (recipientOpt.isPresent()) {
+                    User recipient = recipientOpt.get();
+                    if (projectMemberRepository.existsByProjectIdAndUserId(savedProject.getId(), recipient.getId())) {
+                        inviteResults.put(email, "MEMBER_ALREADY_EXISTS");
+                        continue;
+                    }
                 }
 
-                User recipient = recipientOpt.get();
-
-                // 3. Check if already a project member
-                if (projectMemberRepository.existsByProjectIdAndUserId(savedProject.getId(), recipient.getId())) {
-                    inviteResults.put(email, "MEMBER_ALREADY_EXISTS");
-                    continue;
-                }
-
+                // 3. Send invitation (supports both existing users and new external email invites)
                 try {
                     InviteMemberRequest inviteReq = new InviteMemberRequest();
                     inviteReq.setEmail(email);
