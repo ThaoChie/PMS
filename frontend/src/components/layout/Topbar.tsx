@@ -15,6 +15,7 @@ import type { Role, Screen, User, Notification } from '../../types';
 import UserAvatar from '../common/UserAvatar';
 import { formatRelativeTime } from '../../utils/date';
 import { useNotificationStore } from '../../store/notificationStore';
+import { useNow } from '../../hooks/useNow';
 import { useUIStore } from '../../store/uiStore';
 
 interface TopbarProps {
@@ -41,6 +42,8 @@ export default function Topbar({
   const [notifOpen, setNotifOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { markAsRead, markAllAsRead } = useNotificationStore();
+  // Nhịp đồng hồ 30 giây: nhãn "x phút trước" trong chuông thông báo tự chạy
+  const now = useNow(30000);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -180,7 +183,7 @@ export default function Topbar({
                           {n.description}
                         </p>
                         <p className="text-[10px] text-[#9B9B9F] mt-1">
-                          {formatRelativeTime(n.createdAt)}
+                          {formatRelativeTime(n.createdAt, now)}
                         </p>
                       </div>
                       {!n.isRead && (

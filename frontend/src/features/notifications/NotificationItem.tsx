@@ -1,6 +1,7 @@
 import React from 'react';
 import { AtSign, User, CheckCircle2, AlertCircle, FolderKanban } from 'lucide-react';
 import type { NotificationItem as NotificationModel, NotificationType } from '../../types';
+import { formatRelativeTime } from '../../utils/date';
 
 export function NotifIcon({ type }: { type: NotificationType }) {
   const cls = 'w-3.5 h-3.5 text-[#6B6B70]';
@@ -11,11 +12,9 @@ export function NotifIcon({ type }: { type: NotificationType }) {
   return <AlertCircle className={cls} />;
 }
 
+/** Giữ tên cũ cho nơi khác đang import; dùng chung hàm chuẩn trong utils/date. */
 export function formatRelTime(iso: string) {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
-  return `${Math.floor(diff / 86400)} ngày trước`;
+  return formatRelativeTime(iso);
 }
 
 interface NotificationItemProps {
