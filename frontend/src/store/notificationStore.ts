@@ -14,6 +14,21 @@ interface NotificationState {
   addNotification: (notification: Notification) => void;
 }
 
+/**
+ * Chuẩn hóa 1 thông báo từ API.
+ * Backend cũ gửi trạng thái đã đọc dưới khóa "read" (Jackson đổi tên getter isRead()),
+ * khiến `n.isRead` luôn undefined -> mọi thông báo bị coi là chưa đọc mãi.
+ * Chấp nhận cả "isRead" lẫn "read" để chạy đúng với mọi phiên bản backend.
+ */
+export function normalizeNotification(raw: any): Notification {
+  return {
+    ...raw,
+    id: String(raw?.id ?? ''),
+    isRead: Boolean(raw?.isRead ?? raw?.read ?? false),
+    createdAt: raw?.createdAt ?? '',
+  };
+}
+
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   unreadCount: 0,
@@ -24,10 +39,11 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       const res = await notificationService.getNotifications({ group, unread, page: 1, size: 50 });
       const items = res?.data?.content || (res?.data as any) || [];
-      const list = Array.isArray(items) ? items : [];
+      const list = (Array.isArray(items) ? items : []).map(normalizeNotification);
       set({
         notifications: list,
-        unreadCount: list.filter((n: Notification) => !n.isRead).length,
+        // Đếm từ danh sách chỉ đúng khi không lọc; khi lọc theo nhóm thì giữ số đếm của máy chủ
+        ...(group || unread ? {} : { unreadCount: list.filter((n) => !n.isRead).length }),
         isLoading: false,
       });
     } catch {

@@ -5,6 +5,7 @@ import { useProjectStore } from '../../store/projectStore';
 import { invitationService } from '../../services/invitationService';
 import type { NotificationType, Screen, ProjectInvitation } from '../../types';
 import { NotificationItem } from './NotificationItem';
+import { useNow } from '../../hooks/useNow';
 
 const TYPE_LABELS: Record<NotificationType, string> = {
   mention: 'Nhắc đến',
@@ -22,6 +23,8 @@ interface NotificationCenterProps {
 
 export default function NotificationCenter({ onNavigate }: NotificationCenterProps) {
   const { notifications, unreadCount, isLoading, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore();
+  // Vẽ lại mỗi 30 giây để nhãn "x phút trước" tự cập nhật mà không cần tải lại
+  useNow(30000);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [pendingInvitations, setPendingInvitations] = useState<ProjectInvitation[]>([]);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);

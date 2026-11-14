@@ -45,8 +45,8 @@ export default function AppShell({
   const { user: authUser } = useAuthStore();
   const { notifications: storeNotifications, markAsRead, markAllAsRead } = useNotificationStore();
 
-  // Poll notifications in background every 45s
-  useNotificationPolling(45000);
+  // Tải thông báo nền mỗi 20 giây + ngay khi quay lại tab (gần thời gian thực)
+  useNotificationPolling(20000);
 
   const projects = propProjects || storeProjects;
   const selectedProject = propSelectedProject || currentProject || projects[0] || null;

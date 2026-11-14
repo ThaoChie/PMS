@@ -1,8 +1,10 @@
 package com.pms.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pms.backend.enu.NotificationType;
 import com.pms.backend.model.Notification;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 public class NotificationResponse {
     private Long id;
@@ -15,7 +17,12 @@ public class NotificationResponse {
     private String data;
     private String sourceId;
     private UserResponse sender;
-    private LocalDateTime createdAt;
+    /**
+     * Thời điểm tạo, KÈM MÚI GIỜ (vd "2026-11-14T10:55:00+07:00").
+     * Entity lưu LocalDateTime theo giờ máy chủ (Render chạy UTC). Gửi chuỗi không múi giờ
+     * khiến trình duyệt hiểu nhầm là giờ Việt Nam -> thông báo mới hiện "7 giờ trước".
+     */
+    private OffsetDateTime createdAt;
 
     public static NotificationResponse from(Notification n) {
         if (n == null) return null;
@@ -30,7 +37,8 @@ public class NotificationResponse {
         res.setData(n.getData());
         res.setSourceId(n.getData());
         res.setSender(UserResponse.from(n.getSender()));
-        res.setCreatedAt(n.getCreatedAt());
+        res.setCreatedAt(n.getCreatedAt() == null ? null
+                : n.getCreatedAt().atZone(ZoneId.systemDefault()).toOffsetDateTime());
         return res;
     }
 
@@ -63,6 +71,8 @@ public class NotificationResponse {
     public String getLink() { return link; }
     public void setLink(String link) { this.link = link; }
 
+    // Jackson mặc định đổi getter isRead() thành khóa JSON "read"; frontend và API_DOCUMENTATION dùng "isRead".
+    @JsonProperty("isRead")
     public boolean isRead() { return isRead; }
     public void setRead(boolean read) { isRead = read; }
 
@@ -75,6 +85,6 @@ public class NotificationResponse {
     public UserResponse getSender() { return sender; }
     public void setSender(UserResponse sender) { this.sender = sender; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
 }
