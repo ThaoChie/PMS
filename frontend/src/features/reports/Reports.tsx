@@ -40,8 +40,8 @@ export default function Reports({ role }: ReportsProps) {
                 : 'Tiến độ và hiệu suất công việc trong dự án'}
             </p>
           </div>
-          {currentProject && (
-            <div className="shrink-0">
+          {currentProject && activeTab !== 'productivity' && (
+            <div className="shrink-0 relative z-30">
               <ExportButton projectId={currentProject.id} criteria={{ fromDate: from, toDate: to }} />
             </div>
           )}
@@ -109,28 +109,30 @@ export default function Reports({ role }: ReportsProps) {
                   </div>
                 )}
 
-                {/* Date range presets */}
-                <div className="flex items-center border border-[#E5E5E7] rounded-lg p-0.5 text-xs bg-[#F9F9FB]">
-                  {[
-                    { label: '7 ngày', days: 7 },
-                    { label: '14 ngày', days: 14 },
-                    { label: '30 ngày', days: 30 },
-                    { label: '90 ngày', days: 90 },
-                  ].map((preset) => (
-                    <button
-                      key={preset.days}
-                      type="button"
-                      onClick={() => setRangeDays(preset.days)}
-                      className={`px-2.5 py-1 rounded-md transition-colors ${
-                        rangeDays === preset.days
-                          ? 'bg-white font-medium text-[#1A1A1A] shadow-xs'
-                          : 'text-[#6B6B70] hover:text-[#1A1A1A]'
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
+                {/* Date range presets (ẩn trên tab Năng suất vì đã có picker riêng) */}
+                {activeTab !== 'productivity' && (
+                  <div className="flex items-center border border-[#E5E5E7] rounded-lg p-0.5 text-xs bg-[#F9F9FB]">
+                    {[
+                      { label: '7 ngày', days: 7 },
+                      { label: '14 ngày', days: 14 },
+                      { label: '30 ngày', days: 30 },
+                      { label: '90 ngày', days: 90 },
+                    ].map((preset) => (
+                      <button
+                        key={preset.days}
+                        type="button"
+                        onClick={() => setRangeDays(preset.days)}
+                        className={`px-2.5 py-1 rounded-md transition-colors ${
+                          rangeDays === preset.days
+                            ? 'bg-white font-medium text-[#1A1A1A] shadow-xs'
+                            : 'text-[#6B6B70] hover:text-[#1A1A1A]'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

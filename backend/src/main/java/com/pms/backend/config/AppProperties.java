@@ -15,7 +15,27 @@ public class AppProperties {
     private Invitation invitation = new Invitation();
     private Notification notification = new Notification();
     private Mail mail = new Mail();
+    private Productivity productivity = new Productivity();
     private String frontendUrl = "https://pms-chi-self.vercel.app";
+
+    public static class Productivity {
+        private double dailyStandardHours = 8.0;
+        private double weeklyStandardHours = 40.0;
+        private double underloadRatio = 0.70;
+        private double overloadRatio = 1.15;
+        private int maxInProgressIssues = 5;
+
+        public double getDailyStandardHours() { return dailyStandardHours; }
+        public void setDailyStandardHours(double dailyStandardHours) { this.dailyStandardHours = dailyStandardHours; }
+        public double getWeeklyStandardHours() { return weeklyStandardHours; }
+        public void setWeeklyStandardHours(double weeklyStandardHours) { this.weeklyStandardHours = weeklyStandardHours; }
+        public double getUnderloadRatio() { return underloadRatio; }
+        public void setUnderloadRatio(double underloadRatio) { this.underloadRatio = underloadRatio; }
+        public double getOverloadRatio() { return overloadRatio; }
+        public void setOverloadRatio(double overloadRatio) { this.overloadRatio = overloadRatio; }
+        public int getMaxInProgressIssues() { return maxInProgressIssues; }
+        public void setMaxInProgressIssues(int maxInProgressIssues) { this.maxInProgressIssues = maxInProgressIssues; }
+    }
 
     public static class Jwt {
         private String secret = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
@@ -83,6 +103,8 @@ public class AppProperties {
     public void setNotification(Notification notification) { this.notification = notification; }
     public Mail getMail() { return mail; }
     public void setMail(Mail mail) { this.mail = mail; }
+    public Productivity getProductivity() { return productivity; }
+    public void setProductivity(Productivity productivity) { this.productivity = productivity; }
     public String getFrontendUrl() { return frontendUrl; }
     public void setFrontendUrl(String frontendUrl) { this.frontendUrl = frontendUrl; }
 }

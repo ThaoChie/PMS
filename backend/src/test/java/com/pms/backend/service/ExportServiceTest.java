@@ -1,17 +1,28 @@
 package com.pms.backend.service;
 
-import com.pms.backend.service.impl.*;
-import com.pms.backend.service.interfaces.*;
-
+import com.pms.backend.dto.MemberProductivityDto;
+import com.pms.backend.dto.ProductivityFilterRequest;
+import com.pms.backend.dto.ProductivityReportResponse;
 import com.pms.backend.enu.ErrorCode;
+import com.pms.backend.enu.WorkloadLevel;
 import com.pms.backend.exception.BusinessException;
 import com.pms.backend.model.Issue;
+import com.pms.backend.model.Project;
+import com.pms.backend.model.User;
+import com.pms.backend.model.Worklog;
+import com.pms.backend.service.impl.ExportServiceImpl;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -87,5 +98,177 @@ public class ExportServiceTest {
         byte[] xlsxBytes = exportService.generateExcel(List.of(issue));
         assertNotNull(xlsxBytes);
         assertTrue(xlsxBytes.length > 0);
+    }
+
+    @Test
+    public void testExportProductivityExcel_Generates4Sheets_WithProperContent() throws Exception {
+        Project project = new Project();
+        project.setId(1L);
+        project.setName("Project Alpha");
+        project.setProjectKey("ALPHA");
+
+        ProductivityFilterRequest filter = new ProductivityFilterRequest();
+        filter.setFrom(LocalDate.of(2026, 10, 1));
+        filter.setTo(LocalDate.of(2026, 10, 31));
+        filter.setRoles(List.of("DEVELOPER"));
+
+        MemberProductivityDto member = new MemberProductivityDto();
+        member.setUserId(10L);
+        member.setFullName("Nguyen Van A");
+        member.setEmail("a@pms.com");
+        member.setProjectRole("DEVELOPER");
+        member.setAssignedIssues(5);
+        member.setCompletedIssues(4);
+        member.setInProgressIssues(1);
+        member.setTodoIssues(0);
+        member.setOnTimeRate(100.0);
+        member.setOverdueIssues(0);
+        member.setEstimatedHours(20.0);
+        member.setTotalLoggedHours(18.0);
+        member.setVariancePercentage(-10.0);
+        member.setAvgResolutionTimeHours(12.5);
+        member.setBugsAssigned(1);
+        member.setBugsResolved(1);
+        member.setBugsReopened(0);
+        member.setWorkloadLevel(WorkloadLevel.BALANCED);
+
+        ProductivityReportResponse report = new ProductivityReportResponse();
+        report.setProjectId(1L);
+        report.setFrom(filter.getFrom());
+        report.setTo(filter.getTo());
+        report.setTotalAssigned(5);
+        report.setTotalCompleted(4);
+        report.setTotalInProgress(1);
+        report.setTotalTodo(0);
+        report.setTotalOverdue(0);
+        report.setOverallOnTimeRate(100.0);
+        report.setTotalEstimatedHours(20.0);
+        report.setTotalLoggedHours(18.0);
+        report.setAvgResolutionTimeHours(12.5);
+        report.setTotalBugsAssigned(1);
+        report.setTotalBugsResolved(1);
+        report.setTotalBugsReopened(0);
+        report.setMembers(List.of(member));
+
+        Issue issue = new Issue();
+        issue.setIssueKey("ALPHA-1");
+        issue.setSummary("Implement Feature");
+        issue.setType(com.pms.backend.enu.IssueType.TASK);
+        issue.setPriority(com.pms.backend.enu.Priority.HIGH);
+        issue.setOriginalEstimateMin(300);
+        issue.setTimeSpentMin(240);
+
+        Worklog worklog = new Worklog();
+        worklog.setIssue(issue);
+        User u = new User();
+        u.setFullName("Nguyen Van A");
+        u.setEmail("a@pms.com");
+        worklog.setUser(u);
+        worklog.setWorkDate(LocalDate.of(2026, 10, 15));
+        worklog.setTimeSpentMin(240);
+        worklog.setComment("Worked on task");
+
+        User currentUser = new User();
+        currentUser.setFullName("PM User");
+        currentUser.setEmail("pm@pms.com");
+
+        byte[] excelBytes = exportService.generateProductivityExcel(
+                project, report, List.of(issue), List.of(worklog), filter, currentUser
+        );
+
+        assertNotNull(excelBytes);
+        assertTrue(excelBytes.length > 0);
+
+        // Verify Excel structure
+        try (Workbook wb = new XSSFWorkbook(new ByteArrayInputStream(excelBytes))) {
+            assertEquals(4, wb.getNumberOfSheets());
+            Sheet sheet1 = wb.getSheetAt(0);
+            Sheet sheet2 = wb.getSheetAt(1);
+            Sheet sheet3 = wb.getSheetAt(2);
+            Sheet sheet4 = wb.getSheetAt(3);
+
+            assertEquals("Tổng quan", sheet1.getSheetName());
+            assertEquals("Theo thành viên", sheet2.getSheetName());
+            assertEquals("Chi tiết Issue", sheet3.getSheetName());
+            assertEquals("Log thời gian", sheet4.getSheetName());
+
+            // Check metadata in sheet 1
+            assertTrue(sheet1.getRow(0).getCell(0).getStringCellValue().contains("BÁO CÁO NĂNG SUẤT"));
+            assertTrue(sheet1.getRow(2).getCell(1).getStringCellValue().contains("Project Alpha"));
+
+            // Check member in sheet 2
+            assertEquals("Nguyen Van A", sheet2.getRow(1).getCell(0).getStringCellValue());
+            assertEquals("DEVELOPER", sheet2.getRow(1).getCell(2).getStringCellValue());
+            assertEquals(5.0, sheet2.getRow(1).getCell(3).getNumericCellValue());
+
+            // Check issue in sheet 3
+            assertEquals("ALPHA-1", sheet3.getRow(1).getCell(0).getStringCellValue());
+
+            // Check worklog in sheet 4
+            assertEquals("ALPHA-1", sheet4.getRow(1).getCell(0).getStringCellValue());
+            assertEquals("Nguyen Van A", sheet4.getRow(1).getCell(2).getStringCellValue());
+        }
+    }
+
+    @Test
+    public void testExportProductivityExcel_FormulaInjectionEscape() throws Exception {
+        Project project = new Project();
+        project.setProjectKey("SAFE");
+        project.setName("=cmd|' /C calc'!A0");
+
+        MemberProductivityDto member = new MemberProductivityDto();
+        member.setFullName("@InjectedUser");
+        member.setEmail("+hack@pms.com");
+        member.setProjectRole("-ADMIN");
+
+        ProductivityReportResponse report = new ProductivityReportResponse();
+        report.setMembers(List.of(member));
+
+        Issue issue = new Issue();
+        issue.setIssueKey("=KEY-1");
+        issue.setSummary("+MaliciousFormula");
+
+        Worklog worklog = new Worklog();
+        worklog.setIssue(issue);
+        worklog.setComment("-ExploitComment");
+
+        byte[] excelBytes = exportService.generateProductivityExcel(
+                project, report, List.of(issue), List.of(worklog), new ProductivityFilterRequest(), null
+        );
+
+        assertNotNull(excelBytes);
+        try (Workbook wb = new XSSFWorkbook(new ByteArrayInputStream(excelBytes))) {
+            Sheet sheet1 = wb.getSheet("Tổng quan");
+            assertTrue(sheet1.getRow(2).getCell(1).getStringCellValue().startsWith("'="));
+
+            Sheet sheet2 = wb.getSheet("Theo thành viên");
+            assertTrue(sheet2.getRow(1).getCell(0).getStringCellValue().startsWith("'@"));
+            assertTrue(sheet2.getRow(1).getCell(1).getStringCellValue().startsWith("'+"));
+            assertTrue(sheet2.getRow(1).getCell(2).getStringCellValue().startsWith("'-"));
+
+            Sheet sheet3 = wb.getSheet("Chi tiết Issue");
+            assertTrue(sheet3.getRow(1).getCell(0).getStringCellValue().startsWith("'="));
+            assertTrue(sheet3.getRow(1).getCell(1).getStringCellValue().startsWith("'+"));
+
+            Sheet sheet4 = wb.getSheet("Log thời gian");
+            assertTrue(sheet4.getRow(1).getCell(7).getStringCellValue().startsWith("'-"));
+        }
+    }
+
+    @Test
+    public void testExportProductivityExcel_ExceedsLimit_ThrowsException() {
+        ReflectionTestUtils.setField(exportService, "maxExportRows", 5);
+
+        List<Issue> issues = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            issues.add(new Issue());
+        }
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> {
+            exportService.generateProductivityExcel(
+                    new Project(), new ProductivityReportResponse(), issues, Collections.emptyList(), new ProductivityFilterRequest(), null
+            );
+        });
+        assertEquals(ErrorCode.EXPORT_LIMIT_EXCEEDED, ex.getErrorCode());
     }
 }
