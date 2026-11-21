@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleBusinessException(BusinessException ex) {
         ErrorCode code = ex.getErrorCode();
         return ResponseEntity.status(code.getStatus())
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(code.name(), ex.getMessage()));
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -134,6 +134,9 @@ public class GlobalExceptionHandler {
         }
         if (constraint.contains("project_member")) {
             return "Người dùng này đã là thành viên của dự án.";
+        }
+        if (constraint.contains("uk_project_invitations_pending") || constraint.contains("project_invitations")) {
+            return "Đã có lời mời đang chờ phản hồi cho email này. Chỉ có thể mời lại sau khi lời mời bị từ chối, đã thu hồi hoặc hết hạn.";
         }
         if (constraint.contains("issue_watchers")) {
             return "Bạn đã theo dõi công việc này rồi.";

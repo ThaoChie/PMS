@@ -18,7 +18,7 @@ export interface ProjectInvitation {
   role: Role;
   inviter?: User;
   inviterName?: string;
-  status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED' | 'CANCELLED';
   createdAt?: string;
   expiresAt?: string;
 }
