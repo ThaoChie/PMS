@@ -75,4 +75,13 @@ public class InvitationController {
         invitationService.declineInvitation(id, currentUser);
         return ApiResponse.success("Đã từ chối lời mời tham gia dự án");
     }
+
+    @DeleteMapping({"/api/projects/{projectId}/invitations/{invitationId}", "/projects/{projectId}/invitations/{invitationId}"})
+    @PreAuthorize("@projectSecurity.isPmOrAdmin(#projectId)")
+    public ApiResponse<String> cancelInvitation(@PathVariable Long projectId,
+                                                @PathVariable Long invitationId) {
+        User currentUser = getCurrentUser();
+        invitationService.cancelInvitation(projectId, invitationId, currentUser);
+        return ApiResponse.success("Đã thu hồi lời mời tham gia dự án");
+    }
 }

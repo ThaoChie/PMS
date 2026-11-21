@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, AlertTriangle, AlertCircle, ShieldAlert, Check, Loader2, Save, Mail, X } from 'lucide-react';
 import type { Role, User, ProjectPermissions } from '../../../types';
 import MemberTable from '../components/MemberTable';
@@ -9,6 +9,11 @@ import { memberService } from '../../../services/memberService';
 import { invitationService } from '../../../services/invitationService';
 import { projectService } from '../../../services/projectService';
 import { mailTestService, type MailTestResult } from '../../../services/mailTestService';
+import {
+  validateInviteCandidate,
+  resolveInviteErrorMessage,
+  extractInvitationId,
+} from '../../../utils/invitation';
 
 interface MembersProps {
   role: Role;
@@ -20,6 +25,8 @@ export default function Members({ role }: MembersProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<User | null>(null);
   const [confirmText, setConfirmText] = useState('');
 
@@ -32,6 +39,22 @@ export default function Members({ role }: MembersProps) {
   const [savingPermission, setSavingPermission] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function showToast(msg: string, durationMs = 3500) {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastMessage(msg);
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage(null);
+      toastTimerRef.current = null;
+    }, durationMs);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   const [testingMail, setTestingMail] = useState(false);
   const [mailTestResult, setMailTestResult] = useState<MailTestResult | null>(null);
@@ -104,10 +127,7 @@ export default function Members({ role }: MembersProps) {
         updateProject(currentProject.id, permissions);
       }
       setShowConfirmModal(false);
-      setToastMessage('Lưu quyền thành công');
-      setTimeout(() => {
-        setToastMessage(null);
-      }, 3000);
+      showToast('Lưu quyền thành công', 3000);
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Không thể cập nhật quyền hạn dự án');
       handleCancelPermissions();
@@ -161,22 +181,44 @@ export default function Members({ role }: MembersProps) {
     loadData();
   }, [currentProject?.id]);
 
-  async function handleInvite(email: string, inviteRole: Role) {
-    if (!currentProject) return;
+  async function handleInvite(email: string, inviteRole: Role): Promise<boolean> {
+    if (!currentProject || inviting) return false;
     setError(null);
+
+    const check = validateInviteCandidate(email, members);
+    if (!check.valid) {
+      setError(check.message);
+      return false;
+    }
+
+    setInviting(true);
     try {
-      await invitationService.inviteMember(currentProject.id, email.trim(), inviteRole);
+      await invitationService.inviteMember(currentProject.id, check.normalizedEmail, inviteRole);
       setShowInvite(false);
-      setToastMessage(`Đã gửi lời mời tham gia dự án tới email ${email.trim()}`);
-      setTimeout(() => setToastMessage(null), 4000);
+      showToast(`Đã gửi lời mời tham gia dự án tới email ${check.normalizedEmail}`, 4000);
+      await loadData();
+      return true;
+    } catch (err: any) {
+      setError(resolveInviteErrorMessage(err));
+      return false;
+    } finally {
+      setInviting(false);
+    }
+  }
+
+  async function handleCancelInvitation(pendingMember: User) {
+    if (!currentProject || cancellingId) return;
+    setError(null);
+    setCancellingId(pendingMember.id);
+    try {
+      const invitationId = extractInvitationId(pendingMember.id);
+      await invitationService.cancelInvitation(currentProject.id, invitationId);
+      showToast(`Đã thu hồi lời mời đối với email ${pendingMember.email}`, 3500);
       await loadData();
     } catch (err: any) {
-      const code = err?.response?.data?.code;
-      if (code === 'MEMBER_ALREADY_EXISTS') {
-        setError('Người dùng đã là thành viên của dự án.');
-      } else {
-        setError(err?.response?.data?.message || err?.message || 'Không thể gửi lời mời.');
-      }
+      setError(err?.response?.data?.message || err?.message || 'Không thể thu hồi lời mời.');
+    } finally {
+      setCancellingId(null);
     }
   }
 
@@ -270,6 +312,7 @@ export default function Members({ role }: MembersProps) {
           <InviteMemberPanel
             onClose={() => setShowInvite(false)}
             onInvite={handleInvite}
+            submitting={inviting}
           />
         )}
 
@@ -284,6 +327,8 @@ export default function Members({ role }: MembersProps) {
             canManage={canManage}
             onChangeRole={changeRole}
             onRemoveMember={(m) => setRemoveTarget(m)}
+            onCancelInvitation={handleCancelInvitation}
+            cancellingId={cancellingId}
           />
         )}
 

@@ -28,4 +28,10 @@ export const invitationService = {
   async declineInvitation(invitationId: string): Promise<ApiResponse<void>> {
     return axiosClient.post<any, ApiResponse<void>>(`/invitations/${invitationId}/decline`);
   },
+
+  async cancelInvitation(projectId: string, invitationId: string): Promise<ApiResponse<string>> {
+    return axiosClient.delete<any, ApiResponse<string>>(
+      `/projects/${projectId}/invitations/${invitationId}`,
+    );
+  },
 };
