@@ -13,6 +13,14 @@ public interface IInvitationService {
     Invitation createInvitation(Long projectId, InviteMemberRequest request, User inviter);
     List<Invitation> getProjectInvitations(Long projectId);
     List<Invitation> getMyInvitations(String userEmail);
+    /**
+     * Lấy toàn bộ lịch sử lời mời (mọi trạng thái) của email người dùng để đồng bộ Trung tâm thông báo.
+     */
+    List<Invitation> getAllMyInvitations(String userEmail);
+    /**
+     * Lấy thông tin 1 lời mời dành riêng cho người nhận (kiểm tra khớp email chống IDOR).
+     */
+    Invitation getInvitationForRecipient(Long invitationId, User user);
     void acceptInvitation(Long invitationId, User user);
     void declineInvitation(Long invitationId, User user);
     /**
