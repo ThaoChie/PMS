@@ -72,9 +72,15 @@ public class AppProperties {
 
     public static class Invitation {
         private int expiryDays = 7;
+        private int maxPerMinutePerUser = 10;
+        private int maxPerHourPerProject = 30;
 
         public int getExpiryDays() { return expiryDays; }
         public void setExpiryDays(int expiryDays) { this.expiryDays = expiryDays; }
+        public int getMaxPerMinutePerUser() { return maxPerMinutePerUser; }
+        public void setMaxPerMinutePerUser(int maxPerMinutePerUser) { this.maxPerMinutePerUser = maxPerMinutePerUser; }
+        public int getMaxPerHourPerProject() { return maxPerHourPerProject; }
+        public void setMaxPerHourPerProject(int maxPerHourPerProject) { this.maxPerHourPerProject = maxPerHourPerProject; }
     }
 
     public static class Notification {

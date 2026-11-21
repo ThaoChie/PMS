@@ -21,6 +21,8 @@ interface MemberTableProps {
   canManage: boolean;
   onChangeRole: (id: string, newRole: Role) => void;
   onRemoveMember: (member: User) => void;
+  onCancelInvitation?: (member: User) => void;
+  cancellingId?: string | null;
 }
 
 export default function MemberTable({
@@ -28,6 +30,8 @@ export default function MemberTable({
   canManage,
   onChangeRole,
   onRemoveMember,
+  onCancelInvitation,
+  cancellingId = null,
 }: MemberTableProps) {
   return (
     <div className="border border-[#E5E5E7] rounded-xl overflow-hidden bg-white">
@@ -96,10 +100,22 @@ export default function MemberTable({
                   {member.status === 'Active' && (
                     <button
                       type="button"
+                      aria-label={`Xóa thành viên ${member.name}`}
                       onClick={() => onRemoveMember(member)}
                       className="text-xs text-[#9B9B9F] hover:text-[#E53E3E] transition-colors"
                     >
                       Xóa
+                    </button>
+                  )}
+                  {member.status === 'Pending' && onCancelInvitation && (
+                    <button
+                      type="button"
+                      aria-label={`Thu hồi lời mời của ${member.email}`}
+                      disabled={cancellingId === member.id}
+                      onClick={() => onCancelInvitation(member)}
+                      className="text-xs text-[#9B9B9F] hover:text-[#E53E3E] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {cancellingId === member.id ? 'Đang thu hồi…' : 'Thu hồi'}
                     </button>
                   )}
                 </td>
