@@ -200,7 +200,37 @@ public class InvitationServiceImpl implements IInvitationService {
 
     @Transactional(readOnly = true)
     public List<Invitation> getMyInvitations(String userEmail) {
-        return invitationRepository.findByEmailIgnoreCaseAndStatus(userEmail, InvitationStatus.PENDING);
+        if (userEmail == null || userEmail.isBlank()) {
+            return List.of();
+        }
+        LocalDateTime now = LocalDateTime.now();
+        return invitationRepository.findByEmailIgnoreCaseAndStatus(userEmail.trim(), InvitationStatus.PENDING)
+                .stream()
+                .filter(inv -> inv.getExpiresAt() == null || !inv.getExpiresAt().isBefore(now))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Invitation> getAllMyInvitations(String userEmail) {
+        if (userEmail == null || userEmail.isBlank()) {
+            return List.of();
+        }
+        return invitationRepository.findByEmailIgnoreCaseOrderByIdDesc(userEmail.trim());
+    }
+
+    @Transactional(readOnly = true)
+    public Invitation getInvitationForRecipient(Long invitationId, User user) {
+        Invitation invitation = invitationRepository.findById(invitationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lời mời tham gia dự án"));
+
+        if (user == null || user.getEmail() == null
+                || !invitation.getEmail().equalsIgnoreCase(user.getEmail().trim())) {
+            throw new BusinessException(
+                    ErrorCode.FORBIDDEN,
+                    "Lời mời này được gửi cho một địa chỉ email khác, không thuộc tài khoản đang đăng nhập."
+            );
+        }
+        return invitation;
     }
 
     @Transactional

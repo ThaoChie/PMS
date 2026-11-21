@@ -5,11 +5,13 @@ import com.pms.backend.dao.InvitationRepository;
 import com.pms.backend.dao.ProjectMemberRepository;
 import com.pms.backend.dao.ProjectRepository;
 import com.pms.backend.dao.UserRepository;
+import com.pms.backend.dto.InvitationResponse;
 import com.pms.backend.dto.InviteMemberRequest;
 import com.pms.backend.enu.ErrorCode;
 import com.pms.backend.enu.InvitationStatus;
 import com.pms.backend.enu.ProjectRole;
 import com.pms.backend.exception.BusinessException;
+import com.pms.backend.exception.ResourceNotFoundException;
 import com.pms.backend.model.Invitation;
 import com.pms.backend.model.Project;
 import com.pms.backend.model.User;
@@ -28,6 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -179,5 +182,67 @@ public class InvitationLifecycleAndSpamProtectionTest {
         verify(invitationRepository, times(1)).saveAndFlush(expiredPending);
         assertEquals(57L, created.getId());
         assertEquals(InvitationStatus.PENDING, created.getStatus());
+    }
+
+    @Test
+    @DisplayName("getInvitationForRecipient - Cho phép đúng email người nhận và chặn IDOR (403) khi khác email")
+    public void testGetInvitationForRecipient_AntiIdorAndCancelledStatus() {
+        Invitation revoked = new Invitation();
+        revoked.setId(132L);
+        revoked.setProject(project);
+        revoked.setEmail("23110309@st.vju.ac.vn");
+        revoked.setStatus(InvitationStatus.CANCELLED);
+        revoked.setExpiresAt(LocalDateTime.now().plusDays(7));
+
+        when(invitationRepository.findById(132L)).thenReturn(Optional.of(revoked));
+
+        User rightUser = new User();
+        rightUser.setId(9L);
+        rightUser.setEmail("23110309@st.vju.ac.vn");
+
+        Invitation fetched = invitationService.getInvitationForRecipient(132L, rightUser);
+        assertEquals(InvitationStatus.CANCELLED, fetched.getStatus());
+
+        // Tài khoản khác cố tình đọc lời mời #132 -> ném 403 FORBIDDEN, không lộ thông tin dự án
+        BusinessException forbidden = assertThrows(BusinessException.class, () ->
+                invitationService.getInvitationForRecipient(132L, pm));
+        assertEquals(ErrorCode.FORBIDDEN, forbidden.getErrorCode());
+
+        // Không tồn tại -> 404
+        when(invitationRepository.findById(999L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () ->
+                invitationService.getInvitationForRecipient(999L, rightUser));
+    }
+
+    @Test
+    @DisplayName("getAllMyInvitations & InvitationResponse.from - Đồng bộ đủ lịch sử và tự chuẩn hóa EXPIRED")
+    public void testGetAllMyInvitationsAndExpiredNormalization() {
+        Invitation stalePending = new Invitation();
+        stalePending.setId(130L);
+        stalePending.setProject(project);
+        stalePending.setEmail("23110309@st.vju.ac.vn");
+        stalePending.setStatus(InvitationStatus.PENDING);
+        stalePending.setExpiresAt(LocalDateTime.now().minusHours(1));
+
+        Invitation cancelled = new Invitation();
+        cancelled.setId(132L);
+        cancelled.setProject(project);
+        cancelled.setEmail("23110309@st.vju.ac.vn");
+        cancelled.setStatus(InvitationStatus.CANCELLED);
+        cancelled.setExpiresAt(LocalDateTime.now().plusDays(6));
+
+        when(invitationRepository.findByEmailIgnoreCaseOrderByIdDesc("23110309@st.vju.ac.vn"))
+                .thenReturn(List.of(cancelled, stalePending));
+        when(invitationRepository.findByEmailIgnoreCaseAndStatus("23110309@st.vju.ac.vn", InvitationStatus.PENDING))
+                .thenReturn(List.of(stalePending));
+
+        // getMyInvitations (chỉ lấy PENDING còn hạn) loại bỏ bản ghi đã quá hạn
+        assertTrue(invitationService.getMyInvitations("23110309@st.vju.ac.vn").isEmpty());
+
+        // getAllMyInvitations trả đầy đủ lịch sử và DTO tự chuyển stalePending -> EXPIRED
+        List<Invitation> all = invitationService.getAllMyInvitations("23110309@st.vju.ac.vn");
+        assertEquals(2, all.size());
+        assertEquals("CANCELLED", InvitationResponse.from(all.get(0)).getStatus());
+        assertEquals("EXPIRED", InvitationResponse.from(all.get(1)).getStatus());
     }
 }
