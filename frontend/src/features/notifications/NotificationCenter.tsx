@@ -1,11 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { Check, RefreshCw, Mail, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Check,
+  RefreshCw,
+  Mail,
+  ArrowRight,
+  CheckCircle2,
+  AlertCircle,
+  Ban,
+  Info,
+  X,
+} from 'lucide-react';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useProjectStore } from '../../store/projectStore';
+import { useAuthStore } from '../../store/authStore';
 import { invitationService } from '../../services/invitationService';
 import type { NotificationType, Screen, ProjectInvitation } from '../../types';
 import { NotificationItem } from './NotificationItem';
 import { useNow } from '../../hooks/useNow';
+import {
+  resolveNotificationInviteStatus,
+  buildDeepLinkInviteBanner,
+  normalizeInvitationStatus,
+  type DeepLinkInviteBanner,
+} from '../../utils/invitationStatus';
 
 const TYPE_LABELS: Record<NotificationType, string> = {
   mention: 'Nhắc đến',
@@ -21,68 +38,161 @@ interface NotificationCenterProps {
   onNavigate?: (screen: Screen) => void;
 }
 
+async function resolveDeepLinkBannerForId(
+  invitationId: string,
+  invitationsMap: Record<string, ProjectInvitation>,
+  currentUserEmail?: string,
+): Promise<DeepLinkInviteBanner | null> {
+  const matched = invitationsMap[String(invitationId)];
+  if (matched) {
+    return buildDeepLinkInviteBanner({ invitation: matched, currentUserEmail });
+  }
+  if (!/^\d+$/.test(invitationId)) {
+    return null;
+  }
+  try {
+    const singleRes = await invitationService.getInvitationById(invitationId);
+    return buildDeepLinkInviteBanner({
+      invitation: singleRes?.data ?? null,
+      currentUserEmail,
+    });
+  } catch (err: any) {
+    return buildDeepLinkInviteBanner({
+      errorCode: err?.code || err?.response?.data?.code,
+      httpStatus: err?.response?.status,
+      currentUserEmail,
+    });
+  }
+}
+
 export default function NotificationCenter({ onNavigate }: NotificationCenterProps) {
-  const { notifications, unreadCount, isLoading, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore();
+  const { notifications, unreadCount, isLoading, fetchNotifications, markAsRead, markAllAsRead } =
+    useNotificationStore();
+  const currentUser = useAuthStore((s) => s.user);
   // Vẽ lại mỗi 30 giây để nhãn "x phút trước" tự cập nhật mà không cần tải lại
-  useNow(30000);
-  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const now = useNow(30000);
+
+  const [activeFilter, setActiveFilter] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'invite' || params.get('invitation')) {
+        return 'invite';
+      }
+    }
+    return 'all';
+  });
+  const [targetInvitationId, setTargetInvitationId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('invitation');
+    }
+    return null;
+  });
+
   const [pendingInvitations, setPendingInvitations] = useState<ProjectInvitation[]>([]);
+  const [invitationsById, setInvitationsById] = useState<Record<string, ProjectInvitation>>({});
+  const [deepLinkBanner, setDeepLinkBanner] = useState<DeepLinkInviteBanner | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [acceptedInviteNotifIds, setAcceptedInviteNotifIds] = useState<Set<string>>(new Set());
   const [declinedInviteNotifIds, setDeclinedInviteNotifIds] = useState<Set<string>>(new Set());
-  const [statusFeedback, setStatusFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [statusFeedback, setStatusFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
-    const invId = params.get('invitation');
-    if (tab === 'invite' || invId) {
-      setActiveFilter('invite');
-    }
-  }, []);
+  const activateAndOpenProject = useCallback(
+    async (projectId?: string, projectName?: string) => {
+      if (!onNavigate) return;
+      if (projectId || projectName) {
+        const updatedProjects = await useProjectStore.getState().fetchProjects();
+        const target = updatedProjects.find(
+          (p) =>
+            (projectId && String(p.id) === String(projectId)) ||
+            (projectName && p.name === projectName),
+        );
+        if (target) {
+          useProjectStore.getState().setCurrentProject(target);
+        }
+      }
+      onNavigate('board');
+    },
+    [onNavigate],
+  );
 
-  const loadPendingInvitations = async () => {
+  const loadInvitationsData = useCallback(async () => {
     try {
-      const res = await invitationService.getMyInvitations();
-      const list = res?.data || [];
-      setPendingInvitations(Array.isArray(list) ? list : []);
+      const res = await invitationService.getMyInvitations(true);
+      const rawList = Array.isArray(res?.data) ? res.data : [];
+      const map: Record<string, ProjectInvitation> = {};
+      const pending: ProjectInvitation[] = [];
+
+      for (const inv of rawList) {
+        const key = String(inv.id);
+        map[key] = inv;
+        if (normalizeInvitationStatus(inv) === 'PENDING') {
+          pending.push(inv);
+        }
+      }
+
+      setInvitationsById(map);
+      setPendingInvitations(pending);
+
+      if (targetInvitationId) {
+        const banner = await resolveDeepLinkBannerForId(
+          targetInvitationId,
+          map,
+          currentUser?.email,
+        );
+        setDeepLinkBanner(banner);
+      }
     } catch {
-      // ignore
+      // ignore background fetch errors
     }
-  };
+  }, [targetInvitationId, currentUser?.email]);
 
   useEffect(() => {
     fetchNotifications(activeFilter === 'all' ? undefined : activeFilter);
-    loadPendingInvitations();
-  }, [activeFilter, fetchNotifications]);
+    loadInvitationsData();
+  }, [activeFilter, fetchNotifications, loadInvitationsData]);
 
-  const handleAcceptInvite = async (invitationId: string, notifId: string, fallbackProjectName?: string) => {
+  const handleAcceptInvite = async (
+    invitationId: string,
+    notifId: string,
+    fallbackProjectName?: string,
+  ) => {
     setActionLoadingId(notifId);
     setStatusFeedback(null);
     try {
+      const targetInv = invitationsById[String(invitationId)];
+      const projName = fallbackProjectName || targetInv?.projectName;
       await invitationService.acceptInvitation(invitationId);
       await markAsRead(notifId);
       setAcceptedInviteNotifIds((prev) => new Set(prev).add(notifId));
 
-      // Fetch projects so the newly joined project becomes active immediately
       const updatedProjects = await useProjectStore.getState().fetchProjects();
-      const joinedProj = updatedProjects.find(
-        (p) => String(p.id) === String(invitationId) || (fallbackProjectName && p.name === fallbackProjectName),
-      ) || updatedProjects[0];
+      const joinedProj =
+        updatedProjects.find(
+          (p) =>
+            (targetInv?.projectId && String(p.id) === String(targetInv.projectId)) ||
+            (projName && p.name === projName),
+        ) || updatedProjects[0];
 
       if (joinedProj) {
         useProjectStore.getState().setCurrentProject(joinedProj);
       }
 
-      await loadPendingInvitations();
+      await loadInvitationsData();
       setStatusFeedback({
         type: 'success',
-        message: `Đã chấp nhận lời mời tham gia dự án "${fallbackProjectName || 'mới'}" thành công! Dự án đã được kích hoạt.`,
+        message: `Đã chấp nhận lời mời tham gia dự án "${projName || 'mới'}" thành công! Dự án đã được kích hoạt.`,
       });
     } catch (err: any) {
+      await loadInvitationsData();
       setStatusFeedback({
         type: 'error',
-        message: err?.response?.data?.message || err?.message || 'Không thể chấp nhận lời mời. Vui lòng thử lại.',
+        message:
+          err?.response?.data?.message ||
+          err?.message ||
+          'Không thể chấp nhận lời mời. Vui lòng thử lại.',
       });
     } finally {
       setActionLoadingId(null);
@@ -96,12 +206,13 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
       await invitationService.declineInvitation(invitationId);
       await markAsRead(notifId);
       setDeclinedInviteNotifIds((prev) => new Set(prev).add(notifId));
-      await loadPendingInvitations();
+      await loadInvitationsData();
       setStatusFeedback({
         type: 'success',
         message: 'Đã từ chối lời mời tham gia dự án.',
       });
     } catch (err: any) {
+      await loadInvitationsData();
       setStatusFeedback({
         type: 'error',
         message: err?.response?.data?.message || err?.message || 'Không thể từ chối lời mời.',
@@ -111,9 +222,10 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
     }
   };
 
-  const filtered = activeFilter === 'all'
-    ? notifications
-    : notifications.filter((n) => n.type === activeFilter);
+  const filtered =
+    activeFilter === 'all'
+      ? notifications
+      : notifications.filter((n) => n.type === activeFilter);
 
   return (
     <div className="h-full overflow-y-auto bg-white">
@@ -132,10 +244,11 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
               type="button"
               onClick={() => {
                 fetchNotifications(activeFilter === 'all' ? undefined : activeFilter);
-                loadPendingInvitations();
+                loadInvitationsData();
               }}
               className="p-1.5 border border-[#E5E5E7] text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8]"
               title="Làm mới"
+              aria-label="Làm mới thông báo"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -177,6 +290,65 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
                 Vào dự án ngay →
               </button>
             )}
+          </div>
+        )}
+
+        {/* Deep-link invitation contextual banner (?tab=invite&invitation={id}) */}
+        {deepLinkBanner && !statusFeedback && (
+          <div
+            className={`mb-6 p-4 rounded-xl border text-xs flex items-start justify-between gap-3 ${
+              deepLinkBanner.tone === 'warning'
+                ? 'bg-amber-50 border-amber-200 text-amber-900'
+                : deepLinkBanner.tone === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : 'bg-[#F7F7F8] border-[#E5E5E7] text-[#1A1A1A]'
+            }`}
+          >
+            <div className="flex items-start gap-2.5">
+              {deepLinkBanner.tone === 'warning' ? (
+                <Ban className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              ) : deepLinkBanner.tone === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              ) : (
+                <Info className="w-4 h-4 text-[#6B6B70] shrink-0 mt-0.5" />
+              )}
+              <div>
+                <p className="font-semibold">{deepLinkBanner.title}</p>
+                <p
+                  className={`text-[11px] mt-0.5 leading-relaxed ${
+                    deepLinkBanner.tone === 'warning'
+                      ? 'text-amber-800'
+                      : deepLinkBanner.tone === 'success'
+                      ? 'text-emerald-800'
+                      : 'text-[#6B6B70]'
+                  }`}
+                >
+                  {deepLinkBanner.description}
+                </p>
+                {deepLinkBanner.tone === 'success' && onNavigate && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      activateAndOpenProject(deepLinkBanner.projectId, deepLinkBanner.projectName)
+                    }
+                    className="mt-2 px-3 py-1 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 font-medium inline-flex items-center gap-1"
+                  >
+                    Vào dự án ngay →
+                  </button>
+                )}
+              </div>
+            </div>
+            <button
+              type="button"
+              aria-label="Đóng thông báo trạng thái lời mời"
+              onClick={() => {
+                setDeepLinkBanner(null);
+                setTargetInvitationId(null);
+              }}
+              className="text-[#6B6B70] hover:text-[#1A1A1A] p-1 rounded-md shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
@@ -231,7 +403,9 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
                     <button
                       type="button"
                       disabled={actionLoadingId === String(inv.id)}
-                      onClick={() => handleAcceptInvite(String(inv.id), `inv-${inv.id}`, inv.projectName)}
+                      onClick={() =>
+                        handleAcceptInvite(String(inv.id), `inv-${inv.id}`, inv.projectName)
+                      }
                       className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 inline-flex items-center gap-1"
                     >
                       <Check className="w-3 h-3" /> Chấp nhận lời mời
@@ -286,18 +460,15 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
             </div>
           ) : (
             filtered.map((n, i) => {
-              const matchingPending = pendingInvitations.find(
-                (inv) =>
-                  String(inv.id) === String(n.sourceId || (n as any).data) ||
-                  (inv.projectName && n.title?.includes(inv.projectName)),
+              const cardInviteState = resolveNotificationInviteStatus(
+                n,
+                invitationsById,
+                acceptedInviteNotifIds,
+                declinedInviteNotifIds,
+                now,
               );
-              const isAccepted = acceptedInviteNotifIds.has(n.id);
-              const isDeclined = declinedInviteNotifIds.has(n.id);
-              const isPending = matchingPending !== undefined;
-              const resolvedInvitationId = matchingPending
-                ? String(matchingPending.id)
-                : n.sourceId || (n as any).data || n.id;
-              const targetProjectName = matchingPending?.projectName;
+              const rawSourceId = String(n.sourceId || (n as any).data || n.id);
+              const matchedInv = invitationsById[rawSourceId];
 
               return (
                 <div
@@ -307,22 +478,25 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
                   <NotificationItem
                     notification={n}
                     onRead={markAsRead}
+                    inviteStatus={cardInviteState}
                     onAcceptInvite={
-                      n.type === 'invite'
-                        ? () => handleAcceptInvite(resolvedInvitationId, n.id, targetProjectName)
+                      cardInviteState === 'PENDING'
+                        ? () => handleAcceptInvite(rawSourceId, n.id, matchedInv?.projectName)
                         : undefined
                     }
                     onDeclineInvite={
-                      n.type === 'invite'
-                        ? () => handleDeclineInvite(resolvedInvitationId, n.id)
+                      cardInviteState === 'PENDING'
+                        ? () => handleDeclineInvite(rawSourceId, n.id)
                         : undefined
                     }
                     onNavigateInvitations={onNavigate ? () => onNavigate('invitations') : undefined}
-                    onOpenProject={onNavigate ? () => onNavigate('board') : undefined}
-                    isInvitePending={isPending}
-                    isInviteAccepted={isAccepted}
-                    isInviteDeclined={isDeclined}
+                    onOpenProject={
+                      onNavigate
+                        ? () => activateAndOpenProject(matchedInv?.projectId, matchedInv?.projectName)
+                        : undefined
+                    }
                     isActionLoading={actionLoadingId === n.id}
+                    now={now}
                   />
                 </div>
               );

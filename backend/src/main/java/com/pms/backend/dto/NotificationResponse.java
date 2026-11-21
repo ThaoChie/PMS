@@ -9,6 +9,7 @@ import java.time.ZoneId;
 public class NotificationResponse {
     private Long id;
     private String type;
+    private String rawType;
     private String title;
     private String description;
     private String message;
@@ -29,6 +30,7 @@ public class NotificationResponse {
         NotificationResponse res = new NotificationResponse();
         res.setId(n.getId());
         res.setType(mapTypeToFrontend(n.getType()));
+        res.setRawType(n.getType() != null ? n.getType().name() : null);
         res.setTitle(n.getTitle());
         res.setDescription(n.getMessage());
         res.setMessage(n.getMessage());
@@ -58,6 +60,9 @@ public class NotificationResponse {
 
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+
+    public String getRawType() { return rawType; }
+    public void setRawType(String rawType) { this.rawType = rawType; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
