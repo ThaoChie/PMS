@@ -1,4 +1,4 @@
-import { normalizeNotification } from '../store/notificationStore';
+import { normalizeNotification, useNotificationStore } from '../store/notificationStore';
 import { formatRelativeTime } from '../utils/date';
 
 describe('normalizeNotification', () => {
@@ -35,5 +35,35 @@ describe('formatRelativeTime', () => {
 
   it('thời điểm tương lai (lệch đồng hồ) không hiện số âm', () => {
     expect(formatRelativeTime('2026-11-14T10:05:00+07:00', now)).toBe('Vừa xong');
+  });
+});
+
+describe('useNotificationStore.markAsRead', () => {
+  it('không trừ nhầm unreadCount khi bấm lại vào thông báo vốn đã đọc', async () => {
+    useNotificationStore.setState({
+      notifications: [
+        {
+          id: '101',
+          type: 'invite',
+          title: 'Nguyễn Lại đã từ chối lời mời',
+          description: 'Chi tiết',
+          isRead: true,
+          createdAt: '2026-11-23T09:00:00+07:00',
+        },
+        {
+          id: '102',
+          type: 'invite',
+          title: 'Thông báo chưa đọc',
+          description: 'Chi tiết',
+          isRead: false,
+          createdAt: '2026-11-23T09:05:00+07:00',
+        },
+      ],
+      unreadCount: 1,
+      isLoading: false,
+    });
+
+    await useNotificationStore.getState().markAsRead('101');
+    expect(useNotificationStore.getState().unreadCount).toBe(1);
   });
 });

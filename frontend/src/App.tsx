@@ -67,7 +67,7 @@ export default function App() {
       if (p.match(/^\/projects\/[^/]+\/board/)) return 'board';
       if (p.match(/^\/projects\/[^/]+\/issues/)) return 'issues';
       if (p.match(/^\/projects\/[^/]+\/reports/)) return 'reports';
-      if (p.match(/^\/projects\/[^/]+\/members/)) return 'members-roles';
+      if (p.match(/^\/projects\/[^/]+\/(?:settings\/)?members/)) return 'members-roles';
       if (p.match(/^\/projects\/[^/]+\/settings/)) return 'project-settings';
       if (p.match(/^\/projects\/[^/]+\/(workflows|workflow)/)) return 'workflow';
       if (p.match(/^\/projects\/[^/]+\/custom-fields/)) return 'custom-fields';
@@ -179,8 +179,10 @@ export default function App() {
       return;
     }
 
-    // 4. Project scoped routes (/projects/:id/(board|issues|reports|members|settings|workflows|custom-fields))
-    const projectSubMatch = pathname.match(/^\/projects\/([^/]+)\/(board|issues|reports|members|settings|workflows|workflow|custom-fields)/);
+    // 4. Project scoped routes (/projects/:id/(settings/members|board|issues|reports|members|settings|workflows|custom-fields))
+    const projectSubMatch = pathname.match(
+      /^\/projects\/([^/]+)\/(settings\/members|board|issues|reports|members|settings|workflows|workflow|custom-fields)/,
+    );
     if (projectSubMatch) {
       const projIdOrKey = decodeURIComponent(projectSubMatch[1]);
       const sub = projectSubMatch[2];
@@ -197,7 +199,12 @@ export default function App() {
       if (sub === 'board') setCurrentScreen('board');
       else if (sub === 'issues') setCurrentScreen('issues');
       else if (sub === 'reports') setCurrentScreen('reports');
-      else if (sub === 'members') setCurrentScreen('members-roles');
+      else if (sub === 'members' || sub === 'settings/members') {
+        if (sub === 'settings/members') {
+          window.history.replaceState({}, '', `/projects/${encodeURIComponent(projIdOrKey)}/members`);
+        }
+        setCurrentScreen('members-roles');
+      }
       else if (sub === 'settings') setCurrentScreen('project-settings');
       else if (sub === 'workflows' || sub === 'workflow') setCurrentScreen('workflow');
       else if (sub === 'custom-fields') setCurrentScreen('custom-fields');
@@ -358,7 +365,10 @@ export default function App() {
     setCurrentScreen(screen);
     setSelectedIssueId(null);
 
-    const pid = currentProject?.id || (projects.length > 0 ? projects[0].id : null);
+    const storeState = useProjectStore.getState();
+    const activeProj = storeState.currentProject || currentProject;
+    const activeProjects = storeState.projects.length > 0 ? storeState.projects : projects;
+    const pid = activeProj?.id || (activeProjects.length > 0 ? activeProjects[0].id : null);
 
     switch (screen) {
       case 'dashboard':

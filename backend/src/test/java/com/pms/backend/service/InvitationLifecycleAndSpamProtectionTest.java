@@ -9,6 +9,7 @@ import com.pms.backend.dto.InvitationResponse;
 import com.pms.backend.dto.InviteMemberRequest;
 import com.pms.backend.enu.ErrorCode;
 import com.pms.backend.enu.InvitationStatus;
+import com.pms.backend.enu.NotificationType;
 import com.pms.backend.enu.ProjectRole;
 import com.pms.backend.exception.BusinessException;
 import com.pms.backend.exception.ResourceNotFoundException;
@@ -244,5 +245,63 @@ public class InvitationLifecycleAndSpamProtectionTest {
         assertEquals(2, all.size());
         assertEquals("CANCELLED", InvitationResponse.from(all.get(0)).getStatus());
         assertEquals("EXPIRED", InvitationResponse.from(all.get(1)).getStatus());
+    }
+
+    @Test
+    @DisplayName("declineInvitation & acceptInvitation - Gửi thông báo INVITE_RESPONDED về đúng route /projects/{id}/members cho PM")
+    public void testInviteRespondedNotificationUsesCanonicalMembersRoute() {
+        User invitee = new User();
+        invitee.setId(25L);
+        invitee.setEmail("laivannguyen75tb@gmail.com");
+        invitee.setFullName("Nguyễn Lại");
+
+        Invitation pendingDecline = new Invitation();
+        pendingDecline.setId(140L);
+        pendingDecline.setProject(project);
+        pendingDecline.setEmail("laivannguyen75tb@gmail.com");
+        pendingDecline.setRole(ProjectRole.MEMBER);
+        pendingDecline.setStatus(InvitationStatus.PENDING);
+        pendingDecline.setExpiresAt(LocalDateTime.now().plusDays(7));
+        pendingDecline.setInvitedBy(pm);
+
+        when(invitationRepository.findById(140L)).thenReturn(Optional.of(pendingDecline));
+
+        invitationService.declineInvitation(140L, invitee);
+
+        assertEquals(InvitationStatus.DECLINED, pendingDecline.getStatus());
+        verify(notificationService, times(1)).notify(
+                eq(NotificationType.INVITE_RESPONDED),
+                eq(List.of(pm)),
+                contains("đã từ chối lời mời"),
+                contains(project.getName()),
+                eq("/projects/" + project.getId() + "/members"),
+                eq(String.valueOf(project.getId())),
+                eq(invitee)
+        );
+
+        Invitation pendingAccept = new Invitation();
+        pendingAccept.setId(141L);
+        pendingAccept.setProject(project);
+        pendingAccept.setEmail("laivannguyen75tb@gmail.com");
+        pendingAccept.setRole(ProjectRole.MEMBER);
+        pendingAccept.setStatus(InvitationStatus.PENDING);
+        pendingAccept.setExpiresAt(LocalDateTime.now().plusDays(7));
+        pendingAccept.setInvitedBy(pm);
+
+        when(invitationRepository.findById(141L)).thenReturn(Optional.of(pendingAccept));
+        when(memberRepository.existsByProjectIdAndUserId(project.getId(), invitee.getId())).thenReturn(false);
+
+        invitationService.acceptInvitation(141L, invitee);
+
+        assertEquals(InvitationStatus.ACCEPTED, pendingAccept.getStatus());
+        verify(notificationService, times(1)).notify(
+                eq(NotificationType.INVITE_RESPONDED),
+                eq(List.of(pm)),
+                contains("đã chấp nhận lời mời"),
+                contains(project.getName()),
+                eq("/projects/" + project.getId() + "/members"),
+                eq(String.valueOf(project.getId())),
+                eq(invitee)
+        );
     }
 }
