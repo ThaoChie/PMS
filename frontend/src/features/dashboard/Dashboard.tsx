@@ -137,7 +137,7 @@ export default function Dashboard({ onSelectIssue, onNavigate }: DashboardProps)
       .finally(() => {
         if (active) setLoadingStats(false);
       });
-    return () => {
+  return () => {
       active = false;
     };
   }, [currentProject?.id]);
@@ -181,6 +181,20 @@ export default function Dashboard({ onSelectIssue, onNavigate }: DashboardProps)
       atRisk: overdueCount > 0,
     },
   ];
+
+  function handleSelectSavedFilter(filterId: string) {
+    const targetFilter = savedFilters.find((f) => String(f.id) === String(filterId));
+    const pid =
+      targetFilter?.filters?.projectIds?.[0] ||
+      (targetFilter?.filters as any)?.projectId ||
+      currentProject?.id;
+    const path = pid ? `/projects/${pid}/issues?filterId=${filterId}` : `/issues?filterId=${filterId}`;
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    if (onNavigate) {
+      onNavigate('issues');
+    }
+  }
 
   return (
     <div className="h-full overflow-y-auto bg-white">
@@ -268,7 +282,11 @@ export default function Dashboard({ onSelectIssue, onNavigate }: DashboardProps)
           <RecentActivityWidget notifications={activities.slice(0, 5)} onNavigate={onNavigate} />
 
           {/* Bộ lọc đã lưu */}
-          <SavedFiltersWidget filters={savedFilters} onNavigate={onNavigate} />
+          <SavedFiltersWidget
+            filters={savedFilters}
+            onNavigate={onNavigate}
+            onSelectFilter={handleSelectSavedFilter}
+          />
         </div>
       </div>
     </div>

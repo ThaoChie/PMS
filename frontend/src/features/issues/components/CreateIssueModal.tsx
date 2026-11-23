@@ -56,6 +56,23 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [createdDateStr, setCreatedDateStr] = useState(() => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      setCreatedDateStr(
+        `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`,
+      );
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Sync members & custom fields when selected project changes
   useEffect(() => {
     if (form.projectId) {
@@ -285,6 +302,15 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
+              <Field label="Ngày tạo">
+                <input
+                  type="text"
+                  value={createdDateStr}
+                  disabled
+                  readOnly
+                  className={`${inputCls} bg-[#F7F7F8] text-[#6B6B70] cursor-not-allowed`}
+                />
+              </Field>
               <Field label="Hạn chót" required>
                 <input
                   type="date"
@@ -293,6 +319,9 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   className={inputCls}
                 />
               </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <Field label="Môi trường" optional>
                 <input
                   value={form.environment}

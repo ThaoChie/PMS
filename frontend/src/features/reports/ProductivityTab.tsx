@@ -318,6 +318,14 @@ export const ProductivityTab: React.FC<ProductivityTabProps> = ({ role, from: pr
 
             <button
               type="button"
+              onClick={handleResetFilter}
+              className="px-3 py-1.5 text-xs font-medium text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F9F9FB] border border-[#E5E5E7] rounded-lg transition-colors"
+            >
+              {MESSAGES.REPORTS.RESET_FILTER}
+            </button>
+
+            <button
+              type="button"
               onClick={handleApplyFilter}
               className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold bg-[#E53E3E] text-white rounded-lg hover:bg-[#C53030] transition-colors shadow-xs"
             >
@@ -325,14 +333,6 @@ export const ProductivityTab: React.FC<ProductivityTabProps> = ({ role, from: pr
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <span>Tìm kiếm</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleResetFilter}
-              className="px-3 py-1.5 text-xs font-medium text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F9F9FB] border border-[#E5E5E7] rounded-lg transition-colors"
-            >
-              {MESSAGES.REPORTS.RESET_FILTER}
             </button>
 
             {currentProject && (

@@ -237,6 +237,23 @@ public class ReportServiceTest {
     }
 
     @Test
+    public void testGetProductivityReport_UnassignedMemberId0_DoesNotThrowValidation() {
+        when(projectSecurity.isPmOrAdmin(1L)).thenReturn(true);
+        ProductivityFilterRequest filter = new ProductivityFilterRequest();
+        filter.setMemberIds(List.of(0L));
+
+        ProductivityReportResponse mockResp = new ProductivityReportResponse();
+        mockResp.setTotalAssigned(2);
+        when(productivityReportHibernateDao.generateProductivityReport(1L, filter, true)).thenReturn(mockResp);
+
+        assertDoesNotThrow(() -> {
+            ProductivityReportResponse res = reportService.getProductivityReport(1L, filter);
+            assertNotNull(res);
+            assertEquals(2, res.getTotalAssigned());
+        });
+    }
+
+    @Test
     public void testGetMemberProductivityDetail_AsPm_Success() {
         when(projectSecurity.isPmOrAdmin(1L)).thenReturn(true);
         ProductivityFilterRequest filter = new ProductivityFilterRequest();

@@ -67,7 +67,14 @@ public class ProductivityReportHibernateDao extends BaseHibernateDao {
         pmPreds.add(cb.equal(pmRoot.get("project").get("id"), projectId));
 
         if (filter.getMemberIds() != null && !filter.getMemberIds().isEmpty()) {
-            pmPreds.add(pmRoot.get("user").get("id").in(filter.getMemberIds()));
+            List<Long> memberIdsWithoutZero = filter.getMemberIds().stream()
+                    .filter(id -> id != null && id != 0L)
+                    .collect(Collectors.toList());
+            if (!memberIdsWithoutZero.isEmpty()) {
+                pmPreds.add(pmRoot.get("user").get("id").in(memberIdsWithoutZero));
+            } else {
+                pmPreds.add(cb.disjunction());
+            }
         }
         if (filter.getRoles() != null && !filter.getRoles().isEmpty()) {
             List<ProjectRole> roleEnums = new ArrayList<>();
@@ -101,6 +108,9 @@ public class ProductivityReportHibernateDao extends BaseHibernateDao {
         List<Predicate> issuePreds = new ArrayList<>();
         issuePreds.add(cb.equal(issueRoot.get("project").get("id"), projectId));
         issuePreds.add(cb.isNull(issueRoot.get("deletedAt")));
+        LocalDateTime startOfFrom = from.atStartOfDay();
+        LocalDateTime endOfToWithNanos = to.atTime(23, 59, 59, 999999999);
+        issuePreds.add(cb.between(issueRoot.get("createdAt"), startOfFrom, endOfToWithNanos));
 
         if (filter.getMemberIds() != null && !filter.getMemberIds().isEmpty()) {
             List<Long> memberIds = filter.getMemberIds();
@@ -210,7 +220,14 @@ public class ProductivityReportHibernateDao extends BaseHibernateDao {
         wlPreds.add(cb.equal(wlRoot.get("issue").get("project").get("id"), projectId));
         wlPreds.add(cb.between(wlRoot.get("workDate"), from, to));
         if (filter.getMemberIds() != null && !filter.getMemberIds().isEmpty()) {
-            wlPreds.add(wlRoot.get("user").get("id").in(filter.getMemberIds()));
+            List<Long> validUserIds = filter.getMemberIds().stream()
+                    .filter(id -> id != null && id != 0L)
+                    .collect(Collectors.toList());
+            if (!validUserIds.isEmpty()) {
+                wlPreds.add(wlRoot.get("user").get("id").in(validUserIds));
+            } else {
+                wlPreds.add(cb.disjunction());
+            }
         }
 
         worklogQuery.select(wlRoot).where(wlPreds.toArray(new Predicate[0]));
@@ -490,7 +507,8 @@ public class ProductivityReportHibernateDao extends BaseHibernateDao {
 
             boolean includeUnassigned = (filter.getMemberIds() == null || filter.getMemberIds().isEmpty() || filter.getMemberIds().contains(0L))
                     && (filter.getRoles() == null || filter.getRoles().isEmpty());
-            if (includeUnassigned && unassignedCount > 0) {
+            boolean explicitUnassigned = filter.getMemberIds() != null && filter.getMemberIds().contains(0L);
+            if (includeUnassigned && (unassignedCount > 0 || explicitUnassigned)) {
                 Double unassignedAvgResHours = unassignedResolutionHours.isEmpty() ? null :
                         Math.round(unassignedResolutionHours.stream().mapToDouble(Double::doubleValue).average().orElse(0) * 10.0) / 10.0;
                 Double unassignedEstHours = Math.round((unassignedEstMin / 60.0) * 10.0) / 10.0;
@@ -610,6 +628,9 @@ public class ProductivityReportHibernateDao extends BaseHibernateDao {
             issuePreds.add(cb.equal(issueRoot.get("assignee").get("id"), userId));
         }
         issuePreds.add(cb.isNull(issueRoot.get("deletedAt")));
+        LocalDateTime startOfFrom = from.atStartOfDay();
+        LocalDateTime endOfToWithNanos = to.atTime(23, 59, 59, 999999999);
+        issuePreds.add(cb.between(issueRoot.get("createdAt"), startOfFrom, endOfToWithNanos));
 
         if (filter.getIssueTypes() != null && !filter.getIssueTypes().isEmpty()) {
             List<IssueType> typeEnums = new ArrayList<>();
@@ -763,6 +784,16 @@ public class ProductivityReportHibernateDao extends BaseHibernateDao {
     }
 
     public List<Issue> fetchIssuesForExport(Long projectId, ProductivityFilterRequest filter) {
+        LocalDate from = filter.getFrom() != null ? filter.getFrom() : LocalDate.now().minusDays(30);
+        LocalDate to = filter.getTo() != null ? filter.getTo() : LocalDate.now();
+        if (from.isAfter(to)) {
+            LocalDate tmp = from;
+            from = to;
+            to = tmp;
+        }
+        LocalDateTime startOfFrom = from.atStartOfDay();
+        LocalDateTime endOfTo = to.atTime(23, 59, 59, 999999999);
+
         CriteriaBuilder cb = em().getCriteriaBuilder();
         CriteriaQuery<Issue> issueQuery = cb.createQuery(Issue.class);
         Root<Issue> issueRoot = issueQuery.from(Issue.class);
@@ -773,6 +804,7 @@ public class ProductivityReportHibernateDao extends BaseHibernateDao {
         List<Predicate> issuePreds = new ArrayList<>();
         issuePreds.add(cb.equal(issueRoot.get("project").get("id"), projectId));
         issuePreds.add(cb.isNull(issueRoot.get("deletedAt")));
+        issuePreds.add(cb.between(issueRoot.get("createdAt"), startOfFrom, endOfTo));
 
         if (filter.getMemberIds() != null && !filter.getMemberIds().isEmpty()) {
             List<Long> memberIds = filter.getMemberIds();
@@ -847,7 +879,14 @@ public class ProductivityReportHibernateDao extends BaseHibernateDao {
         wlPreds.add(cb.equal(wlRoot.get("issue").get("project").get("id"), projectId));
         wlPreds.add(cb.between(wlRoot.get("workDate"), from, to));
         if (filter.getMemberIds() != null && !filter.getMemberIds().isEmpty()) {
-            wlPreds.add(wlRoot.get("user").get("id").in(filter.getMemberIds()));
+            List<Long> validUserIds = filter.getMemberIds().stream()
+                    .filter(id -> id != null && id != 0L)
+                    .collect(Collectors.toList());
+            if (!validUserIds.isEmpty()) {
+                wlPreds.add(wlRoot.get("user").get("id").in(validUserIds));
+            } else {
+                wlPreds.add(cb.disjunction());
+            }
         }
 
         wlQuery.select(wlRoot).where(wlPreds.toArray(new Predicate[0])).orderBy(cb.desc(wlRoot.get("workDate")));

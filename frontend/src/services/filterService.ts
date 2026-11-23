@@ -6,6 +6,10 @@ export const filterService = {
     return axiosClient.get('/filters');
   },
 
+  async getFilterById(id: string): Promise<ApiResponse<SavedFilter>> {
+    return axiosClient.get(`/filters/${id}`);
+  },
+
   async createFilter(data: {
     name: string;
     /** Tiêu chí lọc — khớp IssueSearchRequest của backend */
@@ -17,7 +21,15 @@ export const filterService = {
     return axiosClient.post('/filters', data);
   },
 
-  async updateFilter(id: string, data: Partial<SavedFilter>): Promise<ApiResponse<SavedFilter>> {
+  async updateFilter(
+    id: string,
+    data: {
+      name?: string;
+      filters?: SavedFilter['filters'] | Record<string, any>;
+      criteria?: string;
+      sharedWithUserIds?: string[];
+    },
+  ): Promise<ApiResponse<SavedFilter>> {
     return axiosClient.put(`/filters/${id}`, data);
   },
 

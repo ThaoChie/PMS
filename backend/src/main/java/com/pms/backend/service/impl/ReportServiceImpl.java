@@ -170,7 +170,7 @@ public class ReportServiceImpl implements IReportService {
 
         if (filter.getMemberIds() != null && !filter.getMemberIds().isEmpty() && projectMemberRepository != null) {
             for (Long memberId : filter.getMemberIds()) {
-                if (memberId != null && !projectMemberRepository.existsByProjectIdAndUserId(projectId, memberId)) {
+                if (memberId != null && memberId != 0L && !projectMemberRepository.existsByProjectIdAndUserId(projectId, memberId)) {
                     throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Thành viên có ID " + memberId + " không thuộc dự án này");
                 }
             }
