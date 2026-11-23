@@ -6,6 +6,7 @@ interface InvitationCardProps {
   invitation: ProjectInvitation;
   onAccept: (id: string) => void;
   onDecline: (id: string) => void;
+  processingAction?: 'accept' | 'decline' | null;
 }
 
 const ROLE_NAMES: Record<string, string> = {
@@ -21,9 +22,11 @@ export default function InvitationCard({
   invitation,
   onAccept,
   onDecline,
+  processingAction = null,
 }: InvitationCardProps) {
   const roleKey = (invitation.role || '').toLowerCase();
   const displayRole = ROLE_NAMES[roleKey] || invitation.role;
+  const isBusy = processingAction !== null;
 
   return (
     <div className="flex items-center justify-between p-4 bg-white border border-[#E5E5E7] rounded-xl hover:border-[#C5C5C8] transition-colors">
@@ -48,17 +51,21 @@ export default function InvitationCard({
       <div className="flex items-center gap-2">
         <button
           type="button"
+          disabled={isBusy}
           onClick={() => onDecline(invitation.id)}
-          className="flex items-center gap-1 px-3 py-1.5 border border-[#E5E5E7] text-xs font-medium text-[#6B6B70] hover:text-[#E53E3E] rounded-lg transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 border border-[#E5E5E7] text-xs font-medium text-[#6B6B70] hover:text-[#E53E3E] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <X className="w-3.5 h-3.5" /> Từ chối
+          <X className="w-3.5 h-3.5" />
+          {processingAction === 'decline' ? 'Đang từ chối…' : 'Từ chối'}
         </button>
         <button
           type="button"
+          disabled={isBusy}
           onClick={() => onAccept(invitation.id)}
-          className="flex items-center gap-1 px-3 py-1.5 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Check className="w-3.5 h-3.5" /> Chấp nhận
+          <Check className="w-3.5 h-3.5" />
+          {processingAction === 'accept' ? 'Đang chấp nhận…' : 'Chấp nhận'}
         </button>
       </div>
     </div>

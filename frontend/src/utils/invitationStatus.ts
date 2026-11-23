@@ -16,6 +16,14 @@ export interface DeepLinkInviteBanner {
   projectName?: string;
 }
 
+export interface InvitationActionFeedback {
+  tone: 'accepted' | 'declined' | 'error';
+  message: string;
+  canNavigateToProject: boolean;
+  projectId?: string;
+  projectName?: string;
+}
+
 /**
  * Kiểm tra xem thông báo có phải là lời mời gửi TỚI người dùng hiện tại (`INVITE_RECEIVED`) hay không.
  * Loại trừ các thông báo phản hồi gửi về cho PM (`INVITE_RESPONDED`).
@@ -154,4 +162,43 @@ export function buildDeepLinkInviteBanner(params: {
 
   if (!invitation) return null;
   return buildBannerFromResolvedInvitation(invitation, nowMs);
+}
+
+/**
+ * Dựng dữ liệu phản hồi sau khi người nhận bấm Chấp nhận / Từ chối lời mời.
+ * Chỉ duy nhất hành động `accepted` mới bật `canNavigateToProject = true`.
+ */
+export function buildInvitationActionFeedback(params: {
+  action: 'accepted' | 'declined' | 'error';
+  projectName?: string;
+  projectId?: string;
+  errorMessage?: string;
+}): InvitationActionFeedback {
+  const { action, projectName, projectId, errorMessage } = params;
+
+  if (action === 'accepted') {
+    return {
+      tone: 'accepted',
+      message: `Đã chấp nhận lời mời tham gia dự án "${projectName || 'mới'}" thành công!`,
+      canNavigateToProject: true,
+      projectId,
+      projectName,
+    };
+  }
+
+  if (action === 'declined') {
+    const suffix = projectName ? ` "${projectName}"` : '';
+    return {
+      tone: 'declined',
+      message: `Đã từ chối lời mời tham gia dự án${suffix}.`,
+      canNavigateToProject: false,
+      projectName,
+    };
+  }
+
+  return {
+    tone: 'error',
+    message: errorMessage || 'Không thể xử lý lời mời. Vui lòng thử lại.',
+    canNavigateToProject: false,
+  };
 }
