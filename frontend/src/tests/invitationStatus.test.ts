@@ -4,6 +4,7 @@ import {
   buildDeepLinkInviteBanner,
   isInviteeNotification,
   normalizeInvitationStatus,
+  buildInvitationActionFeedback,
 } from '../utils/invitationStatus';
 import type { Notification, ProjectInvitation } from '../types';
 
@@ -189,5 +190,47 @@ describe('normalizeInvitationStatus timezone safety', () => {
         NOW,
       ),
     ).toBe('EXPIRED');
+  });
+});
+
+describe('buildInvitationActionFeedback', () => {
+  it('cho phép chuyển sang bảng công việc duy nhất khi người nhận CHẤP NHẬN lời mời', () => {
+    const fb = buildInvitationActionFeedback({
+      action: 'accepted',
+      projectId: '120',
+      projectName: 'demo1',
+    });
+
+    expect(fb.tone).toBe('accepted');
+    expect(fb.canNavigateToProject).toBe(true);
+    expect(fb.projectId).toBe('120');
+    expect(fb.message).toContain('demo1');
+  });
+
+  it('KHÔNG cho phép hiển thị nút vào bảng công việc khi người nhận TỪ CHỐI lời mời', () => {
+    const fbWithProj = buildInvitationActionFeedback({
+      action: 'declined',
+      projectName: 'demo1',
+    });
+    expect(fbWithProj.tone).toBe('declined');
+    expect(fbWithProj.canNavigateToProject).toBe(false);
+    expect(fbWithProj.message).toBe('Đã từ chối lời mời tham gia dự án "demo1".');
+
+    const fbNoProj = buildInvitationActionFeedback({
+      action: 'declined',
+    });
+    expect(fbNoProj.tone).toBe('declined');
+    expect(fbNoProj.canNavigateToProject).toBe(false);
+    expect(fbNoProj.message).toBe('Đã từ chối lời mời tham gia dự án.');
+  });
+
+  it('trả về trạng thái lỗi an toàn và tắt cờ điều hướng khi API báo lỗi', () => {
+    const fbErr = buildInvitationActionFeedback({
+      action: 'error',
+      errorMessage: 'Lời mời đã được thu hồi.',
+    });
+    expect(fbErr.tone).toBe('error');
+    expect(fbErr.canNavigateToProject).toBe(false);
+    expect(fbErr.message).toBe('Lời mời đã được thu hồi.');
   });
 });

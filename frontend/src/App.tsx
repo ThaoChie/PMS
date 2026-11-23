@@ -547,7 +547,13 @@ export default function App() {
           />
         );
       case 'board':
-        return <Board role={role} onSelectIssue={handleSelectIssue} />;
+        return (
+          <Board
+            role={role}
+            onSelectIssue={handleSelectIssue}
+            onNavigate={handleNavigate}
+          />
+        );
       case 'issues':
         return <IssueList onSelectIssue={handleSelectIssue} />;
       case 'saved-filters':
