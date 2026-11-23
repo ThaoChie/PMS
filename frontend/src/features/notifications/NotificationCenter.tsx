@@ -5,7 +5,6 @@ import {
   Mail,
   ArrowRight,
   CheckCircle2,
-  AlertCircle,
   Ban,
   Info,
   X,
@@ -16,12 +15,15 @@ import { useAuthStore } from '../../store/authStore';
 import { invitationService } from '../../services/invitationService';
 import type { NotificationType, Screen, ProjectInvitation } from '../../types';
 import { NotificationItem } from './NotificationItem';
+import InvitationFeedbackBanner from '../../components/common/InvitationFeedbackBanner';
 import { useNow } from '../../hooks/useNow';
 import {
   resolveNotificationInviteStatus,
   buildDeepLinkInviteBanner,
   normalizeInvitationStatus,
+  buildInvitationActionFeedback,
   type DeepLinkInviteBanner,
+  type InvitationActionFeedback,
 } from '../../utils/invitationStatus';
 
 const TYPE_LABELS: Record<NotificationType, string> = {
@@ -94,10 +96,7 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [acceptedInviteNotifIds, setAcceptedInviteNotifIds] = useState<Set<string>>(new Set());
   const [declinedInviteNotifIds, setDeclinedInviteNotifIds] = useState<Set<string>>(new Set());
-  const [statusFeedback, setStatusFeedback] = useState<{
-    type: 'success' | 'error';
-    message: string;
-  } | null>(null);
+  const [statusFeedback, setStatusFeedback] = useState<InvitationActionFeedback | null>(null);
 
   const activateAndOpenProject = useCallback(
     async (projectId?: string, projectName?: string) => {
@@ -159,6 +158,7 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
     notifId: string,
     fallbackProjectName?: string,
   ) => {
+    if (actionLoadingId) return;
     setActionLoadingId(notifId);
     setStatusFeedback(null);
     try {
@@ -181,42 +181,54 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
       }
 
       await loadInvitationsData();
-      setStatusFeedback({
-        type: 'success',
-        message: `Đã chấp nhận lời mời tham gia dự án "${projName || 'mới'}" thành công! Dự án đã được kích hoạt.`,
-      });
+      setStatusFeedback(
+        buildInvitationActionFeedback({
+          action: 'accepted',
+          projectId: targetInv?.projectId,
+          projectName: projName,
+        }),
+      );
     } catch (err: any) {
       await loadInvitationsData();
-      setStatusFeedback({
-        type: 'error',
-        message:
-          err?.response?.data?.message ||
-          err?.message ||
-          'Không thể chấp nhận lời mời. Vui lòng thử lại.',
-      });
+      setStatusFeedback(
+        buildInvitationActionFeedback({
+          action: 'error',
+          errorMessage:
+            err?.response?.data?.message ||
+            err?.message ||
+            'Không thể chấp nhận lời mời. Vui lòng thử lại.',
+        }),
+      );
     } finally {
       setActionLoadingId(null);
     }
   };
 
   const handleDeclineInvite = async (invitationId: string, notifId: string) => {
+    if (actionLoadingId) return;
     setActionLoadingId(notifId);
     setStatusFeedback(null);
+    const targetInv = invitationsById[String(invitationId)];
     try {
       await invitationService.declineInvitation(invitationId);
       await markAsRead(notifId);
       setDeclinedInviteNotifIds((prev) => new Set(prev).add(notifId));
       await loadInvitationsData();
-      setStatusFeedback({
-        type: 'success',
-        message: 'Đã từ chối lời mời tham gia dự án.',
-      });
+      setStatusFeedback(
+        buildInvitationActionFeedback({
+          action: 'declined',
+          projectName: targetInv?.projectName,
+        }),
+      );
     } catch (err: any) {
       await loadInvitationsData();
-      setStatusFeedback({
-        type: 'error',
-        message: err?.response?.data?.message || err?.message || 'Không thể từ chối lời mời.',
-      });
+      setStatusFeedback(
+        buildInvitationActionFeedback({
+          action: 'error',
+          errorMessage:
+            err?.response?.data?.message || err?.message || 'Không thể từ chối lời mời.',
+        }),
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -266,31 +278,17 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
 
         {/* Feedback message banner */}
         {statusFeedback && (
-          <div
-            className={`mb-6 p-4 rounded-xl text-xs font-medium flex items-center justify-between gap-3 ${
-              statusFeedback.type === 'success'
-                ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
-                : 'bg-red-50 border border-red-200 text-red-800'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {statusFeedback.type === 'success' ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-              )}
-              <span>{statusFeedback.message}</span>
-            </div>
-            {statusFeedback.type === 'success' && onNavigate && (
-              <button
-                type="button"
-                onClick={() => onNavigate('board')}
-                className="px-3 py-1 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 shrink-0 font-medium"
-              >
-                Vào dự án ngay →
-              </button>
-            )}
-          </div>
+          <InvitationFeedbackBanner
+            feedback={statusFeedback}
+            actionLabel="Vào dự án ngay →"
+            className="mb-6 p-4"
+            onOpenProject={
+              onNavigate
+                ? () => activateAndOpenProject(statusFeedback.projectId, statusFeedback.projectName)
+                : undefined
+            }
+            onDismiss={() => setStatusFeedback(null)}
+          />
         )}
 
         {/* Deep-link invitation contextual banner (?tab=invite&invitation={id}) */}

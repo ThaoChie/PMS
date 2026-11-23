@@ -1,79 +1,149 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { ProjectInvitation, Screen } from '../../../types';
 import InvitationCard from '../components/InvitationCard';
+import InvitationFeedbackBanner from '../../../components/common/InvitationFeedbackBanner';
 import { invitationService } from '../../../services/invitationService';
 import { useProjectStore } from '../../../store/projectStore';
+import {
+  buildInvitationActionFeedback,
+  type InvitationActionFeedback,
+} from '../../../utils/invitationStatus';
 
 interface InvitationsProps {
   onNavigate?: (screen: Screen) => void;
 }
 
+function mapRawInvitation(inv: any): ProjectInvitation {
+  return {
+    id: String(inv.id),
+    projectId: inv.projectId != null ? String(inv.projectId) : undefined,
+    projectName: inv.projectName,
+    projectKey: inv.projectKey,
+    email: inv.email,
+    role: (inv.role?.toLowerCase() || 'member') as ProjectInvitation['role'],
+    inviterName: inv.inviterName,
+    status: inv.status,
+    expiresAt: inv.expiresAt,
+  };
+}
+
+async function activateJoinedProject(projectId?: string, projectName?: string) {
+  const updatedProjects = await useProjectStore.getState().fetchProjects();
+  const target =
+    updatedProjects.find(
+      (p) =>
+        (projectId && String(p.id) === String(projectId)) ||
+        (projectName && p.name === projectName),
+    ) || updatedProjects[0];
+
+  if (target) {
+    useProjectStore.getState().setCurrentProject(target);
+  }
+}
+
 export default function Invitations({ onNavigate }: InvitationsProps = {}) {
   const [invitations, setInvitations] = useState<ProjectInvitation[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [processingState, setProcessingState] = useState<{
+    id: string;
+    action: 'accept' | 'decline';
+  } | null>(null);
+  const [feedback, setFeedback] = useState<InvitationActionFeedback | null>(null);
 
-  async function loadInvitations() {
-    setLoading(true);
-    setError(null);
+  const loadInvitations = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+    }
     try {
       const res = await invitationService.getMyInvitations();
-      const list = (res?.data || []).map((inv: any) => ({
-        id: String(inv.id),
-        projectId: String(inv.projectId),
-        projectName: inv.projectName,
-        projectKey: inv.projectKey,
-        email: inv.email,
-        role: (inv.role?.toLowerCase() || 'member') as any,
-        inviterName: inv.inviterName,
-        status: inv.status,
-        expiresAt: inv.expiresAt,
-      }));
+      const list = Array.isArray(res?.data) ? res.data.map(mapRawInvitation) : [];
       setInvitations(list);
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Không thể tải danh sách lời mời');
+      if (!options?.silent) {
+        setFeedback(
+          buildInvitationActionFeedback({
+            action: 'error',
+            errorMessage:
+              err?.response?.data?.message || err?.message || 'Không thể tải danh sách lời mời',
+          }),
+        );
+      }
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadInvitations();
-  }, []);
+  }, [loadInvitations]);
 
   async function handleAccept(id: string) {
-    setError(null);
+    if (processingState) return;
+    const acceptedInv = invitations.find((inv) => inv.id === id);
+    setProcessingState({ id, action: 'accept' });
+    setFeedback(null);
     try {
-      const acceptedInv = invitations.find((inv) => inv.id === id);
       await invitationService.acceptInvitation(id);
-      setSuccessMsg(`Đã chấp nhận lời mời tham gia dự án "${acceptedInv?.projectName || ''}" thành công!`);
-      await loadInvitations();
-      
-      // Refresh projects in store so new project is visible and activated
-      const updatedProjects = await useProjectStore.getState().fetchProjects();
-      const target = updatedProjects.find(
-        (p) => String(p.id) === String(acceptedInv?.projectId) || (acceptedInv?.projectName && p.name === acceptedInv.projectName),
-      ) || updatedProjects[0];
-      
-      if (target) {
-        useProjectStore.getState().setCurrentProject(target);
-      }
+      setInvitations((prev) => prev.filter((inv) => inv.id !== id));
+      await activateJoinedProject(acceptedInv?.projectId, acceptedInv?.projectName);
+      setFeedback(
+        buildInvitationActionFeedback({
+          action: 'accepted',
+          projectId: acceptedInv?.projectId,
+          projectName: acceptedInv?.projectName,
+        }),
+      );
+      await loadInvitations({ silent: true });
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Không thể chấp nhận lời mời');
+      setFeedback(
+        buildInvitationActionFeedback({
+          action: 'error',
+          errorMessage:
+            err?.response?.data?.message || err?.message || 'Không thể chấp nhận lời mời',
+        }),
+      );
+      await loadInvitations({ silent: true });
+    } finally {
+      setProcessingState(null);
     }
   }
 
   async function handleDecline(id: string) {
-    setError(null);
+    if (processingState) return;
+    const declinedInv = invitations.find((inv) => inv.id === id);
+    setProcessingState({ id, action: 'decline' });
+    setFeedback(null);
     try {
       await invitationService.declineInvitation(id);
-      setSuccessMsg('Đã từ chối lời mời.');
-      setTimeout(() => setSuccessMsg(null), 3000);
-      await loadInvitations();
+      setInvitations((prev) => prev.filter((inv) => inv.id !== id));
+      setFeedback(
+        buildInvitationActionFeedback({
+          action: 'declined',
+          projectName: declinedInv?.projectName,
+        }),
+      );
+      await loadInvitations({ silent: true });
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Không thể từ chối lời mời');
+      setFeedback(
+        buildInvitationActionFeedback({
+          action: 'error',
+          errorMessage: err?.response?.data?.message || err?.message || 'Không thể từ chối lời mời',
+        }),
+      );
+      await loadInvitations({ silent: true });
+    } finally {
+      setProcessingState(null);
     }
+  }
+
+  async function handleOpenJoinedBoard() {
+    if (!onNavigate) return;
+    if (feedback?.projectId || feedback?.projectName) {
+      await activateJoinedProject(feedback.projectId, feedback.projectName);
+    }
+    onNavigate('board');
   }
 
   return (
@@ -86,25 +156,13 @@ export default function Invitations({ onNavigate }: InvitationsProps = {}) {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-medium">
-            {error}
-          </div>
-        )}
-
-        {successMsg && (
-          <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-medium flex items-center justify-between gap-3">
-            <span>{successMsg}</span>
-            {onNavigate && (
-              <button
-                type="button"
-                onClick={() => onNavigate('board')}
-                className="px-3 py-1 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 transition-colors shrink-0 font-medium"
-              >
-                Vào bảng công việc ngay →
-              </button>
-            )}
-          </div>
+        {feedback && (
+          <InvitationFeedbackBanner
+            feedback={feedback}
+            actionLabel="Vào bảng công việc ngay →"
+            onOpenProject={onNavigate ? handleOpenJoinedBoard : undefined}
+            onDismiss={() => setFeedback(null)}
+          />
         )}
 
         {loading ? (
@@ -121,6 +179,7 @@ export default function Invitations({ onNavigate }: InvitationsProps = {}) {
               <InvitationCard
                 key={inv.id}
                 invitation={inv}
+                processingAction={processingState?.id === inv.id ? processingState.action : null}
                 onAccept={handleAccept}
                 onDecline={handleDecline}
               />
