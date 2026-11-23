@@ -1,5 +1,6 @@
 package com.pms.backend.dto;
 
+import com.pms.backend.enu.InvitationStatus;
 import com.pms.backend.model.Invitation;
 
 import java.time.LocalDateTime;
@@ -28,7 +29,15 @@ public class InvitationResponse {
         }
         res.setEmail(invitation.getEmail());
         res.setRole(invitation.getRole() != null ? invitation.getRole().name() : "MEMBER");
-        res.setStatus(invitation.getStatus() != null ? invitation.getStatus().name() : "PENDING");
+        InvitationStatus effectiveStatus = invitation.getStatus() != null
+                ? invitation.getStatus()
+                : InvitationStatus.PENDING;
+        if (effectiveStatus == InvitationStatus.PENDING
+                && invitation.getExpiresAt() != null
+                && invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            effectiveStatus = InvitationStatus.EXPIRED;
+        }
+        res.setStatus(effectiveStatus.name());
         res.setExpiresAt(invitation.getExpiresAt());
         if (invitation.getInvitedBy() != null) {
             try {

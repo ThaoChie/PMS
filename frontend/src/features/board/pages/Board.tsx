@@ -1,20 +1,65 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { RefreshCw, AlertCircle, Filter, User as UserIcon, Search, CheckCircle2 } from 'lucide-react';
+import {
+  RefreshCw,
+  AlertCircle,
+  User as UserIcon,
+  Search,
+  FolderKanban,
+  Mail,
+} from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
 import { useAuthStore } from '../../../store/authStore';
 import { toast } from '../../../store/toastStore';
 import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
 import { mapUserResponseToUser } from '../../../store/authStore';
-import type { Issue, IssueStatus, Role, WorkflowStatus } from '../../../types';
+import type { Issue, IssueStatus, Role, Screen, WorkflowStatus } from '../../../types';
 import KanbanColumn from '../components/KanbanColumn';
 
 interface BoardProps {
   role: Role;
   onSelectIssue: (id: string) => void;
+  onNavigate?: (screen: Screen) => void;
 }
 
-export default function Board({ role, onSelectIssue }: BoardProps) {
+function EmptyProjectBoardState({ onNavigate }: { onNavigate?: (screen: Screen) => void }) {
+  return (
+    <div className="h-full overflow-y-auto bg-white">
+      <div className="max-w-3xl mx-auto px-8 py-16">
+        <div className="py-16 px-8 text-center border border-[#E5E5E7] rounded-xl bg-white">
+          <div className="w-11 h-11 rounded-full bg-[#F7F7F8] border border-[#E5E5E7] flex items-center justify-center mx-auto mb-3 text-[#6B6B70]">
+            <FolderKanban className="w-5 h-5" />
+          </div>
+          <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">Chưa chọn dự án</h3>
+          <p className="text-xs text-[#6B6B70] max-w-md mx-auto leading-relaxed">
+            Bạn chưa tham gia hoặc chưa chọn dự án nào. Vui lòng chọn một dự án từ menu góc trên
+            bên trái, tạo dự án mới hoặc kiểm tra lời mời tham gia dự án.
+          </p>
+          {onNavigate && (
+            <div className="mt-5 flex items-center justify-center gap-2.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => onNavigate('projects')}
+                className="px-3.5 py-1.5 bg-[#1A1A1A] text-white text-xs font-medium rounded-lg hover:bg-black transition-colors inline-flex items-center gap-1.5"
+              >
+                <FolderKanban className="w-3.5 h-3.5" /> Danh sách dự án
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('invitations')}
+                className="px-3.5 py-1.5 border border-[#E5E5E7] text-[#1A1A1A] text-xs font-medium rounded-lg hover:bg-[#F7F7F8] transition-colors inline-flex items-center gap-1.5"
+              >
+                <Mail className="w-3.5 h-3.5" /> Lời mời dự án
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
   const { currentProject } = useProjectStore();
   const currentUser = useAuthStore((s) => s.user);
 
@@ -40,7 +85,7 @@ export default function Board({ role, onSelectIssue }: BoardProps) {
       const wfRes = await workflowService.getWorkflow(currentProject.id);
       const stList: WorkflowStatus[] = wfRes?.data?.statuses || [];
       if (stList.length > 0) {
-        setStatuses(stList.sort((a, b) => a.position - b.position));
+        setStatuses([...stList].sort((a, b) => a.position - b.position));
       } else {
         setStatuses([
           { id: '1', name: 'To Do', category: 'TODO', position: 0, isInitial: true },
@@ -196,6 +241,10 @@ export default function Board({ role, onSelectIssue }: BoardProps) {
       setDraggedIssue(null);
       isDroppingRef.current = false;
     }
+  }
+
+  if (!currentProject) {
+    return <EmptyProjectBoardState onNavigate={onNavigate} />;
   }
 
   return (

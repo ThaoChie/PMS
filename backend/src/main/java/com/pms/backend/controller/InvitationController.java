@@ -54,10 +54,21 @@ public class InvitationController {
 
     @GetMapping({"/api/invitations/mine", "/invitations/mine"})
     @PreAuthorize("isAuthenticated()")
-    public ApiResponse<List<InvitationResponse>> getMyInvitations() {
+    public ApiResponse<List<InvitationResponse>> getMyInvitations(
+            @RequestParam(name = "includeAll", defaultValue = "false") boolean includeAll) {
         User currentUser = getCurrentUser();
-        List<Invitation> invitations = invitationService.getMyInvitations(currentUser.getEmail());
+        List<Invitation> invitations = includeAll
+                ? invitationService.getAllMyInvitations(currentUser.getEmail())
+                : invitationService.getMyInvitations(currentUser.getEmail());
         return ApiResponse.success(invitations.stream().map(InvitationResponse::from).collect(Collectors.toList()));
+    }
+
+    @GetMapping({"/api/invitations/{id:\\d+}", "/invitations/{id:\\d+}"})
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<InvitationResponse> getInvitationById(@PathVariable Long id) {
+        User currentUser = getCurrentUser();
+        Invitation invitation = invitationService.getInvitationForRecipient(id, currentUser);
+        return ApiResponse.success(InvitationResponse.from(invitation));
     }
 
     @PostMapping({"/api/invitations/{id}/accept", "/invitations/{id}/accept"})
@@ -74,5 +85,14 @@ public class InvitationController {
         User currentUser = getCurrentUser();
         invitationService.declineInvitation(id, currentUser);
         return ApiResponse.success("Đã từ chối lời mời tham gia dự án");
+    }
+
+    @DeleteMapping({"/api/projects/{projectId}/invitations/{invitationId}", "/projects/{projectId}/invitations/{invitationId}"})
+    @PreAuthorize("@projectSecurity.isPmOrAdmin(#projectId)")
+    public ApiResponse<String> cancelInvitation(@PathVariable Long projectId,
+                                                @PathVariable Long invitationId) {
+        User currentUser = getCurrentUser();
+        invitationService.cancelInvitation(projectId, invitationId, currentUser);
+        return ApiResponse.success("Đã thu hồi lời mời tham gia dự án");
     }
 }

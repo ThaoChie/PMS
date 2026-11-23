@@ -49,4 +49,19 @@ class NotificationResponseJsonTest {
         OffsetDateTime parsed = OffsetDateTime.parse(createdAt);
         assertEquals(LocalDateTime.of(2026, 11, 14, 3, 0, 0), parsed.toLocalDateTime());
     }
+
+    @Test
+    void phanBietRawType_giuaInviteReceivedVaInviteResponded() throws Exception {
+        Notification received = sample(false);
+        received.setType(NotificationType.INVITE_RECEIVED);
+        JsonNode jsonReceived = mapper.readTree(mapper.writeValueAsString(NotificationResponse.from(received)));
+        assertEquals("invite", jsonReceived.get("type").asText());
+        assertEquals("INVITE_RECEIVED", jsonReceived.get("rawType").asText());
+
+        Notification responded = sample(false);
+        responded.setType(NotificationType.INVITE_RESPONDED);
+        JsonNode jsonResponded = mapper.readTree(mapper.writeValueAsString(NotificationResponse.from(responded)));
+        assertEquals("invite", jsonResponded.get("type").asText());
+        assertEquals("INVITE_RESPONDED", jsonResponded.get("rawType").asText());
+    }
 }

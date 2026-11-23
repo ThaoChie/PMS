@@ -11,6 +11,7 @@ public enum ErrorCode {
     PROJECT_KEY_EXISTS(HttpStatus.CONFLICT, "Project key already exists"),
     PROJECT_CLOSED(HttpStatus.CONFLICT, "Project is closed and cannot be modified"),
     MEMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "User is already a member of this project"),
+    INVITATION_ALREADY_PENDING(HttpStatus.CONFLICT, "Đã có lời mời đang chờ phản hồi cho email này"),
     LAST_PM_REMOVAL(HttpStatus.CONFLICT, "Cannot remove or demote the last Project Manager"),
     CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "Resource was modified concurrently"),
     UNPROCESSABLE_ENTITY(HttpStatus.UNPROCESSABLE_ENTITY, "Unprocessable entity"),
