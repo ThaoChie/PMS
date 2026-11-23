@@ -13,7 +13,7 @@ import { useNotificationStore } from '../../store/notificationStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useAuthStore } from '../../store/authStore';
 import { invitationService } from '../../services/invitationService';
-import type { NotificationType, Screen, ProjectInvitation } from '../../types';
+import type { Notification, NotificationType, Screen, ProjectInvitation } from '../../types';
 import { NotificationItem } from './NotificationItem';
 import InvitationFeedbackBanner from '../../components/common/InvitationFeedbackBanner';
 import { useNow } from '../../hooks/useNow';
@@ -22,9 +22,14 @@ import {
   buildDeepLinkInviteBanner,
   normalizeInvitationStatus,
   buildInvitationActionFeedback,
+  type InviteCardState,
   type DeepLinkInviteBanner,
   type InvitationActionFeedback,
 } from '../../utils/invitationStatus';
+import {
+  resolveNotificationTarget,
+  executeNotificationNavigation,
+} from '../../utils/notificationNavigation';
 
 const TYPE_LABELS: Record<NotificationType, string> = {
   mention: 'Nhắc đến',
@@ -233,6 +238,17 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
       setActionLoadingId(null);
     }
   };
+
+  const handleNotificationCardClick = useCallback(
+    (n: Notification, cardInviteState: InviteCardState) => {
+      markAsRead(n.id);
+      if (cardInviteState === 'NONE') {
+        const target = resolveNotificationTarget(n, 'center');
+        void executeNotificationNavigation(target, onNavigate);
+      }
+    },
+    [markAsRead, onNavigate],
+  );
 
   const filtered =
     activeFilter === 'all'
@@ -475,7 +491,7 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
                 >
                   <NotificationItem
                     notification={n}
-                    onRead={markAsRead}
+                    onRead={() => handleNotificationCardClick(n, cardInviteState)}
                     inviteStatus={cardInviteState}
                     onAcceptInvite={
                       cardInviteState === 'PENDING'
