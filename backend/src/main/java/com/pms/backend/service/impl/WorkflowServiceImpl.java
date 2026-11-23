@@ -30,6 +30,8 @@ public class WorkflowServiceImpl implements IWorkflowService {
     private final IAuditService auditService;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private IWatcherService watcherService;
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
 
     public WorkflowServiceImpl(WorkflowStatusRepository statusRepository,
                            WorkflowTransitionRepository transitionRepository,
@@ -109,19 +111,59 @@ public class WorkflowServiceImpl implements IWorkflowService {
                 .map(WorkflowStatusDto::getId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-
+        Map<String, WorkflowStatus> currentByName = new HashMap<>();
         for (WorkflowStatus curr : currentStatuses) {
-            if (!incomingStatusIds.contains(curr.getId())) {
+            if (curr.getName() != null) {
+                currentByName.putIfAbsent(curr.getName().trim().toLowerCase(), curr);
+            }
+        }
+        Set<String> incomingNamesLower = newStatuses.stream()
+                .map(s -> s.getName().trim().toLowerCase())
+                .collect(Collectors.toSet());
+
+        List<WorkflowStatus> statusesToDelete = new ArrayList<>();
+        for (WorkflowStatus curr : currentStatuses) {
+            boolean keptById = incomingStatusIds.contains(curr.getId());
+            boolean keptByName = curr.getName() != null
+                    && incomingNamesLower.contains(curr.getName().trim().toLowerCase());
+            if (!keptById && !keptByName) {
                 long activeCount = issueRepository.countByStatusIdAndDeletedAtIsNull(curr.getId());
                 if (activeCount > 0) {
                     throw new BusinessException(ErrorCode.CONFLICT,
                             "Cannot delete status '" + curr.getName() + "' because it has " + activeCount + " active issue(s)");
                 }
+                if (entityManager != null && curr.getId() != null) {
+                    Long historyRefs = entityManager.createQuery(
+                                    "SELECT COUNT(h) FROM IssueStatusHistory h WHERE h.fromStatus.id = :sid OR h.toStatus.id = :sid",
+                                    Long.class)
+                            .setParameter("sid", curr.getId())
+                            .getSingleResult();
+                    if (historyRefs != null && historyRefs > 0) {
+                        throw new BusinessException(ErrorCode.CONFLICT,
+                                "Cannot delete status '" + curr.getName() + "' because it is referenced in issue history");
+                    }
+                }
+                statusesToDelete.add(curr);
             }
         }
 
-        // Delete existing transitions
+        // Delete existing transitions before removing unused statuses
         transitionRepository.deleteByProjectId(projectId);
+        transitionRepository.flush();
+        if (!statusesToDelete.isEmpty()) {
+            if (entityManager != null) {
+                for (WorkflowStatus del : statusesToDelete) {
+                    if (del.getId() != null) {
+                        entityManager.createQuery(
+                                        "UPDATE Issue i SET i.status = NULL WHERE i.status.id = :sid AND i.deletedAt IS NOT NULL")
+                                .setParameter("sid", del.getId())
+                                .executeUpdate();
+                    }
+                }
+            }
+            statusRepository.deleteAll(statusesToDelete);
+            statusRepository.flush();
+        }
 
         // Map existing statuses or create new ones
         Map<String, WorkflowStatus> statusMapByName = new HashMap<>();
@@ -133,7 +175,7 @@ public class WorkflowServiceImpl implements IWorkflowService {
             if (dto.getId() != null) {
                 status = statusRepository.findById(dto.getId()).orElse(new WorkflowStatus());
             } else {
-                status = new WorkflowStatus();
+                status = currentByName.getOrDefault(dto.getName().trim().toLowerCase(), new WorkflowStatus());
             }
             status.setProject(project);
             status.setName(dto.getName().trim());
