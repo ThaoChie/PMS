@@ -275,7 +275,7 @@ public class InvitationServiceImpl implements IInvitationService {
                     List.of(invitation.getInvitedBy()),
                     user.getFullName() + " đã chấp nhận lời mời",
                     user.getFullName() + " đã đồng ý tham gia dự án " + project.getName(),
-                    "/projects/" + project.getId() + "/settings/members",
+                    "/projects/" + project.getId() + "/members",
                     String.valueOf(project.getId()),
                     user
             );
@@ -308,7 +308,7 @@ public class InvitationServiceImpl implements IInvitationService {
                     List.of(invitation.getInvitedBy()),
                     user.getFullName() + " đã từ chối lời mời",
                     user.getFullName() + " đã từ chối tham gia dự án " + invitation.getProject().getName(),
-                    "/projects/" + invitation.getProject().getId() + "/settings/members",
+                    "/projects/" + invitation.getProject().getId() + "/members",
                     String.valueOf(invitation.getProject().getId()),
                     user
             );

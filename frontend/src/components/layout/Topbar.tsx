@@ -17,6 +17,10 @@ import { formatRelativeTime } from '../../utils/date';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useNow } from '../../hooks/useNow';
 import { useUIStore } from '../../store/uiStore';
+import {
+  resolveNotificationTarget,
+  executeNotificationNavigation,
+} from '../../utils/notificationNavigation';
 
 interface TopbarProps {
   role?: Role;
@@ -160,16 +164,8 @@ export default function Topbar({
                       onClick={() => {
                         markAsRead(n.id);
                         setNotifOpen(false);
-                        if (n.type === 'invite') {
-                          onNavigate('invitations');
-                        } else if ((n.type as string).toUpperCase() === 'APPROVAL' || n.title?.toLowerCase().includes('phê duyệt') || n.title?.toLowerCase().includes('yêu cầu')) {
-                          onNavigate('approvals' as Screen);
-                        } else if (n.sourceId) {
-                          window.history.pushState({}, '', `/issues/${n.sourceId}`);
-                          window.dispatchEvent(new PopStateEvent('popstate'));
-                        } else {
-                          onNavigate('board');
-                        }
+                        const target = resolveNotificationTarget(n, 'bell');
+                        void executeNotificationNavigation(target, onNavigate);
                       }}
                     >
                       <div className="w-7 h-7 rounded-full bg-[#F7F7F8] border border-[#E5E5E7] flex items-center justify-center shrink-0 mt-0.5">
