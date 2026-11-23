@@ -17,8 +17,13 @@ export const invitationService = {
     );
   },
 
-  async getMyInvitations(): Promise<ApiResponse<ProjectInvitation[]>> {
-    return axiosClient.get<any, ApiResponse<ProjectInvitation[]>>('/invitations/mine');
+  async getMyInvitations(includeAll: boolean = false): Promise<ApiResponse<ProjectInvitation[]>> {
+    const suffix = includeAll ? '?includeAll=true' : '';
+    return axiosClient.get<any, ApiResponse<ProjectInvitation[]>>(`/invitations/mine${suffix}`);
+  },
+
+  async getInvitationById(invitationId: string): Promise<ApiResponse<ProjectInvitation>> {
+    return axiosClient.get<any, ApiResponse<ProjectInvitation>>(`/invitations/${invitationId}`);
   },
 
   async acceptInvitation(invitationId: string): Promise<ApiResponse<void>> {
@@ -27,5 +32,11 @@ export const invitationService = {
 
   async declineInvitation(invitationId: string): Promise<ApiResponse<void>> {
     return axiosClient.post<any, ApiResponse<void>>(`/invitations/${invitationId}/decline`);
+  },
+
+  async cancelInvitation(projectId: string, invitationId: string): Promise<ApiResponse<string>> {
+    return axiosClient.delete<any, ApiResponse<string>>(
+      `/projects/${projectId}/invitations/${invitationId}`,
+    );
   },
 };

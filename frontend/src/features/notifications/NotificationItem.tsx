@@ -1,7 +1,8 @@
 import React from 'react';
-import { AtSign, User, CheckCircle2, AlertCircle, FolderKanban } from 'lucide-react';
+import { AtSign, User, CheckCircle2, AlertCircle, FolderKanban, Ban, Clock, XCircle } from 'lucide-react';
 import type { NotificationItem as NotificationModel, NotificationType } from '../../types';
 import { formatRelativeTime } from '../../utils/date';
+import type { InviteCardState } from '../../utils/invitationStatus';
 
 export function NotifIcon({ type }: { type: NotificationType }) {
   const cls = 'w-3.5 h-3.5 text-[#6B6B70]';
@@ -13,8 +14,8 @@ export function NotifIcon({ type }: { type: NotificationType }) {
 }
 
 /** Giữ tên cũ cho nơi khác đang import; dùng chung hàm chuẩn trong utils/date. */
-export function formatRelTime(iso: string) {
-  return formatRelativeTime(iso);
+export function formatRelTime(iso: string, now?: number) {
+  return formatRelativeTime(iso, now);
 }
 
 interface NotificationItemProps {
@@ -24,11 +25,27 @@ interface NotificationItemProps {
   onDeclineInvite?: (invitationId: string, notifId: string) => void;
   onNavigateInvitations?: () => void;
   onOpenProject?: () => void;
+  inviteStatus?: InviteCardState;
   isInvitePending?: boolean;
   isInviteAccepted?: boolean;
   isInviteDeclined?: boolean;
   isActionLoading?: boolean;
   compact?: boolean;
+  now?: number;
+}
+
+function resolveEffectiveInviteState(props: {
+  inviteStatus?: InviteCardState;
+  isInviteAccepted?: boolean;
+  isInviteDeclined?: boolean;
+  isInvitePending?: boolean;
+  hasAcceptHandler: boolean;
+}): InviteCardState {
+  if (props.inviteStatus) return props.inviteStatus;
+  if (props.isInviteAccepted) return 'ACCEPTED';
+  if (props.isInviteDeclined) return 'DECLINED';
+  if (props.isInvitePending === true && props.hasAcceptHandler) return 'PENDING';
+  return 'NONE';
 }
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({
@@ -38,13 +55,22 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   onDeclineInvite,
   onNavigateInvitations,
   onOpenProject,
+  inviteStatus,
   isInvitePending,
   isInviteAccepted = false,
   isInviteDeclined = false,
   isActionLoading = false,
   compact = false,
+  now,
 }) => {
   const invitationId = n.sourceId || (n as any).data || n.id;
+  const effectiveState = resolveEffectiveInviteState({
+    inviteStatus,
+    isInviteAccepted,
+    isInviteDeclined,
+    isInvitePending,
+    hasAcceptHandler: Boolean(onAcceptInvite),
+  });
 
   return (
     <div
@@ -62,17 +88,17 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             {n.title}
           </p>
           <span className="text-[10px] text-[#9B9B9F] shrink-0 mt-0.5">
-            {formatRelTime(n.createdAt)}
+            {formatRelTime(n.createdAt, now)}
           </span>
         </div>
         <p className={`text-xs text-[#6B6B70] mt-0.5 line-clamp-2 ${compact ? 'text-[11px]' : ''}`}>
           {n.description}
         </p>
 
-        {n.type === 'invite' && (
+        {n.type === 'invite' && effectiveState !== 'NONE' && (
           <div className="mt-2.5">
-            {isInviteAccepted ? (
-              <div className="flex items-center gap-2">
+            {effectiveState === 'ACCEPTED' && (
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-lg border border-emerald-200">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Đã tham gia dự án
                 </span>
@@ -89,11 +115,27 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                   </button>
                 )}
               </div>
-            ) : isInviteDeclined ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
-                Đã từ chối lời mời
+            )}
+
+            {effectiveState === 'DECLINED' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg border border-gray-200">
+                <XCircle className="w-3.5 h-3.5" /> Đã từ chối lời mời
               </span>
-            ) : isInvitePending !== false ? (
+            )}
+
+            {effectiveState === 'CANCELLED' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-800 text-xs font-medium rounded-lg border border-amber-200">
+                <Ban className="w-3.5 h-3.5" /> Lời mời đã được quản lý dự án thu hồi
+              </span>
+            )}
+
+            {effectiveState === 'EXPIRED' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg border border-gray-200">
+                <Clock className="w-3.5 h-3.5" /> Lời mời đã hết hạn
+              </span>
+            )}
+
+            {effectiveState === 'PENDING' && onAcceptInvite && (
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -101,22 +143,24 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                   className="px-3 py-1 bg-[#16A34A] text-white text-xs font-medium rounded-lg hover:bg-[#15803D] disabled:opacity-50 transition-colors flex items-center gap-1.5 shadow-xs"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onAcceptInvite?.(invitationId, n.id);
+                    onAcceptInvite(invitationId, n.id);
                   }}
                 >
                   {isActionLoading ? 'Đang xử lý…' : 'Chấp nhận'}
                 </button>
-                <button
-                  type="button"
-                  disabled={isActionLoading}
-                  className="px-3 py-1 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] disabled:opacity-50 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeclineInvite?.(invitationId, n.id);
-                  }}
-                >
-                  Từ chối
-                </button>
+                {onDeclineInvite && (
+                  <button
+                    type="button"
+                    disabled={isActionLoading}
+                    className="px-3 py-1 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] disabled:opacity-50 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeclineInvite(invitationId, n.id);
+                    }}
+                  >
+                    Từ chối
+                  </button>
+                )}
                 {onNavigateInvitations && (
                   <button
                     type="button"
@@ -130,7 +174,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                   </button>
                 )}
               </div>
-            ) : null}
+            )}
           </div>
         )}
       </div>

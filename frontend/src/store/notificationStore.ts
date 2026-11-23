@@ -62,13 +62,19 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   markAsRead: async (id: string) => {
+    const existing = get().notifications.find((n) => n.id === id);
+    if (existing?.isRead) {
+      return;
+    }
     set((state) => {
+      const target = state.notifications.find((n) => n.id === id);
+      const shouldDecrement = target ? !target.isRead : true;
       const updated = state.notifications.map((n) =>
         n.id === id ? { ...n, isRead: true } : n,
       );
       return {
         notifications: updated,
-        unreadCount: Math.max(0, state.unreadCount - 1),
+        unreadCount: shouldDecrement ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
       };
     });
     try {
