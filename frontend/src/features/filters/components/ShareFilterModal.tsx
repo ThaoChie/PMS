@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Share2 } from 'lucide-react';
 import type { User } from '../../../types';
 import UserAvatar from '../../../components/common/UserAvatar';
@@ -7,6 +7,7 @@ interface ShareFilterModalProps {
   isOpen: boolean;
   filterName: string;
   users: User[];
+  initialUserIds?: string[];
   onClose: () => void;
   onShare: (userIds: string[]) => void;
 }
@@ -15,10 +16,17 @@ export default function ShareFilterModal({
   isOpen,
   filterName,
   users,
+  initialUserIds = [],
   onClose,
   onShare,
 }: ShareFilterModalProps) {
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>(initialUserIds);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedUsers(initialUserIds || []);
+    }
+  }, [isOpen, initialUserIds]);
 
   if (!isOpen) return null;
 
@@ -51,30 +59,36 @@ export default function ShareFilterModal({
             Chọn các thành viên bạn muốn chia sẻ bộ lọc này:
           </p>
           <div className="max-h-56 overflow-y-auto space-y-1 border border-[#E5E5E7] rounded-lg p-2">
-            {users.map((u) => {
-              const isSelected = selectedUsers.includes(u.id);
-              return (
-                <div
-                  key={u.id}
-                  onClick={() => toggleUser(u.id)}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-                    isSelected ? 'bg-[#FDECEC]' : 'hover:bg-[#F7F7F8]'
-                  }`}
-                >
-                  <UserAvatar initials={u.initials} size="xs" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-[#1A1A1A] truncate">{u.name}</p>
-                    <p className="text-[10px] text-[#6B6B70] truncate">{u.email}</p>
+            {users.length === 0 ? (
+              <p className="text-xs text-center text-[#9B9B9F] py-4">
+                Không có thành viên nào khác trong dự án
+              </p>
+            ) : (
+              users.map((u) => {
+                const isSelected = selectedUsers.includes(u.id);
+                return (
+                  <div
+                    key={u.id}
+                    onClick={() => toggleUser(u.id)}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                      isSelected ? 'bg-[#FDECEC]' : 'hover:bg-[#F7F7F8]'
+                    }`}
+                  >
+                    <UserAvatar initials={u.initials} size="xs" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-[#1A1A1A] truncate">{u.name}</p>
+                      <p className="text-[10px] text-[#6B6B70] truncate">{u.email}</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {}}
+                      className="rounded text-[#E53E3E]"
+                    />
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => {}}
-                    className="rounded text-[#E53E3E]"
-                  />
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-2">
@@ -90,7 +104,7 @@ export default function ShareFilterModal({
               onClick={handleConfirm}
               className="px-4 py-1.5 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030]"
             >
-              Chia sẻ
+              Lưu chia sẻ ({selectedUsers.length})
             </button>
           </div>
         </div>

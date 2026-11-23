@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Mail } from 'lucide-react';
 
 interface SubscribeModalProps {
@@ -17,6 +17,12 @@ export default function SubscribeModal({
   onSubscribe,
 }: SubscribeModalProps) {
   const [frequency, setFrequency] = useState<'daily' | 'weekly'>(initialFrequency);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFrequency(initialFrequency);
+    }
+  }, [isOpen, initialFrequency]);
 
   if (!isOpen) return null;
 
