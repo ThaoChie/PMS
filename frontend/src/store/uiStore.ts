@@ -3,6 +3,7 @@ import type { Screen } from '../types';
 
 interface UIState {
   isSidebarCollapsed: boolean;
+  isMobileSidebarOpen: boolean;
   currentScreen: Screen;
   selectedIssueId: string | null;
   showCreateIssue: boolean;
@@ -10,6 +11,8 @@ interface UIState {
   showQuickSearch: boolean;
 
   toggleSidebar: () => void;
+  setMobileSidebarOpen: (open: boolean) => void;
+  toggleMobileSidebar: () => void;
   setCurrentScreen: (screen: Screen) => void;
   setSelectedIssueId: (id: string | null) => void;
   setShowCreateIssue: (show: boolean) => void;
@@ -19,6 +22,7 @@ interface UIState {
 
 export const useUIStore = create<UIState>((set) => ({
   isSidebarCollapsed: false,
+  isMobileSidebarOpen: false,
   currentScreen: 'board',
   selectedIssueId: null,
   showCreateIssue: false,
@@ -26,7 +30,9 @@ export const useUIStore = create<UIState>((set) => ({
   showQuickSearch: false,
 
   toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
-  setCurrentScreen: (currentScreen) => set({ currentScreen, selectedIssueId: null }),
+  setMobileSidebarOpen: (isMobileSidebarOpen) => set({ isMobileSidebarOpen }),
+  toggleMobileSidebar: () => set((state) => ({ isMobileSidebarOpen: !state.isMobileSidebarOpen })),
+  setCurrentScreen: (currentScreen) => set({ currentScreen, selectedIssueId: null, isMobileSidebarOpen: false }),
   setSelectedIssueId: (selectedIssueId) => set({ selectedIssueId }),
   setShowCreateIssue: (showCreateIssue) => set({ showCreateIssue }),
   setShowCreateProject: (showCreateProject) => set({ showCreateProject }),

@@ -245,11 +245,11 @@ export default function Members({ role }: MembersProps) {
 
   return (
     <div className="h-full overflow-y-auto bg-white">
-      <div className="max-w-4xl mx-auto px-8 py-10">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-xl font-bold text-[#1A1A1A]">Thành viên & Vai trò</h1>
-            <p className="text-sm text-[#6B6B70] mt-0.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1A1A1A]">Thành viên & Vai trò</h1>
+            <p className="text-xs sm:text-sm text-[#6B6B70] mt-0.5 leading-relaxed">
               {members.filter((m) => m.status === 'Active').length} thành viên đang hoạt động ·{' '}
               {members.filter((m) => m.status === 'Pending').length} lời mời đang chờ
             </p>
@@ -258,7 +258,7 @@ export default function Members({ role }: MembersProps) {
             <button
               type="button"
               onClick={() => setShowInvite(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2.5 min-h-[44px] bg-[#E53E3E] text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-[#C53030] transition-colors shrink-0 self-start sm:self-auto"
             >
               <Plus className="w-3.5 h-3.5" /> Mời thành viên
             </button>

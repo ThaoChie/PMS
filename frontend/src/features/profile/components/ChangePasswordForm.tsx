@@ -115,7 +115,7 @@ export default function ChangePasswordForm({ onSuccess }: ChangePasswordFormProp
   }
 
   return (
-    <div className="bg-white border border-[#E5E5E7] rounded-xl p-6">
+    <div className="bg-white border border-[#E5E5E7] rounded-xl p-4 sm:p-6">
       <h2 className="text-sm font-semibold text-[#1A1A1A] mb-1">Đổi mật khẩu</h2>
       <p className="text-xs text-[#6B6B70] mb-5">
         Mật khẩu mới cần tối thiểu 6 ký tự. Nên kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt.
@@ -169,11 +169,11 @@ export default function ChangePasswordForm({ onSuccess }: ChangePasswordFormProp
             <p className="text-xs text-[#E53E3E]">{pwError}</p>
           </div>
         )}
-        <div className="flex items-center gap-3 pt-1">
+        <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 bg-[#1A1A1A] text-white text-xs font-medium rounded-lg hover:bg-[#333] disabled:opacity-60 transition-colors cursor-pointer"
+            className="px-4 py-2 min-h-[44px] bg-[#1A1A1A] text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-[#333] disabled:opacity-60 transition-colors cursor-pointer"
           >
             {loading ? 'Đang cập nhật…' : 'Cập nhật mật khẩu'}
           </button>

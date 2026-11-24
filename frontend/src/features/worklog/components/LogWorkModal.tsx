@@ -70,14 +70,20 @@ export default function LogWorkModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 modal-backdrop">
       <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden border border-[#E5E5E7]">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E5E7]">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-[#E5E5E7]">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-[#E53E3E]" />
             <h3 className="text-sm font-semibold text-[#1A1A1A]">
               {MESSAGES.WORKLOG.LOG_BUTTON} — {issueKey}
             </h3>
           </div>
-          <button type="button" onClick={onClose} disabled={submitting} className="text-[#9B9B9F] hover:text-[#1A1A1A]">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="w-10 h-10 flex items-center justify-center rounded-lg text-[#9B9B9F] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
+            aria-label="Đóng"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -128,19 +134,19 @@ export default function LogWorkModal({
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E5E7]">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E5E5E7]">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 border border-[#E5E5E7] rounded-lg text-xs font-medium text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors disabled:opacity-50"
+              className="px-4 py-2 min-h-[44px] border border-[#E5E5E7] rounded-lg text-xs sm:text-sm font-medium text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors disabled:opacity-50"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 bg-[#E53E3E] text-white rounded-lg text-xs font-medium hover:bg-[#C53030] transition-colors disabled:opacity-50"
+              className="px-4 py-2 min-h-[44px] bg-[#E53E3E] text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-[#C53030] transition-colors disabled:opacity-50"
             >
               {submitting ? 'Đang ghi nhận…' : 'Ghi nhận'}
             </button>

@@ -102,33 +102,34 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 flex items-start justify-center z-50 pt-20 px-4 modal-backdrop"
+      className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 pt-10 sm:pt-20 p-3 sm:p-4 modal-backdrop"
       onClick={onClose}
     >
       <div
-        className="bg-white border border-[#E5E5E7] rounded-xl w-full max-w-xl shadow-xl overflow-hidden"
+        className="bg-white border border-[#E5E5E7] rounded-xl w-full max-w-xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#E5E5E7]">
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#E5E5E7] shrink-0">
           <Search className="w-4 h-4 text-[#9B9B9F] shrink-0" />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Tìm kiếm công việc, dự án…"
-            className="flex-1 text-sm text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none"
+            className="flex-1 text-sm sm:text-base text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="text-[#9B9B9F] hover:text-[#1A1A1A]"
+              className="w-9 h-9 flex items-center justify-center text-[#9B9B9F] hover:text-[#1A1A1A] rounded-lg transition-colors"
+              aria-label="Xóa từ khóa"
             >
               <X className="w-4 h-4" />
             </button>
           )}
-          <kbd className="text-[10px] text-[#9B9B9F] border border-[#E5E5E7] rounded px-1.5 py-0.5 shrink-0">
+          <kbd className="text-[10px] text-[#9B9B9F] border border-[#E5E5E7] rounded px-1.5 py-0.5 shrink-0 hidden sm:inline-block">
             Esc
           </kbd>
         </div>

@@ -6,6 +6,7 @@ import UserAvatar, { Avatar } from '../common/UserAvatar';
 import { useProjectStore } from '../../store/projectStore';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import { useUIStore } from '../../store/uiStore';
 import { useNotificationPolling } from '../../hooks/useNotificationPolling';
 
 interface AppShellProps {
@@ -44,6 +45,7 @@ export default function AppShell({
   const { projects: storeProjects, currentProject, setCurrentProject } = useProjectStore();
   const { user: authUser } = useAuthStore();
   const { notifications: storeNotifications, markAsRead, markAllAsRead } = useNotificationStore();
+  const { isMobileSidebarOpen, setMobileSidebarOpen } = useUIStore();
 
   // Tải thông báo nền mỗi 20 giây + ngay khi quay lại tab (gần thời gian thực)
   useNotificationPolling(20000);
@@ -69,7 +71,16 @@ export default function AppShell({
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div className="flex h-screen overflow-hidden bg-white w-full max-w-full relative">
+      {/* Mobile Sidebar Backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300"
+          onClick={() => setMobileSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar */}
       <Sidebar
         currentScreen={currentScreen}
@@ -77,14 +88,23 @@ export default function AppShell({
         user={currentUser}
         projects={projects}
         selectedProject={selectedProject}
-        onNavigate={onNavigate}
-        onSelectProject={handleSelectProject}
-        onCreateProject={propOnCreateProject}
+        onNavigate={(screen) => {
+          setMobileSidebarOpen(false);
+          onNavigate(screen);
+        }}
+        onSelectProject={(project) => {
+          setMobileSidebarOpen(false);
+          handleSelectProject(project);
+        }}
+        onCreateProject={() => {
+          setMobileSidebarOpen(false);
+          if (propOnCreateProject) propOnCreateProject();
+        }}
         onLogout={onLogout}
       />
 
       {/* Main container */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full overflow-hidden">
         {/* Topbar */}
         <Topbar
           role={role}
@@ -98,7 +118,7 @@ export default function AppShell({
         />
 
         {/* Page Content */}
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-hidden relative">
           {children}
         </main>
       </div>

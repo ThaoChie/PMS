@@ -346,12 +346,15 @@ export default function IssueDetailDrawer({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/20 z-30" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 z-40 transition-opacity duration-200" onClick={onClose} />
 
       {/* Drawer */}
-      <div id="issue-detail-drawer" className="fixed right-0 top-14 bottom-0 w-[440px] bg-white border-l border-[#E5E5E7] z-40 flex flex-col issue-drawer shadow-xl">
+      <div
+        id="issue-detail-drawer"
+        className="fixed right-0 top-0 md:top-14 bottom-0 w-full sm:w-[480px] md:w-[520px] max-w-full bg-white border-l border-[#E5E5E7] z-50 flex flex-col issue-drawer shadow-2xl"
+      >
         {/* Header */}
-        <div className="px-5 py-3 border-b border-[#E5E5E7] flex items-start gap-3 shrink-0">
+        <div className="px-4 sm:px-5 py-3 border-b border-[#E5E5E7] flex items-start gap-2 sm:gap-3 shrink-0">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="text-[11px] font-mono text-[#9B9B9F] font-semibold">{issue.key}</span>
@@ -361,7 +364,7 @@ export default function IssueDetailDrawer({
                 <button
                   type="button"
                   onClick={() => setShowTypeMenu((s) => !s)}
-                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded border flex items-center gap-1 transition-colors cursor-pointer hover:border-[#1A1A1A] ${
+                  className={`text-[10px] font-medium px-2 py-1 rounded border flex items-center gap-1 transition-colors cursor-pointer hover:border-[#1A1A1A] ${
                     issue.type === 'Bug' || issue.type === 'BUG'
                       ? 'text-[#E53E3E] bg-[#FDECEC] border-[#E53E3E]/20'
                       : 'text-[#6B6B70] bg-[#F7F7F8] border-[#E5E5E7]'
@@ -373,7 +376,7 @@ export default function IssueDetailDrawer({
                 </button>
 
                 {showTypeMenu && (
-                  <div className="absolute top-6 left-0 bg-white border border-[#E5E5E7] rounded-lg shadow-lg z-30 py-1 min-w-[120px]">
+                  <div className="absolute top-7 left-0 bg-white border border-[#E5E5E7] rounded-lg shadow-lg z-30 py-1 min-w-[130px]">
                     {(['TASK', 'BUG', 'STORY', 'EPIC'] as const).map((t) => (
                       <button
                         key={t}
@@ -384,7 +387,7 @@ export default function IssueDetailDrawer({
                             await handleInlineUpdate({ type: t });
                           }
                         }}
-                        className={`w-full text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F8] transition-colors ${
+                        className={`w-full text-left px-3 py-2 text-xs sm:text-sm hover:bg-[#F7F7F8] transition-colors ${
                           issue.type === t ? 'font-semibold text-[#1A1A1A] bg-[#F0F0F1]' : 'text-[#6B6B70]'
                         }`}
                       >
@@ -412,7 +415,7 @@ export default function IssueDetailDrawer({
                   }
                 }}
                 onBlur={handleSaveSummary}
-                className="text-sm font-semibold text-[#1A1A1A] w-full border border-[#1A1A1A] rounded px-2 py-1 focus:outline-none bg-white shadow-inner"
+                className="text-sm sm:text-base font-semibold text-[#1A1A1A] w-full border border-[#1A1A1A] rounded-lg px-2.5 py-1.5 focus:outline-none bg-white shadow-inner"
               />
             ) : (
               <h3
@@ -420,7 +423,7 @@ export default function IssueDetailDrawer({
                   setSummaryValue(issue.summary);
                   setEditingSummary(true);
                 }}
-                className="text-sm font-semibold text-[#1A1A1A] leading-snug hover:bg-[#F0F0F1] -mx-1 px-1 py-0.5 rounded cursor-pointer transition-colors group flex items-start justify-between gap-2"
+                className="text-sm sm:text-base font-semibold text-[#1A1A1A] leading-snug hover:bg-[#F0F0F1] -mx-1 px-1 py-1 rounded cursor-pointer transition-colors group flex items-start justify-between gap-2"
                 title="Nhấp để sửa tóm tắt công việc"
               >
                 <span className="flex-1">{issue.summary}</span>
@@ -429,7 +432,7 @@ export default function IssueDetailDrawer({
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 pt-0.5">
             <button
               type="button"
               onClick={() => {
@@ -439,12 +442,12 @@ export default function IssueDetailDrawer({
                   handleStartEdit();
                 }
               }}
-              className={`p-1 rounded transition-colors ${
-                isEditing ? 'bg-[#1A1A1A] text-white' : 'text-[#9B9B9F] hover:text-[#1A1A1A] hover:bg-[#F7F7F8]'
+              className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg transition-colors ${
+                isEditing ? 'bg-[#1A1A1A] text-white' : 'text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8]'
               }`}
               title={isEditing ? 'Hủy chỉnh sửa đầy đủ' : 'Mở biểu mẫu chỉnh sửa đầy đủ'}
             >
-              <Pencil className="w-3.5 h-3.5" />
+              <Pencil className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -454,59 +457,60 @@ export default function IssueDetailDrawer({
                 setCopiedLink(true);
                 setTimeout(() => setCopiedLink(false), 2000);
               }}
-              className={`p-1 rounded transition-colors ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg transition-colors ${
                 copiedLink
                   ? 'text-emerald-600 bg-emerald-50'
-                  : 'text-[#9B9B9F] hover:text-[#1A1A1A] hover:bg-[#F7F7F8]'
+                  : 'text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8]'
               }`}
               title={copiedLink ? 'Đã sao chép liên kết!' : 'Sao chép liên kết công việc'}
             >
-              {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             </button>
             <button
               type="button"
               onClick={() => {
                 window.open(`/issues/${issue.key}`, '_blank');
               }}
-              className="text-[#9B9B9F] hover:text-[#1A1A1A] p-1 rounded hover:bg-[#F7F7F8] transition-colors"
+              className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#6B6B70] hover:text-[#1A1A1A] rounded-lg hover:bg-[#F7F7F8] transition-colors"
               title="Mở trong trang riêng"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
+              <ExternalLink className="w-4 h-4" />
             </button>
             {canConvert && (
               <button
                 type="button"
                 onClick={() => setShowConvertModal(true)}
-                className="text-[#9B9B9F] hover:text-purple-600 p-1 rounded hover:bg-[#F7F7F8] transition-colors"
+                className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#6B6B70] hover:text-purple-600 rounded-lg hover:bg-[#F7F7F8] transition-colors"
                 title={isSubtask ? "Tách thành công việc độc lập" : "Chuyển thành Subtask"}
               >
-                <GitFork className="w-3.5 h-3.5" />
+                <GitFork className="w-4 h-4" />
               </button>
             )}
             <button
               type="button"
               onClick={() => setShowShareModal(true)}
-              className="text-[#9B9B9F] hover:text-[#1A1A1A] p-1 rounded hover:bg-[#F7F7F8] transition-colors"
+              className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#6B6B70] hover:text-[#1A1A1A] rounded-lg hover:bg-[#F7F7F8] transition-colors"
               title="Chia sẻ issue"
             >
-              <Share2 className="w-3.5 h-3.5" />
+              <Share2 className="w-4 h-4" />
             </button>
             {canDelete && (
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="text-[#9B9B9F] hover:text-[#E53E3E] p-1 rounded hover:bg-[#F7F7F8] transition-colors"
+                className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#6B6B70] hover:text-[#E53E3E] rounded-lg hover:bg-[#F7F7F8] transition-colors"
                 title={isSubtask ? "Xóa subtask" : "Xóa công việc"}
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
               </button>
             )}
             <button
               type="button"
               onClick={onClose}
-              className="text-[#9B9B9F] hover:text-[#1A1A1A] p-1 rounded hover:bg-[#F7F7F8] transition-colors"
+              className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center text-[#6B6B70] hover:text-[#1A1A1A] rounded-lg hover:bg-[#F7F7F8] transition-colors ml-0.5"
+              aria-label="Đóng chi tiết công việc"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>

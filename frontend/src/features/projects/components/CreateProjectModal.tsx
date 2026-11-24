@@ -196,21 +196,22 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 modal-backdrop px-4"
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 modal-backdrop p-3 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white border border-[#E5E5E7] rounded-xl w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto"
+        className="bg-white border border-[#E5E5E7] rounded-xl w-full max-w-md shadow-2xl max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E5E7]">
-          <h2 className="text-sm font-semibold text-[#1A1A1A]">Tạo dự án mới</h2>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#E5E5E7]">
+          <h2 className="text-sm sm:text-base font-semibold text-[#1A1A1A]">Tạo dự án mới</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-[#9B9B9F] hover:text-[#1A1A1A] transition-colors"
+            aria-label="Đóng biểu mẫu tạo dự án"
+            className="w-11 h-11 flex items-center justify-center rounded-lg text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5 sm:w-4 sm:h-4" />
           </button>
         </div>
 
@@ -422,18 +423,18 @@ export default function CreateProjectModal({ onClose, onSubmitSuccess }: CreateP
               </div>
             </div>
 
-            <div className="flex items-center gap-3 pt-2 justify-end">
+            <div className="flex items-center gap-3 pt-3 justify-end">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
+                className="px-4 py-2 min-h-[44px] border border-[#E5E5E7] text-xs sm:text-sm text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={saving || !name.trim() || !key.trim() || !!keyWarning}
-                className="px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 min-h-[44px] bg-[#E53E3E] text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {saving ? 'Đang tạo…' : 'Tạo dự án'}
               </button>

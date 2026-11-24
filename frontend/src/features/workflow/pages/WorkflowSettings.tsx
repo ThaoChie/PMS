@@ -202,25 +202,26 @@ export default function WorkflowSettings() {
 
   return (
     <div className="h-full overflow-y-auto bg-[#FAFAFA]">
-      <div className="max-w-5xl mx-auto px-8 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-6 sm:px-6 sm:py-8 md:px-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-xl font-bold text-[#1A1A1A] flex items-center gap-2">
-              <GitBranch className="w-5 h-5 text-[#1A1A1A]" />
-              Cấu hình quy trình làm việc (Workflow Engine)
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1A1A1A] flex items-center gap-2">
+              <GitBranch className="w-5 h-5 text-[#1A1A1A] shrink-0" />
+              <span>Cấu hình quy trình làm việc</span>
             </h1>
-            <p className="text-xs text-[#6B6B70] mt-1">
+            <p className="text-xs sm:text-sm text-[#6B6B70] mt-1 leading-relaxed">
               Định nghĩa vòng đời trạng thái, ma trận chuyển tiếp hợp lệ và bước duyệt bắt buộc cho dự án{' '}
               <span className="font-semibold text-[#1A1A1A]">{currentProject?.name}</span>
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
             <button
               id="btn-refresh-workflow"
               type="button"
               onClick={loadWorkflow}
-              className="p-2 border border-[#E5E5E7] text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
+              aria-label="Làm mới quy trình"
+              className="w-11 h-11 flex items-center justify-center border border-[#E5E5E7] text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
               title="Làm mới"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -230,7 +231,7 @@ export default function WorkflowSettings() {
               type="button"
               disabled={saving}
               onClick={handleSaveWorkflow}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#1A1A1A] hover:bg-black text-white text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors shadow-xs"
+              className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] bg-[#1A1A1A] hover:bg-black text-white text-xs sm:text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors shadow-xs"
             >
               <Save className="w-4 h-4" />
               <span>{saving ? 'Đang lưu…' : 'Lưu thay đổi'}</span>
