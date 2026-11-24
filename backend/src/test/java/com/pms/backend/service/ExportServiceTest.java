@@ -11,6 +11,7 @@ import com.pms.backend.model.Project;
 import com.pms.backend.model.User;
 import com.pms.backend.model.Worklog;
 import com.pms.backend.service.impl.ExportServiceImpl;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -88,7 +89,7 @@ public class ExportServiceTest {
     }
 
     @Test
-    public void testExport_Excel_Success() {
+    public void testExport_Excel_Success() throws Exception {
         Issue issue = new Issue();
         issue.setIssueKey("EXCEL-1");
         issue.setSummary("Test Excel Generation");
@@ -98,6 +99,27 @@ public class ExportServiceTest {
         byte[] xlsxBytes = exportService.generateExcel(List.of(issue));
         assertNotNull(xlsxBytes);
         assertTrue(xlsxBytes.length > 0);
+
+        try (Workbook wb = new XSSFWorkbook(new ByteArrayInputStream(xlsxBytes))) {
+            Sheet sheet = wb.getSheet("Issues");
+            assertNotNull(sheet);
+
+            // Row heights
+            assertEquals(28.0f, sheet.getRow(0).getHeightInPoints(), 0.1);
+            assertEquals(24.0f, sheet.getRow(1).getHeightInPoints(), 0.1);
+
+            // Times New Roman Font
+            Font headerFont = wb.getFontAt(sheet.getRow(0).getCell(0).getCellStyle().getFontIndex());
+            assertEquals("Times New Roman", headerFont.getFontName());
+
+            Font dataFont = wb.getFontAt(sheet.getRow(1).getCell(0).getCellStyle().getFontIndex());
+            assertEquals("Times New Roman", dataFont.getFontName());
+
+            // Column width padding applied
+            for (int i = 0; i < 13; i++) {
+                assertTrue(sheet.getColumnWidth(i) >= 12 * 256);
+            }
+        }
     }
 
     @Test
@@ -195,18 +217,36 @@ public class ExportServiceTest {
             // Check metadata in sheet 1
             assertTrue(sheet1.getRow(0).getCell(0).getStringCellValue().contains("BÁO CÁO NĂNG SUẤT"));
             assertTrue(sheet1.getRow(2).getCell(1).getStringCellValue().contains("Project Alpha"));
+            assertEquals(36.0f, sheet1.getRow(0).getHeightInPoints(), 0.1);
+            Font titleFont = wb.getFontAt(sheet1.getRow(0).getCell(0).getCellStyle().getFontIndex());
+            assertEquals("Times New Roman", titleFont.getFontName());
 
             // Check member in sheet 2
             assertEquals("Nguyen Van A", sheet2.getRow(1).getCell(0).getStringCellValue());
             assertEquals("DEVELOPER", sheet2.getRow(1).getCell(2).getStringCellValue());
             assertEquals(5.0, sheet2.getRow(1).getCell(3).getNumericCellValue());
+            assertEquals(28.0f, sheet2.getRow(0).getHeightInPoints(), 0.1);
+            assertEquals(24.0f, sheet2.getRow(1).getHeightInPoints(), 0.1);
+            Font s2HeaderFont = wb.getFontAt(sheet2.getRow(0).getCell(0).getCellStyle().getFontIndex());
+            assertEquals("Times New Roman", s2HeaderFont.getFontName());
+            Font s2DataFont = wb.getFontAt(sheet2.getRow(1).getCell(0).getCellStyle().getFontIndex());
+            assertEquals("Times New Roman", s2DataFont.getFontName());
+
+            // Check column widths in sheet 2
+            for (int i = 0; i < 17; i++) {
+                assertTrue(sheet2.getColumnWidth(i) >= 14 * 256);
+            }
 
             // Check issue in sheet 3
             assertEquals("ALPHA-1", sheet3.getRow(1).getCell(0).getStringCellValue());
+            assertEquals(28.0f, sheet3.getRow(0).getHeightInPoints(), 0.1);
+            assertEquals(24.0f, sheet3.getRow(1).getHeightInPoints(), 0.1);
 
             // Check worklog in sheet 4
             assertEquals("ALPHA-1", sheet4.getRow(1).getCell(0).getStringCellValue());
             assertEquals("Nguyen Van A", sheet4.getRow(1).getCell(2).getStringCellValue());
+            assertEquals(28.0f, sheet4.getRow(0).getHeightInPoints(), 0.1);
+            assertEquals(24.0f, sheet4.getRow(1).getHeightInPoints(), 0.1);
         }
     }
 
