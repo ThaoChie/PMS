@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Notification } from '../types';
 import { notificationService } from '../services/notificationService';
+import { getAuthToken } from '../api/axiosClient';
 
 interface NotificationState {
   notifications: Notification[];
@@ -35,6 +36,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   isLoading: false,
 
   fetchNotifications: async (group?: string, unread?: boolean) => {
+    if (!getAuthToken()) {
+      set({ notifications: [], unreadCount: 0, isLoading: false });
+      return;
+    }
     set({ isLoading: true });
     try {
       const res = await notificationService.getNotifications({ group, unread, page: 1, size: 50 });
@@ -52,6 +57,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   fetchUnreadCount: async () => {
+    if (!getAuthToken()) {
+      set({ unreadCount: 0 });
+      return;
+    }
     try {
       const res = await notificationService.getUnreadCount();
       const count = res?.data?.count ?? 0;

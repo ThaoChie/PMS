@@ -149,13 +149,15 @@ public class DatabaseConfig {
         config.setMaximumPoolSize(10);
         config.setMinimumIdle(1);
         config.setIdleTimeout(300000);
-        config.setConnectionTimeout(15000);
-        config.setInitializationFailTimeout(15000);
+        // Tăng timeout kết nối lên 30s để hỗ trợ Neon Serverless Postgres thức dậy từ trạng thái ngủ (Cold Start)
+        config.setConnectionTimeout(30000);
+        // -1: Hikari không làm sập ứng dụng (crash loop) khi Neon DB đang khởi động chậm
+        config.setInitializationFailTimeout(-1);
 
         // Enforce socket timeouts to prevent indefinite thread hangs
-        config.addDataSourceProperty("socketTimeout", "30");
-        config.addDataSourceProperty("connectTimeout", "10");
-        config.addDataSourceProperty("loginTimeout", "10");
+        config.addDataSourceProperty("socketTimeout", "45");
+        config.addDataSourceProperty("connectTimeout", "20");
+        config.addDataSourceProperty("loginTimeout", "20");
 
         return new HikariDataSource(config);
     }
