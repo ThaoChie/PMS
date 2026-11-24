@@ -8,7 +8,6 @@ import type { ApprovalRequest, ApprovalRequestStatus, ApprovalRequestType } from
 import {
   FileCheck,
   Plus,
-  RefreshCw,
   Search,
   Filter,
   CheckCircle2,
@@ -88,15 +87,6 @@ export default function ApprovalsPage() {
           </div>
 
           <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={loadData}
-              disabled={isLoading}
-              className="p-2 bg-white border border-[#E5E5E7] hover:bg-gray-50 text-[#6B6B70] hover:text-[#1A1A1A] rounded-xl transition-colors shadow-2xs"
-              title="Làm mới dữ liệu"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
             <button
               type="button"
               data-testid="btn-open-create-modal"

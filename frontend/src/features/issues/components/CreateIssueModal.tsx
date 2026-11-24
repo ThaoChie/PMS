@@ -4,6 +4,7 @@ import { useProjectStore } from '../../../store/projectStore';
 import { memberService } from '../../../services/memberService';
 import { issueService } from '../../../services/issueService';
 import { customFieldService } from '../../../services/customFieldService';
+import { toast } from '../../../store/toastStore';
 import type { IssueType, Priority, CustomField } from '../../../types';
 
 interface CreateIssueModalProps {
@@ -152,7 +153,9 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
         customFields: Object.keys(customFieldValues).length > 0 ? customFieldValues : undefined,
       };
 
-      await issueService.createIssue(form.projectId, payload);
+      const res = await issueService.createIssue(form.projectId, payload);
+      const createdKey = res?.data?.key || '';
+      toast.success(createdKey ? `Tạo công việc ${createdKey} thành công` : 'Tạo công việc thành công');
       onSubmitSuccess?.();
       onClose();
     } catch (err: any) {

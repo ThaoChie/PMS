@@ -1,5 +1,6 @@
 import axiosClient from '../api/axiosClient';
 import type { ApiResponse, PageWrapper, Issue, IssueType, Priority, SubTask } from '../types';
+import { notifyIssueChanged } from '../utils/issueEvents';
 
 export const issueService = {
   async getIssues(
@@ -52,7 +53,9 @@ export const issueService = {
       epicId?: number | string;
     },
   ): Promise<ApiResponse<Issue>> {
-    return axiosClient.post<any, ApiResponse<Issue>>(`/projects/${projectId}/issues`, data);
+    const res = await axiosClient.post<any, ApiResponse<Issue>>(`/projects/${projectId}/issues`, data);
+    notifyIssueChanged({ projectId, action: 'create', issue: res?.data });
+    return res;
   },
 
   async updateIssue(
@@ -60,18 +63,24 @@ export const issueService = {
     data: Partial<Issue>,
     version?: number,
   ): Promise<ApiResponse<Issue>> {
-    return axiosClient.put<any, ApiResponse<Issue>>(`/issues/${issueKey}`, {
+    const res = await axiosClient.put<any, ApiResponse<Issue>>(`/issues/${issueKey}`, {
       ...data,
       version,
     });
+    notifyIssueChanged({ issueKey, action: 'update', issue: res?.data });
+    return res;
   },
 
   async deleteIssue(issueKey: string): Promise<ApiResponse<void>> {
-    return axiosClient.delete<any, ApiResponse<void>>(`/issues/${issueKey}`);
+    const res = await axiosClient.delete<any, ApiResponse<void>>(`/issues/${issueKey}`);
+    notifyIssueChanged({ issueKey, action: 'delete' });
+    return res;
   },
 
   async assignIssue(issueKey: string, assigneeId: string | null): Promise<ApiResponse<void>> {
-    return axiosClient.put<any, ApiResponse<void>>(`/issues/${issueKey}/assignee`, { assigneeId });
+    const res = await axiosClient.put<any, ApiResponse<void>>(`/issues/${issueKey}/assignee`, { assigneeId });
+    notifyIssueChanged({ issueKey, action: 'assign' });
+    return res;
   },
 
   async linkIssue(
@@ -79,47 +88,63 @@ export const issueService = {
     targetKey: string,
     relation: string,
   ): Promise<ApiResponse<void>> {
-    return axiosClient.post<any, ApiResponse<void>>(`/issues/${issueKey}/links`, {
+    const res = await axiosClient.post<any, ApiResponse<void>>(`/issues/${issueKey}/links`, {
       targetKey,
       relation,
     });
+    notifyIssueChanged({ issueKey, action: 'update' });
+    return res;
   },
 
   async removeLink(issueKey: string, linkId: string): Promise<ApiResponse<void>> {
-    return axiosClient.delete<any, ApiResponse<void>>(`/issues/${issueKey}/links/${linkId}`);
+    const res = await axiosClient.delete<any, ApiResponse<void>>(`/issues/${issueKey}/links/${linkId}`);
+    notifyIssueChanged({ issueKey, action: 'update' });
+    return res;
   },
 
   async setEpic(issueKey: string, epicKey: string | null): Promise<ApiResponse<void>> {
-    return axiosClient.put<any, ApiResponse<void>>(`/issues/${issueKey}/epic`, { epicKey });
+    const res = await axiosClient.put<any, ApiResponse<void>>(`/issues/${issueKey}/epic`, { epicKey });
+    notifyIssueChanged({ issueKey, action: 'update' });
+    return res;
   },
 
   async createSubtask(
     issueKey: string,
     data: { summary: string; assigneeId?: string },
   ): Promise<ApiResponse<SubTask>> {
-    return axiosClient.post<any, ApiResponse<SubTask>>(`/issues/${issueKey}/subtasks`, data);
+    const res = await axiosClient.post<any, ApiResponse<SubTask>>(`/issues/${issueKey}/subtasks`, data);
+    notifyIssueChanged({ issueKey, action: 'update' });
+    return res;
   },
 
   async convertToSubtask(issueKey: string, parentKey: string): Promise<ApiResponse<void>> {
-    return axiosClient.post<any, ApiResponse<void>>(`/issues/${issueKey}/convert-to-subtask`, {
+    const res = await axiosClient.post<any, ApiResponse<void>>(`/issues/${issueKey}/convert-to-subtask`, {
       parentKey,
     });
+    notifyIssueChanged({ issueKey, action: 'update' });
+    return res;
   },
 
   async convertToIssue(issueKey: string, targetType: string = 'Task'): Promise<ApiResponse<void>> {
-    return axiosClient.post<any, ApiResponse<void>>(`/issues/${issueKey}/convert-to-issue?targetType=${targetType.toUpperCase()}`);
+    const res = await axiosClient.post<any, ApiResponse<void>>(`/issues/${issueKey}/convert-to-issue?targetType=${targetType.toUpperCase()}`);
+    notifyIssueChanged({ issueKey, action: 'update' });
+    return res;
   },
 
   async uploadAttachment(issueKey: string, file: File): Promise<ApiResponse<any>> {
     const formData = new FormData();
     formData.append('file', file);
-    return axiosClient.post(`/issues/${issueKey}/attachments`, formData, {
+    const res = await axiosClient.post(`/issues/${issueKey}/attachments`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    notifyIssueChanged({ issueKey, action: 'update' });
+    return res;
   },
 
   async deleteAttachment(issueKey: string, attachmentId: string): Promise<ApiResponse<void>> {
-    return axiosClient.delete(`/issues/${issueKey}/attachments/${attachmentId}`);
+    const res = await axiosClient.delete(`/issues/${issueKey}/attachments/${attachmentId}`);
+    notifyIssueChanged({ issueKey, action: 'update' });
+    return res;
   },
 
   async watchIssue(issueKey: string): Promise<ApiResponse<void>> {

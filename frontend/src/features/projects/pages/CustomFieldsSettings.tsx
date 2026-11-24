@@ -7,7 +7,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  RefreshCw,
   X,
   Type,
   Hash,
@@ -284,15 +283,6 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={loadFields}
-              className="h-9 px-3 border border-[#E5E5E7] bg-white text-[#6B6B70] hover:text-[#1A1A1A] rounded-lg hover:bg-[#F7F7F8] transition-colors flex items-center gap-1.5 text-xs font-medium shrink-0 shadow-xs"
-              title="Làm mới danh sách"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden md:inline">Làm mới</span>
-            </button>
             {canEdit && (
               <button
                 id="cf-btn-add"
