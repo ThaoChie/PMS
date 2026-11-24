@@ -29,6 +29,7 @@ import { ApprovalsPage } from './features/approvals';
 import ToastContainer from './components/common/ToastContainer';
 import { useAuthStore } from './store/authStore';
 import { useProjectStore } from './store/projectStore';
+import { notifyIssueChanged } from './utils/issueEvents';
 
 type AuthView = 'login' | 'register' | 'forgot-password' | 'reset-password';
 
@@ -648,13 +649,19 @@ export default function App() {
               issueId={selectedIssueId}
               role={role}
               onClose={handleCloseIssue}
+              onUpdated={() => notifyIssueChanged()}
             />
           )}
         </div>
       </Shell>
 
       {/* Modals */}
-      {showCreateIssue && <CreateIssueModal onClose={() => setShowCreateIssue(false)} />}
+      {showCreateIssue && (
+        <CreateIssueModal
+          onClose={() => setShowCreateIssue(false)}
+          onSubmitSuccess={() => notifyIssueChanged()}
+        />
+      )}
       {showCreateProject && (
         <CreateProjectModal
           onClose={() => setShowCreateProject(false)}

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  RefreshCw,
   AlertCircle,
   User as UserIcon,
   Search,
@@ -13,6 +12,7 @@ import { toast } from '../../../store/toastStore';
 import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
 import { mapUserResponseToUser } from '../../../store/authStore';
+import { ISSUE_CHANGED_EVENT, type IssueEventDetail } from '../../../utils/issueEvents';
 import type { Issue, IssueStatus, Role, Screen, WorkflowStatus } from '../../../types';
 import KanbanColumn from '../components/KanbanColumn';
 
@@ -134,6 +134,19 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Lắng nghe sự kiện thay đổi công việc để cập nhật bảng Kanban real-time
+  useEffect(() => {
+    const handleIssuesChanged = (e: Event) => {
+      const detail = (e as CustomEvent<IssueEventDetail>)?.detail;
+      if (!detail?.projectId || !currentProject?.id || String(detail.projectId) === String(currentProject.id)) {
+        loadData();
+      }
+    };
+
+    window.addEventListener(ISSUE_CHANGED_EVENT, handleIssuesChanged);
+    return () => window.removeEventListener(ISSUE_CHANGED_EVENT, handleIssuesChanged);
+  }, [loadData, currentProject]);
 
   // Filter issues based on quick filters
   const filteredIssues = useMemo(() => {
@@ -262,15 +275,6 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
           <span className="text-xs text-[#6B6B70] hidden sm:inline">
             Hiển thị {filteredIssues.length}/{issues.length} công việc
           </span>
-          <button
-            type="button"
-            onClick={loadData}
-            aria-label="Làm mới bảng"
-            className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border border-[#E5E5E7] text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
-            title="Làm mới"
-          >
-            <RefreshCw className={`w-4 h-4 sm:w-3.5 sm:h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
         </div>
       </div>
 

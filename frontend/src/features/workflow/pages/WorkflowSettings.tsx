@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, AlertTriangle, CheckCircle2, Save, RefreshCw, GitBranch, Shield, ArrowRight, Sliders } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Save, GitBranch, Shield, ArrowRight, Sliders } from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
 import { workflowService } from '../../../services/workflowService';
 import type { IssueStatus, StatusCategory, WorkflowStatus, WorkflowTransition } from '../../../types';
@@ -216,16 +216,6 @@ export default function WorkflowSettings() {
             </p>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-            <button
-              id="btn-refresh-workflow"
-              type="button"
-              onClick={loadWorkflow}
-              aria-label="Làm mới quy trình"
-              className="w-11 h-11 flex items-center justify-center border border-[#E5E5E7] text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
-              title="Làm mới"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
             <button
               id="btn-save-workflow"
               type="button"

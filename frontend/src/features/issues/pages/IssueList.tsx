@@ -18,6 +18,7 @@ import { filterService } from '../../../services/filterService';
 import { toast } from '../../../store/toastStore';
 import { MESSAGES } from '../../../constants/messages';
 import { QUICK_FILTER_OPTIONS } from '../../../constants/enums';
+import { ISSUE_CHANGED_EVENT, type IssueEventDetail } from '../../../utils/issueEvents';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { filtersToSearchParams, searchParamsToFilters } from '../../../utils/searchParams';
 import type { Issue, SavedFilter } from '../../../types';
@@ -209,6 +210,30 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
   useEffect(() => {
     loadIssues();
   }, [loadIssues]);
+
+  // Lắng nghe sự kiện thay đổi công việc (tạo mới, cập nhật, xóa) để cập nhật danh sách real-time tự động
+  useEffect(() => {
+    const handleIssuesChanged = (e: Event) => {
+      const detail = (e as CustomEvent<IssueEventDetail>)?.detail;
+      if (!detail?.projectId || !currentProject?.id || String(detail.projectId) === String(currentProject.id)) {
+        if (detail?.action === 'create' && detail?.issue && currentProject?.id) {
+          const mapped = mapIssue(detail.issue, currentProject.id);
+          setIssues((prev) => {
+            if (prev.some((item) => String(item.id) === String(mapped.id) || item.key === mapped.key)) {
+              return prev;
+            }
+            return [mapped, ...prev];
+          });
+        } else if (detail?.action === 'delete' && detail?.issueKey) {
+          setIssues((prev) => prev.filter((item) => item.key !== detail.issueKey && item.id !== detail.issueId));
+        }
+        loadIssues();
+      }
+    };
+
+    window.addEventListener(ISSUE_CHANGED_EVENT, handleIssuesChanged);
+    return () => window.removeEventListener(ISSUE_CHANGED_EVENT, handleIssuesChanged);
+  }, [loadIssues, currentProject]);
 
   // Lấy danh sách bộ lọc đã lưu
   const loadSavedFilters = useCallback(async () => {
@@ -653,15 +678,6 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={loadIssues}
-              className="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-md border border-[#E5E5E7] text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
-              title={MESSAGES.COMMON.RETRY}
-              aria-label={MESSAGES.COMMON.RETRY}
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            </button>
             {/* Xuất dữ liệu theo đúng bộ lọc đang áp dụng (UC010) */}
             <ExportButton criteria={searchCriteria} issues={issues} projectId={currentProject?.id} />
           </div>

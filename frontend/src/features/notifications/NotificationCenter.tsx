@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Check,
-  RefreshCw,
   Mail,
   ArrowRight,
   CheckCircle2,
@@ -268,18 +267,6 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
             )}
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => {
-                fetchNotifications(activeFilter === 'all' ? undefined : activeFilter);
-                loadInvitationsData();
-              }}
-              className="w-11 h-11 flex items-center justify-center border border-[#E5E5E7] text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8]"
-              title="Làm mới"
-              aria-label="Làm mới thông báo"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
             {unreadCount > 0 && (
               <button
                 type="button"

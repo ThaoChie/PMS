@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { KanbanSquare, ListTodo, Bug, Clock, FolderGit2, RefreshCw } from 'lucide-react';
+import { KanbanSquare, ListTodo, Bug, Clock, FolderGit2 } from 'lucide-react';
 import type { Issue, NotificationItem, Role, SavedFilter } from '../../types';
 import { useProjectStore } from '../../store/projectStore';
 import { issueService } from '../../services/issueService';
@@ -11,6 +11,7 @@ import { AssignedIssuesWidget } from './AssignedIssuesWidget';
 import { RecentActivityWidget } from './RecentActivityWidget';
 import { WatchingWidget } from './WatchingWidget';
 import { SavedFiltersWidget } from './SavedFiltersWidget';
+import { ISSUE_CHANGED_EVENT, type IssueEventDetail } from '../../utils/issueEvents';
 
 interface DashboardProps {
   role: Role;
@@ -117,6 +118,28 @@ export default function Dashboard({ onSelectIssue, onNavigate }: DashboardProps)
     fetchDashboard();
   }, [fetchDashboard]);
 
+  // Lắng nghe sự kiện thay đổi công việc để cập nhật Dashboard real-time
+  useEffect(() => {
+    const handleIssuesChanged = (e: Event) => {
+      const detail = (e as CustomEvent<IssueEventDetail>)?.detail;
+      if (!detail?.projectId || !currentProject?.id || String(detail.projectId) === String(currentProject.id)) {
+        fetchDashboard();
+        if (currentProject?.id) {
+          issueService
+            .getIssues(currentProject.id, { page: 1, size: 100 })
+            .then((res) => {
+              const raw: any = res?.data?.content || (res?.data as any) || [];
+              setProjectIssues(Array.isArray(raw) ? raw.map(mapIssue) : []);
+            })
+            .catch(() => {});
+        }
+      }
+    };
+
+    window.addEventListener(ISSUE_CHANGED_EVENT, handleIssuesChanged);
+    return () => window.removeEventListener(ISSUE_CHANGED_EVENT, handleIssuesChanged);
+  }, [fetchDashboard, currentProject?.id]);
+
   useEffect(() => {
     if (!currentProject?.id) {
       setProjectIssues([]);
@@ -208,17 +231,8 @@ export default function Dashboard({ onSelectIssue, onNavigate }: DashboardProps)
                 : 'Chào mừng bạn quay lại — hãy chọn hoặc tạo một dự án để bắt đầu'}
             </p>
           </div>
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={fetchDashboard}
-              title={MESSAGES.COMMON.RETRY}
-              aria-label={MESSAGES.COMMON.RETRY}
-              className="w-11 h-11 flex items-center justify-center rounded-lg border border-[#E5E5E7] text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
-            >
-              <RefreshCw className={`w-4 h-4 ${loadingDashboard ? 'animate-spin' : ''}`} />
-            </button>
-            {!currentProject && (
+          {!currentProject && (
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               <button
                 onClick={() => onNavigate('projects')}
                 className="px-3.5 py-2.5 min-h-[44px] bg-[#1A1A1A] text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-[#333] transition-colors flex items-center gap-2"
@@ -226,8 +240,8 @@ export default function Dashboard({ onSelectIssue, onNavigate }: DashboardProps)
                 <FolderGit2 className="w-4 h-4" />
                 <span>Xem danh sách dự án</span>
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Stats */}
