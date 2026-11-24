@@ -14,10 +14,13 @@ import com.pms.backend.model.Project;
 import com.pms.backend.model.User;
 import com.pms.backend.model.Worklog;
 import com.pms.backend.util.DurationParser;
+import com.pms.backend.util.ExcelStyleHelper;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.slf4j.Logger;
@@ -157,25 +160,57 @@ public class ExportServiceImpl implements IExportService {
                 workbook = new XSSFWorkbook();
             }
 
+            ExcelStyleHelper styleHelper = new ExcelStyleHelper(workbook);
+
             Sheet sheet = workbook.createSheet("Issues");
+            ExcelStyleHelper.prepareSheet(sheet);
 
             // Header Row
             Row headerRow = sheet.createRow(0);
+            headerRow.setHeightInPoints(ExcelStyleHelper.HEADER_ROW_HEIGHT);
             for (int i = 0; i < HEADERS.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(HEADERS[i]);
+                cell.setCellStyle(styleHelper.getHeaderCenterStyle());
             }
 
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             int rowIdx = 1;
             for (Issue issue : issues) {
                 Row row = sheet.createRow(rowIdx++);
+                row.setHeightInPoints(ExcelStyleHelper.DATA_ROW_HEIGHT);
+                boolean isZebra = (rowIdx % 2 == 1);
                 String[] data = extractIssueData(issue, dtf);
+
                 for (int i = 0; i < data.length; i++) {
                     Cell cell = row.createCell(i);
                     cell.setCellValue(sanitizeForSpreadsheet(data[i]));
+
+                    // Apply proper column styling and alignment
+                    if (i == 1 || i == 4 || i == 5) {
+                        // Summary, Assignee, Reporter -> Left
+                        cell.setCellStyle(styleHelper.getDataLeftStyle(isZebra));
+                    } else if (i == 8 || i == 9 || i == 10) {
+                        // Original Estimate, Remaining, Time Spent -> Right
+                        cell.setCellStyle(styleHelper.getDataRightStyle(isZebra));
+                    } else {
+                        // Key, Type, Status, Priority, DueDate, CreatedAt, UpdatedAt -> Center
+                        cell.setCellStyle(styleHelper.getDataCenterStyle(isZebra));
+                    }
                 }
             }
+
+            // Freeze top header row
+            sheet.createFreezePane(0, 1);
+
+            // AutoFilter
+            if (!issues.isEmpty()) {
+                sheet.setAutoFilter(new CellRangeAddress(0, issues.size(), 0, HEADERS.length - 1));
+            }
+
+            // Auto size columns with generous min widths and max bound
+            int[] minWidths = {15, 32, 14, 16, 22, 22, 16, 16, 16, 16, 18, 18, 18};
+            ExcelStyleHelper.formatColumns(sheet, minWidths, 55);
 
             workbook.write(out);
             if (workbook instanceof SXSSFWorkbook sxssf) {
@@ -268,62 +303,68 @@ public class ExportServiceImpl implements IExportService {
         Workbook workbook = null;
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             workbook = new XSSFWorkbook();
+            ExcelStyleHelper styleHelper = new ExcelStyleHelper(workbook);
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
             // Sheet 1: Tổng quan
             Sheet sheet1 = workbook.createSheet("Tổng quan");
+            ExcelStyleHelper.prepareSheet(sheet1);
+
             int r1 = 0;
+            // Title Row
             Row titleRow = sheet1.createRow(r1++);
-            titleRow.createCell(0).setCellValue(sanitizeForSpreadsheet("BÁO CÁO NĂNG SUẤT DỰ ÁN"));
+            titleRow.setHeightInPoints(ExcelStyleHelper.TITLE_ROW_HEIGHT);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue(sanitizeForSpreadsheet("BÁO CÁO NĂNG SUẤT DỰ ÁN"));
+            titleCell.setCellStyle(styleHelper.getTitleStyle());
 
-            sheet1.createRow(r1++); // blank line
+            // Blank line
+            Row blank1 = sheet1.createRow(r1++);
+            blank1.setHeightInPoints(ExcelStyleHelper.SPACER_ROW_HEIGHT);
 
-            Row projRow = sheet1.createRow(r1++);
-            projRow.createCell(0).setCellValue(sanitizeForSpreadsheet("Dự án:"));
-            projRow.createCell(1).setCellValue(sanitizeForSpreadsheet(project != null ? project.getName() + " (" + project.getProjectKey() + ")" : ""));
-
-            Row exporterRow = sheet1.createRow(r1++);
-            exporterRow.createCell(0).setCellValue(sanitizeForSpreadsheet("Người xuất:"));
             String exporterName = currentUser != null ? (currentUser.getFullName() != null ? currentUser.getFullName() : currentUser.getEmail()) : "Hệ thống";
-            exporterRow.createCell(1).setCellValue(sanitizeForSpreadsheet(exporterName));
 
-            Row exportTimeRow = sheet1.createRow(r1++);
-            exportTimeRow.createCell(0).setCellValue(sanitizeForSpreadsheet("Thời điểm xuất:"));
-            exportTimeRow.createCell(1).setCellValue(sanitizeForSpreadsheet(java.time.LocalDateTime.now().format(dtf)));
+            String[][] metaInfo = {
+                    {"Dự án:", project != null ? project.getName() + " (" + project.getProjectKey() + ")" : ""},
+                    {"Người xuất:", exporterName},
+                    {"Thời điểm xuất:", java.time.LocalDateTime.now().format(dtf)},
+                    {"Kỳ báo cáo:", (report != null && report.getFrom() != null ? report.getFrom().toString() : "") + " đến " + (report != null && report.getTo() != null ? report.getTo().toString() : "")},
+                    {"Bộ lọc thành viên:", filter != null && filter.getMemberIds() != null && !filter.getMemberIds().isEmpty() ? filter.getMemberIds().toString() : "Tất cả"},
+                    {"Bộ lọc vai trò:", filter != null && filter.getRoles() != null && !filter.getRoles().isEmpty() ? String.join(", ", filter.getRoles()) : "Tất cả"},
+                    {"Bộ lọc loại công việc:", filter != null && filter.getIssueTypes() != null && !filter.getIssueTypes().isEmpty() ? String.join(", ", filter.getIssueTypes()) : "Tất cả"},
+                    {"Bộ lọc độ ưu tiên:", filter != null && filter.getPriorities() != null && !filter.getPriorities().isEmpty() ? String.join(", ", filter.getPriorities()) : "Tất cả"},
+                    {"Bộ lọc trạng thái:", filter != null && filter.getStatuses() != null && !filter.getStatuses().isEmpty() ? String.join(", ", filter.getStatuses()) : "Tất cả"},
+                    {"Chỉ việc quá hạn:", filter != null && Boolean.TRUE.equals(filter.getOverdueOnly()) ? "Có" : "Không"}
+            };
 
-            Row periodRow = sheet1.createRow(r1++);
-            periodRow.createCell(0).setCellValue(sanitizeForSpreadsheet("Kỳ báo cáo:"));
-            periodRow.createCell(1).setCellValue(sanitizeForSpreadsheet((report != null && report.getFrom() != null ? report.getFrom().toString() : "") + " đến " + (report != null && report.getTo() != null ? report.getTo().toString() : "")));
+            for (String[] meta : metaInfo) {
+                Row r = sheet1.createRow(r1++);
+                r.setHeightInPoints(ExcelStyleHelper.INFO_ROW_HEIGHT);
 
-            Row filterMembersRow = sheet1.createRow(r1++);
-            filterMembersRow.createCell(0).setCellValue(sanitizeForSpreadsheet("Bộ lọc thành viên:"));
-            filterMembersRow.createCell(1).setCellValue(sanitizeForSpreadsheet(filter != null && filter.getMemberIds() != null && !filter.getMemberIds().isEmpty() ? filter.getMemberIds().toString() : "Tất cả"));
+                Cell c0 = r.createCell(0);
+                c0.setCellValue(sanitizeForSpreadsheet(meta[0]));
+                c0.setCellStyle(styleHelper.getInfoLabelStyle());
 
-            Row filterRolesRow = sheet1.createRow(r1++);
-            filterRolesRow.createCell(0).setCellValue(sanitizeForSpreadsheet("Bộ lọc vai trò:"));
-            filterRolesRow.createCell(1).setCellValue(sanitizeForSpreadsheet(filter != null && filter.getRoles() != null && !filter.getRoles().isEmpty() ? String.join(", ", filter.getRoles()) : "Tất cả"));
+                Cell c1 = r.createCell(1);
+                c1.setCellValue(sanitizeForSpreadsheet(meta[1]));
+                c1.setCellStyle(styleHelper.getInfoValueStyle());
+            }
 
-            Row filterTypesRow = sheet1.createRow(r1++);
-            filterTypesRow.createCell(0).setCellValue(sanitizeForSpreadsheet("Bộ lọc loại công việc:"));
-            filterTypesRow.createCell(1).setCellValue(sanitizeForSpreadsheet(filter != null && filter.getIssueTypes() != null && !filter.getIssueTypes().isEmpty() ? String.join(", ", filter.getIssueTypes()) : "Tất cả"));
+            // Blank line
+            Row blank2 = sheet1.createRow(r1++);
+            blank2.setHeightInPoints(ExcelStyleHelper.SPACER_ROW_HEIGHT);
 
-            Row filterPrioritiesRow = sheet1.createRow(r1++);
-            filterPrioritiesRow.createCell(0).setCellValue(sanitizeForSpreadsheet("Bộ lọc độ ưu tiên:"));
-            filterPrioritiesRow.createCell(1).setCellValue(sanitizeForSpreadsheet(filter != null && filter.getPriorities() != null && !filter.getPriorities().isEmpty() ? String.join(", ", filter.getPriorities()) : "Tất cả"));
-
-            Row filterStatusesRow = sheet1.createRow(r1++);
-            filterStatusesRow.createCell(0).setCellValue(sanitizeForSpreadsheet("Bộ lọc trạng thái:"));
-            filterStatusesRow.createCell(1).setCellValue(sanitizeForSpreadsheet(filter != null && filter.getStatuses() != null && !filter.getStatuses().isEmpty() ? String.join(", ", filter.getStatuses()) : "Tất cả"));
-
-            Row filterOverdueRow = sheet1.createRow(r1++);
-            filterOverdueRow.createCell(0).setCellValue(sanitizeForSpreadsheet("Chỉ việc quá hạn:"));
-            filterOverdueRow.createCell(1).setCellValue(sanitizeForSpreadsheet(filter != null && Boolean.TRUE.equals(filter.getOverdueOnly()) ? "Có" : "Không"));
-
-            sheet1.createRow(r1++); // blank line
-
+            // Summary metrics header
             Row statsHeaderRow = sheet1.createRow(r1++);
-            statsHeaderRow.createCell(0).setCellValue(sanitizeForSpreadsheet("CHỈ SỐ TỔNG HỢP"));
-            statsHeaderRow.createCell(1).setCellValue(sanitizeForSpreadsheet("GIÁ TRỊ"));
+            statsHeaderRow.setHeightInPoints(ExcelStyleHelper.HEADER_ROW_HEIGHT);
+
+            Cell sh0 = statsHeaderRow.createCell(0);
+            sh0.setCellValue(sanitizeForSpreadsheet("CHỈ SỐ TỔNG HỢP"));
+            sh0.setCellStyle(styleHelper.getHeaderLeftStyle());
+
+            Cell sh1 = statsHeaderRow.createCell(1);
+            sh1.setCellValue(sanitizeForSpreadsheet("GIÁ TRỊ"));
+            sh1.setCellStyle(styleHelper.getHeaderRightStyle());
 
             String[][] summaryData = {
                     {"Tổng công việc được giao", report != null ? String.valueOf(report.getTotalAssigned()) : "0"},
@@ -339,103 +380,167 @@ public class ExportServiceImpl implements IExportService {
                     {"Bug đã giải quyết", report != null ? String.valueOf(report.getTotalBugsResolved()) : "0"},
                     {"Bug bị reopen", report != null ? String.valueOf(report.getTotalBugsReopened()) : "0"}
             };
+
+            int metricIdx = 0;
             for (String[] rowData : summaryData) {
                 Row r = sheet1.createRow(r1++);
-                r.createCell(0).setCellValue(sanitizeForSpreadsheet(rowData[0]));
-                r.createCell(1).setCellValue(sanitizeForSpreadsheet(rowData[1]));
+                r.setHeightInPoints(ExcelStyleHelper.DATA_ROW_HEIGHT);
+                boolean isZebra = (metricIdx++ % 2 == 1);
+
+                Cell c0 = r.createCell(0);
+                c0.setCellValue(sanitizeForSpreadsheet(rowData[0]));
+                c0.setCellStyle(styleHelper.getDataLeftStyle(isZebra));
+
+                Cell c1 = r.createCell(1);
+                c1.setCellValue(sanitizeForSpreadsheet(rowData[1]));
+                c1.setCellStyle(styleHelper.getDataRightStyle(isZebra));
             }
+
+            sheet1.setColumnWidth(0, 36 * 256);
+            sheet1.setColumnWidth(1, 48 * 256);
 
             // Sheet 2: Theo thành viên
             Sheet sheet2 = workbook.createSheet("Theo thành viên");
+            ExcelStyleHelper.prepareSheet(sheet2);
+
             String[] s2Headers = {
                     "Thành viên", "Email", "Vai trò", "Công việc giao", "Đã hoàn thành", "Đang làm",
                     "Chưa bắt đầu", "Đúng hạn (%)", "Quá hạn", "Giờ ước lượng (h)", "Giờ log (h)",
                     "Chênh lệch (%)", "Thời gian xử lý TB (h)", "Bug giao", "Bug sửa", "Bug reopen", "Mức tải"
             };
             Row s2HeaderRow = sheet2.createRow(0);
+            s2HeaderRow.setHeightInPoints(ExcelStyleHelper.HEADER_ROW_HEIGHT);
             for (int i = 0; i < s2Headers.length; i++) {
-                s2HeaderRow.createCell(i).setCellValue(sanitizeForSpreadsheet(s2Headers[i]));
+                Cell c = s2HeaderRow.createCell(i);
+                c.setCellValue(sanitizeForSpreadsheet(s2Headers[i]));
+                c.setCellStyle(styleHelper.getHeaderCenterStyle());
             }
+
             int r2 = 1;
             if (report != null && report.getMembers() != null) {
                 for (MemberProductivityDto m : report.getMembers()) {
                     Row r = sheet2.createRow(r2++);
-                    r.createCell(0).setCellValue(sanitizeForSpreadsheet(m.getFullName()));
-                    r.createCell(1).setCellValue(sanitizeForSpreadsheet(m.getEmail()));
-                    r.createCell(2).setCellValue(sanitizeForSpreadsheet(m.getProjectRole()));
-                    r.createCell(3).setCellValue(m.getAssignedIssues());
-                    r.createCell(4).setCellValue(m.getCompletedIssues());
-                    r.createCell(5).setCellValue(m.getInProgressIssues());
-                    r.createCell(6).setCellValue(m.getTodoIssues());
-                    r.createCell(7).setCellValue(m.getOnTimeRate() != null ? m.getOnTimeRate() : 0.0);
-                    r.createCell(8).setCellValue(m.getOverdueIssues());
-                    r.createCell(9).setCellValue(m.getEstimatedHours() != null ? m.getEstimatedHours() : 0.0);
-                    r.createCell(10).setCellValue(m.getTotalLoggedHours() != null ? m.getTotalLoggedHours() : 0.0);
-                    r.createCell(11).setCellValue(m.getVariancePercentage() != null ? m.getVariancePercentage() : 0.0);
-                    r.createCell(12).setCellValue(m.getAvgResolutionTimeHours() != null ? String.valueOf(m.getAvgResolutionTimeHours()) : "N/A");
-                    r.createCell(13).setCellValue(m.getBugsAssigned());
-                    r.createCell(14).setCellValue(m.getBugsResolved());
-                    r.createCell(15).setCellValue(m.getBugsReopened());
-                    r.createCell(16).setCellValue(sanitizeForSpreadsheet(m.getWorkloadLevel() != null ? m.getWorkloadLevel().name() : ""));
+                    r.setHeightInPoints(ExcelStyleHelper.DATA_ROW_HEIGHT);
+                    boolean isZebra = (r2 % 2 == 1);
+
+                    createStyledCell(r, 0, sanitizeForSpreadsheet(m.getFullName()), styleHelper.getDataLeftStyle(isZebra));
+                    createStyledCell(r, 1, sanitizeForSpreadsheet(m.getEmail()), styleHelper.getDataLeftStyle(isZebra));
+                    createStyledCell(r, 2, sanitizeForSpreadsheet(m.getProjectRole()), styleHelper.getDataCenterStyle(isZebra));
+
+                    createStyledNumericCell(r, 3, m.getAssignedIssues(), styleHelper.getDataIntegerStyle(isZebra));
+                    createStyledNumericCell(r, 4, m.getCompletedIssues(), styleHelper.getDataIntegerStyle(isZebra));
+                    createStyledNumericCell(r, 5, m.getInProgressIssues(), styleHelper.getDataIntegerStyle(isZebra));
+                    createStyledNumericCell(r, 6, m.getTodoIssues(), styleHelper.getDataIntegerStyle(isZebra));
+
+                    createStyledNumericCell(r, 7, m.getOnTimeRate() != null ? m.getOnTimeRate() : 0.0, styleHelper.getDataDecimalStyle(isZebra));
+                    createStyledNumericCell(r, 8, m.getOverdueIssues(), styleHelper.getDataIntegerStyle(isZebra));
+                    createStyledNumericCell(r, 9, m.getEstimatedHours() != null ? m.getEstimatedHours() : 0.0, styleHelper.getDataDecimalStyle(isZebra));
+                    createStyledNumericCell(r, 10, m.getTotalLoggedHours() != null ? m.getTotalLoggedHours() : 0.0, styleHelper.getDataDecimalStyle(isZebra));
+                    createStyledNumericCell(r, 11, m.getVariancePercentage() != null ? m.getVariancePercentage() : 0.0, styleHelper.getDataDecimalStyle(isZebra));
+
+                    if (m.getAvgResolutionTimeHours() != null) {
+                        createStyledNumericCell(r, 12, m.getAvgResolutionTimeHours(), styleHelper.getDataDecimalStyle(isZebra));
+                    } else {
+                        createStyledCell(r, 12, "N/A", styleHelper.getDataCenterStyle(isZebra));
+                    }
+
+                    createStyledNumericCell(r, 13, m.getBugsAssigned(), styleHelper.getDataIntegerStyle(isZebra));
+                    createStyledNumericCell(r, 14, m.getBugsResolved(), styleHelper.getDataIntegerStyle(isZebra));
+                    createStyledNumericCell(r, 15, m.getBugsReopened(), styleHelper.getDataIntegerStyle(isZebra));
+                    createStyledCell(r, 16, sanitizeForSpreadsheet(m.getWorkloadLevel() != null ? m.getWorkloadLevel().name() : ""), styleHelper.getDataCenterStyle(isZebra));
                 }
             }
 
+            sheet2.createFreezePane(0, 1);
+            if (report != null && report.getMembers() != null && !report.getMembers().isEmpty()) {
+                sheet2.setAutoFilter(new CellRangeAddress(0, report.getMembers().size(), 0, s2Headers.length - 1));
+            }
+            int[] s2MinWidths = {24, 28, 16, 16, 16, 14, 14, 15, 14, 18, 16, 16, 22, 14, 14, 14, 15};
+            ExcelStyleHelper.formatColumns(sheet2, s2MinWidths, 40);
+
             // Sheet 3: Chi tiết Issue
             Sheet sheet3 = workbook.createSheet("Chi tiết Issue");
+            ExcelStyleHelper.prepareSheet(sheet3);
+
             String[] s3Headers = {
                     "Mã công việc", "Tiêu đề", "Loại", "Mức ưu tiên", "Trạng thái", "Người thực hiện",
                     "Người báo cáo", "Hạn hoàn thành", "Ước tính (h)", "Đã log (h)", "Ngày tạo", "Cập nhật lần cuối"
             };
             Row s3HeaderRow = sheet3.createRow(0);
+            s3HeaderRow.setHeightInPoints(ExcelStyleHelper.HEADER_ROW_HEIGHT);
             for (int i = 0; i < s3Headers.length; i++) {
-                s3HeaderRow.createCell(i).setCellValue(sanitizeForSpreadsheet(s3Headers[i]));
+                Cell c = s3HeaderRow.createCell(i);
+                c.setCellValue(sanitizeForSpreadsheet(s3Headers[i]));
+                c.setCellStyle(styleHelper.getHeaderCenterStyle());
             }
+
             int r3 = 1;
             if (issues != null) {
                 for (Issue is : issues) {
                     Row r = sheet3.createRow(r3++);
-                    r.createCell(0).setCellValue(sanitizeForSpreadsheet(is.getIssueKey()));
-                    r.createCell(1).setCellValue(sanitizeForSpreadsheet(is.getSummary()));
-                    r.createCell(2).setCellValue(sanitizeForSpreadsheet(is.getType() != null ? is.getType().name() : ""));
-                    r.createCell(3).setCellValue(sanitizeForSpreadsheet(is.getPriority() != null ? is.getPriority().name() : ""));
-                    r.createCell(4).setCellValue(sanitizeForSpreadsheet(is.getStatus() != null ? is.getStatus().getName() : ""));
+                    r.setHeightInPoints(ExcelStyleHelper.DATA_ROW_HEIGHT);
+                    boolean isZebra = (r3 % 2 == 1);
+
+                    createStyledCell(r, 0, sanitizeForSpreadsheet(is.getIssueKey()), styleHelper.getDataCenterStyle(isZebra));
+                    createStyledCell(r, 1, sanitizeForSpreadsheet(is.getSummary()), styleHelper.getDataLeftStyle(isZebra));
+                    createStyledCell(r, 2, sanitizeForSpreadsheet(is.getType() != null ? is.getType().name() : ""), styleHelper.getDataCenterStyle(isZebra));
+                    createStyledCell(r, 3, sanitizeForSpreadsheet(is.getPriority() != null ? is.getPriority().name() : ""), styleHelper.getDataCenterStyle(isZebra));
+                    createStyledCell(r, 4, sanitizeForSpreadsheet(is.getStatus() != null ? is.getStatus().getName() : ""), styleHelper.getDataCenterStyle(isZebra));
 
                     String assigneeName = "Chưa phân công";
                     if (is.getAssignee() != null) {
                         assigneeName = is.getAssignee().getFullName() != null ? is.getAssignee().getFullName() : is.getAssignee().getEmail();
                     }
-                    r.createCell(5).setCellValue(sanitizeForSpreadsheet(assigneeName));
+                    createStyledCell(r, 5, sanitizeForSpreadsheet(assigneeName), styleHelper.getDataLeftStyle(isZebra));
 
                     String reporterName = "";
                     if (is.getReporter() != null) {
                         reporterName = is.getReporter().getFullName() != null ? is.getReporter().getFullName() : is.getReporter().getEmail();
                     }
-                    r.createCell(6).setCellValue(sanitizeForSpreadsheet(reporterName));
+                    createStyledCell(r, 6, sanitizeForSpreadsheet(reporterName), styleHelper.getDataLeftStyle(isZebra));
 
-                    r.createCell(7).setCellValue(sanitizeForSpreadsheet(is.getDueDate() != null ? is.getDueDate().toString() : ""));
+                    createStyledCell(r, 7, sanitizeForSpreadsheet(is.getDueDate() != null ? is.getDueDate().toString() : ""), styleHelper.getDataCenterStyle(isZebra));
+
                     double estH = is.getOriginalEstimateMin() != null ? Math.round((is.getOriginalEstimateMin() / 60.0) * 100.0) / 100.0 : 0.0;
                     double spentH = is.getTimeSpentMin() != null ? Math.round((is.getTimeSpentMin() / 60.0) * 100.0) / 100.0 : 0.0;
-                    r.createCell(8).setCellValue(estH);
-                    r.createCell(9).setCellValue(spentH);
-                    r.createCell(10).setCellValue(sanitizeForSpreadsheet(is.getCreatedAt() != null ? is.getCreatedAt().format(dtf) : ""));
-                    r.createCell(11).setCellValue(sanitizeForSpreadsheet(is.getUpdatedAt() != null ? is.getUpdatedAt().format(dtf) : ""));
+                    createStyledNumericCell(r, 8, estH, styleHelper.getDataDecimalStyle(isZebra));
+                    createStyledNumericCell(r, 9, spentH, styleHelper.getDataDecimalStyle(isZebra));
+
+                    createStyledCell(r, 10, sanitizeForSpreadsheet(is.getCreatedAt() != null ? is.getCreatedAt().format(dtf) : ""), styleHelper.getDataCenterStyle(isZebra));
+                    createStyledCell(r, 11, sanitizeForSpreadsheet(is.getUpdatedAt() != null ? is.getUpdatedAt().format(dtf) : ""), styleHelper.getDataCenterStyle(isZebra));
                 }
             }
 
+            sheet3.createFreezePane(0, 1);
+            if (issues != null && !issues.isEmpty()) {
+                sheet3.setAutoFilter(new CellRangeAddress(0, issues.size(), 0, s3Headers.length - 1));
+            }
+            int[] s3MinWidths = {15, 32, 14, 16, 16, 22, 22, 16, 16, 16, 18, 18};
+            ExcelStyleHelper.formatColumns(sheet3, s3MinWidths, 55);
+
             // Sheet 4: Log thời gian
             Sheet sheet4 = workbook.createSheet("Log thời gian");
+            ExcelStyleHelper.prepareSheet(sheet4);
+
             String[] s4Headers = {
                     "Mã công việc", "Tiêu đề công việc", "Thành viên log", "Email", "Ngày làm việc",
                     "Thời gian (h)", "Thời gian (phút)", "Ghi chú", "Thời điểm tạo"
             };
             Row s4HeaderRow = sheet4.createRow(0);
+            s4HeaderRow.setHeightInPoints(ExcelStyleHelper.HEADER_ROW_HEIGHT);
             for (int i = 0; i < s4Headers.length; i++) {
-                s4HeaderRow.createCell(i).setCellValue(sanitizeForSpreadsheet(s4Headers[i]));
+                Cell c = s4HeaderRow.createCell(i);
+                c.setCellValue(sanitizeForSpreadsheet(s4Headers[i]));
+                c.setCellStyle(styleHelper.getHeaderCenterStyle());
             }
+
             int r4 = 1;
             if (worklogs != null) {
                 for (Worklog wl : worklogs) {
                     Row r = sheet4.createRow(r4++);
+                    r.setHeightInPoints(ExcelStyleHelper.DATA_ROW_HEIGHT);
+                    boolean isZebra = (r4 % 2 == 1);
+
                     String key = wl.getIssue() != null ? wl.getIssue().getIssueKey() : "";
                     String sum = wl.getIssue() != null ? wl.getIssue().getSummary() : "";
                     String uName = wl.getUser() != null ? (wl.getUser().getFullName() != null ? wl.getUser().getFullName() : wl.getUser().getEmail()) : "";
@@ -443,17 +548,24 @@ public class ExportServiceImpl implements IExportService {
                     int min = wl.getTimeSpentMin() != null ? wl.getTimeSpentMin() : 0;
                     double h = Math.round((min / 60.0) * 100.0) / 100.0;
 
-                    r.createCell(0).setCellValue(sanitizeForSpreadsheet(key));
-                    r.createCell(1).setCellValue(sanitizeForSpreadsheet(sum));
-                    r.createCell(2).setCellValue(sanitizeForSpreadsheet(uName));
-                    r.createCell(3).setCellValue(sanitizeForSpreadsheet(uEmail));
-                    r.createCell(4).setCellValue(sanitizeForSpreadsheet(wl.getWorkDate() != null ? wl.getWorkDate().toString() : ""));
-                    r.createCell(5).setCellValue(h);
-                    r.createCell(6).setCellValue(min);
-                    r.createCell(7).setCellValue(sanitizeForSpreadsheet(wl.getComment()));
-                    r.createCell(8).setCellValue(sanitizeForSpreadsheet(wl.getCreatedAt() != null ? wl.getCreatedAt().format(dtf) : ""));
+                    createStyledCell(r, 0, sanitizeForSpreadsheet(key), styleHelper.getDataCenterStyle(isZebra));
+                    createStyledCell(r, 1, sanitizeForSpreadsheet(sum), styleHelper.getDataLeftStyle(isZebra));
+                    createStyledCell(r, 2, sanitizeForSpreadsheet(uName), styleHelper.getDataLeftStyle(isZebra));
+                    createStyledCell(r, 3, sanitizeForSpreadsheet(uEmail), styleHelper.getDataLeftStyle(isZebra));
+                    createStyledCell(r, 4, sanitizeForSpreadsheet(wl.getWorkDate() != null ? wl.getWorkDate().toString() : ""), styleHelper.getDataCenterStyle(isZebra));
+                    createStyledNumericCell(r, 5, h, styleHelper.getDataDecimalStyle(isZebra));
+                    createStyledNumericCell(r, 6, min, styleHelper.getDataIntegerStyle(isZebra));
+                    createStyledCell(r, 7, sanitizeForSpreadsheet(wl.getComment()), styleHelper.getDataLeftStyle(isZebra));
+                    createStyledCell(r, 8, sanitizeForSpreadsheet(wl.getCreatedAt() != null ? wl.getCreatedAt().format(dtf) : ""), styleHelper.getDataCenterStyle(isZebra));
                 }
             }
+
+            sheet4.createFreezePane(0, 1);
+            if (worklogs != null && !worklogs.isEmpty()) {
+                sheet4.setAutoFilter(new CellRangeAddress(0, worklogs.size(), 0, s4Headers.length - 1));
+            }
+            int[] s4MinWidths = {15, 32, 22, 28, 16, 16, 16, 30, 18};
+            ExcelStyleHelper.formatColumns(sheet4, s4MinWidths, 55);
 
             workbook.write(out);
             return out.toByteArray();
@@ -468,6 +580,22 @@ public class ExportServiceImpl implements IExportService {
                     workbook.close();
                 } catch (Exception ignored) {}
             }
+        }
+    }
+
+    private void createStyledCell(Row row, int colIndex, String value, CellStyle style) {
+        Cell cell = row.createCell(colIndex);
+        cell.setCellValue(value != null ? value : "");
+        if (style != null) {
+            cell.setCellStyle(style);
+        }
+    }
+
+    private void createStyledNumericCell(Row row, int colIndex, double value, CellStyle style) {
+        Cell cell = row.createCell(colIndex);
+        cell.setCellValue(value);
+        if (style != null) {
+            cell.setCellStyle(style);
         }
     }
 }
