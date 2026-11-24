@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 import EmailLoginForm from '../components/EmailLoginForm';
 import { authService } from '../../../services/authService';
@@ -16,7 +16,8 @@ export default function Login({ onLogin, onRegister, onForgotPassword }: LoginPr
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleEmailSubmit(email: string, password: string) {
+  const handleEmailSubmit = async (email: string, password: string) => {
+    if (loading) return; // Prevent double submission
     setLoading(true);
     setError(null);
     try {
@@ -56,41 +57,48 @@ export default function Login({ onLogin, onRegister, onForgotPassword }: LoginPr
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  async function handleGoogleTokenReceived(idToken: string) {
-    setGoogleLoading(true);
-    setError(null);
-    try {
-      const res = await authService.googleLogin(idToken);
-      if (res?.success || res?.data?.accessToken) {
-        let userObj = res.data?.user ? mapUserResponseToUser(res.data.user) : null;
-        if (!userObj) {
-          try {
-            const meRes = await userService.getMe();
-            if (meRes?.data) {
-              userObj = mapUserResponseToUser(meRes.data);
+  const handleGoogleTokenReceived = useCallback(
+    async (idToken: string) => {
+      setGoogleLoading(true);
+      setError(null);
+      try {
+        const res = await authService.googleLogin(idToken);
+        if (res?.success || res?.data?.accessToken) {
+          let userObj = res.data?.user ? mapUserResponseToUser(res.data.user) : null;
+          if (!userObj) {
+            try {
+              const meRes = await userService.getMe();
+              if (meRes?.data) {
+                userObj = mapUserResponseToUser(meRes.data);
+              }
+            } catch {
+              // Error fetching me
             }
-          } catch {
-            // Error fetching me
           }
+          if (!userObj) {
+            setError('Không thể tải thông tin tài khoản Google từ máy chủ.');
+            return;
+          }
+          useAuthStore.getState().login(userObj, res.data.accessToken);
+          onLogin();
+        } else {
+          setError(res?.message || 'Đăng nhập bằng Google không thành công');
         }
-        if (!userObj) {
-          setError('Không thể tải thông tin tài khoản Google từ máy chủ.');
-          return;
-        }
-        useAuthStore.getState().login(userObj, res.data.accessToken);
-        onLogin();
-      } else {
-        setError(res?.message || 'Đăng nhập bằng Google không thành công');
+      } catch (err: any) {
+        const rawMsg = err?.response?.data?.message || err?.message || '';
+        setError(rawMsg || 'Xác thực tài khoản Google thất bại. Vui lòng kiểm tra lại ID Token.');
+      } finally {
+        setGoogleLoading(false);
       }
-    } catch (err: any) {
-      const rawMsg = err?.response?.data?.message || err?.message || '';
-      setError(rawMsg || 'Xác thực tài khoản Google thất bại. Vui lòng kiểm tra lại ID Token.');
-    } finally {
-      setGoogleLoading(false);
-    }
-  }
+    },
+    [onLogin]
+  );
+
+  const handleGoogleError = useCallback((msg: string) => {
+    setError(msg);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-10 selection:bg-[#FDF2F2] selection:text-[#C5221F]">
@@ -142,7 +150,7 @@ export default function Login({ onLogin, onRegister, onForgotPassword }: LoginPr
         {/* Google Official Login Button */}
         <GoogleLoginButton
           onTokenReceived={handleGoogleTokenReceived}
-          onError={(msg) => setError(msg)}
+          onError={handleGoogleError}
           loading={googleLoading}
         />
 
