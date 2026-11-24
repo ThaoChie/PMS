@@ -169,22 +169,23 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 modal-backdrop px-4"
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 modal-backdrop p-3 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white border border-[#E5E5E7] rounded-xl w-full max-w-2xl shadow-xl flex flex-col max-h-[90vh]"
+        className="bg-white border border-[#E5E5E7] rounded-xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E5E7] shrink-0">
-          <h2 className="text-sm font-semibold text-[#1A1A1A]">Tạo công việc mới</h2>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#E5E5E7] shrink-0">
+          <h2 className="text-sm sm:text-base font-semibold text-[#1A1A1A]">Tạo công việc mới</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-[#9B9B9F] hover:text-[#1A1A1A] transition-colors"
+            aria-label="Đóng biểu mẫu tạo công việc"
+            className="w-11 h-11 flex items-center justify-center rounded-lg text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5 sm:w-4 sm:h-4" />
           </button>
         </div>
 
@@ -198,8 +199,8 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="overflow-y-auto flex-1 px-6 py-5">
-            <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="overflow-y-auto flex-1 px-4 sm:px-6 py-4 sm:py-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
               <Field label="Dự án" required>
                 <select
                   value={form.projectId}
@@ -252,7 +253,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
               <Field label="Mức độ ưu tiên">
                 <select
                   value={form.priority}
@@ -282,7 +283,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
               <Field label="Nhãn (Labels)" optional>
                 <input
                   value={form.labels}
@@ -301,7 +302,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
               <Field label="Ngày tạo">
                 <input
                   type="text"
@@ -321,7 +322,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="mb-4">
               <Field label="Môi trường" optional>
                 <input
                   value={form.environment}
@@ -338,7 +339,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                 <p className="text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider mb-3">
                   Thông tin bổ sung dự án ({customFields.length})
                 </p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {customFields.map((cf) => {
                     const optionsList = cf.options ? cf.options.split(',').map((s) => s.trim()).filter(Boolean) : [];
                     const val = customFieldValues[cf.fieldKey] || '';
@@ -392,11 +393,11 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E5E5E7] shrink-0">
+          <div className="flex items-center justify-end gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-t border-[#E5E5E7] shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
+              className="px-4 py-2 min-h-[44px] border border-[#E5E5E7] text-xs sm:text-sm text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
             >
               Hủy
             </button>
@@ -404,7 +405,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
               id="create-issue-submit-btn"
               type="submit"
               disabled={saving || !form.summary.trim()}
-              className="px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 min-h-[44px] bg-[#E53E3E] text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? 'Đang tạo…' : 'Tạo công việc'}
             </button>

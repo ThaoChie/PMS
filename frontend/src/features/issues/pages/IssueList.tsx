@@ -449,28 +449,35 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
   }
 
   return (
-    <div className="h-full flex bg-white overflow-hidden">
+    <div className="h-full flex bg-white overflow-hidden relative">
       {filterPanelOpen && (
-        <AdvancedSearchPanel
-          criteria={criteria}
-          onChange={patchCriteria}
-          statuses={statuses}
-          members={members}
-          hasFilters={hasFilters}
-          onClearFilters={clearFilters}
-          onSaveFilter={() => setShowSaveFilter(true)}
-        />
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-40 md:hidden transition-opacity"
+            onClick={() => setFilterPanelOpen(false)}
+          />
+          <AdvancedSearchPanel
+            criteria={criteria}
+            onChange={patchCriteria}
+            statuses={statuses}
+            members={members}
+            hasFilters={hasFilters}
+            onClearFilters={clearFilters}
+            onSaveFilter={() => setShowSaveFilter(true)}
+            onClose={() => setFilterPanelOpen(false)}
+          />
+        </>
       )}
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top toolbar */}
-        <div className="px-6 py-3 border-b border-[#E5E5E7] flex items-center justify-between gap-3 shrink-0">
+        <div className="px-4 py-2.5 sm:px-6 sm:py-3 border-b border-[#E5E5E7] flex flex-wrap items-center justify-between gap-2.5 shrink-0">
           <div className="flex items-center gap-2 min-w-0 flex-wrap">
             <button
               type="button"
               onClick={() => setFilterPanelOpen((o) => !o)}
-              className={`p-1.5 rounded-md border text-xs flex items-center gap-1.5 transition-colors shrink-0 ${
+              className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 rounded-md border text-xs sm:text-sm flex items-center gap-1.5 transition-colors shrink-0 ${
                 filterPanelOpen
                   ? 'border-[#1A1A1A] bg-[#F7F7F8] text-[#1A1A1A]'
                   : 'border-[#E5E5E7] text-[#6B6B70] hover:border-[#C5C5C8]'
@@ -635,7 +642,7 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
               value={criteria.keyword}
               onChange={(e) => patchCriteria({ keyword: e.target.value })}
               placeholder={MESSAGES.SEARCH.KEYWORD_PLACEHOLDER}
-              className="px-3 py-1.5 border border-[#E5E5E7] rounded-md text-xs text-[#1A1A1A] placeholder:text-[#9B9B9F] w-56 focus:outline-none focus:border-[#1A1A1A] shrink-0"
+              className="px-3 py-1.5 border border-[#E5E5E7] rounded-md text-xs sm:text-sm text-[#1A1A1A] placeholder:text-[#9B9B9F] w-full sm:w-56 focus:outline-none focus:border-[#1A1A1A] shrink-0"
             />
             <QuickFilterChips
               options={QUICK_FILTER_OPTIONS.map((q) => ({ id: q.id, label: q.label }))}
@@ -649,8 +656,9 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
             <button
               type="button"
               onClick={loadIssues}
-              className="p-1.5 rounded-md border border-[#E5E5E7] text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
+              className="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-md border border-[#E5E5E7] text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
               title={MESSAGES.COMMON.RETRY}
+              aria-label={MESSAGES.COMMON.RETRY}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             </button>

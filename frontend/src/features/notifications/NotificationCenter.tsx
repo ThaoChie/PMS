@@ -257,36 +257,36 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
 
   return (
     <div className="h-full overflow-y-auto bg-white">
-      <div className="max-w-2xl mx-auto px-8 py-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-xl font-bold text-[#1A1A1A]">Trung tâm thông báo</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1A1A1A]">Trung tâm thông báo</h1>
             {unreadCount > 0 ? (
-              <p className="text-xs text-[#6B6B70] mt-0.5">{unreadCount} thông báo chưa đọc</p>
+              <p className="text-xs sm:text-sm text-[#6B6B70] mt-0.5">{unreadCount} thông báo chưa đọc</p>
             ) : (
-              <p className="text-xs text-[#9B9B9F] mt-0.5">Bạn đã xem hết các thông báo</p>
+              <p className="text-xs sm:text-sm text-[#9B9B9F] mt-0.5">Bạn đã xem hết các thông báo</p>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               type="button"
               onClick={() => {
                 fetchNotifications(activeFilter === 'all' ? undefined : activeFilter);
                 loadInvitationsData();
               }}
-              className="p-1.5 border border-[#E5E5E7] text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8]"
+              className="w-11 h-11 flex items-center justify-center border border-[#E5E5E7] text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8]"
               title="Làm mới"
               aria-label="Làm mới thông báo"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             {unreadCount > 0 && (
               <button
                 type="button"
                 onClick={markAllAsRead}
-                className="flex items-center gap-1.5 text-xs text-[#6B6B70] hover:text-[#1A1A1A] border border-[#E5E5E7] rounded-lg px-3 py-1.5 hover:bg-[#F7F7F8] transition-colors"
+                className="flex items-center gap-1.5 text-xs sm:text-sm text-[#6B6B70] hover:text-[#1A1A1A] border border-[#E5E5E7] rounded-lg px-3.5 py-2.5 min-h-[44px] hover:bg-[#F7F7F8] transition-colors"
               >
-                <Check className="w-3.5 h-3.5" /> Đánh dấu đã đọc tất cả
+                <Check className="w-4 h-4" /> Đánh dấu đã đọc tất cả
               </button>
             )}
           </div>
@@ -440,13 +440,13 @@ export default function NotificationCenter({ onNavigate }: NotificationCenterPro
         )}
 
         {/* Filter tabs */}
-        <div className="flex items-center gap-1 mb-5 flex-wrap">
+        <div className="flex items-center gap-1.5 mb-5 overflow-x-auto no-scrollbar whitespace-nowrap pb-1">
           {FILTERS.map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setActiveFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-3.5 py-2 min-h-[38px] rounded-lg text-xs font-medium transition-colors shrink-0 ${
                 activeFilter === f
                   ? 'bg-[#1A1A1A] text-white'
                   : 'text-[#6B6B70] hover:bg-[#F7F7F8] hover:text-[#1A1A1A]'

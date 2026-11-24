@@ -248,39 +248,40 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-white overflow-hidden">
       {/* Board header */}
-      <div className="px-6 py-4 border-b border-[#E5E5E7] flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-[#1A1A1A]">Bảng công việc (Kanban)</h2>
-          <span className="text-xs text-[#6B6B70]">
+      <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-[#E5E5E7] flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <h2 className="text-sm sm:text-base font-semibold text-[#1A1A1A] truncate">Bảng công việc (Kanban)</h2>
+          <span className="text-xs text-[#6B6B70] truncate">
             {currentProject ? `${currentProject.name} (${currentProject.key})` : 'Dự án'}
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-[#6B6B70]">
+        <div className="flex items-center gap-3 shrink-0">
+          <span className="text-xs text-[#6B6B70] hidden sm:inline">
             Hiển thị {filteredIssues.length}/{issues.length} công việc
           </span>
           <button
             type="button"
             onClick={loadData}
-            className="p-1.5 rounded-md border border-[#E5E5E7] text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
+            aria-label="Làm mới bảng"
+            className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border border-[#E5E5E7] text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
             title="Làm mới"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 sm:w-3.5 sm:h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
       {/* Quick Filter Bar */}
-      <div className="px-6 py-2.5 border-b border-[#F0F0F2] bg-[#FAF9F6] flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="px-4 py-2.5 sm:px-6 border-b border-[#F0F0F2] bg-[#FAF9F6] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 text-xs">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
           {/* My issues button */}
           <button
             type="button"
             onClick={() => setOnlyMyIssues((prev) => !prev)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-medium transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] sm:min-h-0 rounded-lg border font-medium transition-all ${
               onlyMyIssues
                 ? 'bg-[#1A1A1A] text-white border-[#1A1A1A] shadow-xs'
                 : 'bg-white text-[#6B6B70] border-[#E5E5E7] hover:border-[#1A1A1A] hover:text-[#1A1A1A]'
@@ -291,13 +292,13 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
           </button>
 
           {/* Type filter pills */}
-          <div className="flex items-center gap-1 bg-white border border-[#E5E5E7] rounded-lg p-0.5">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-white border border-[#E5E5E7] rounded-lg p-0.5 overflow-x-auto max-w-full">
             {['ALL', 'Story', 'Task', 'Bug', 'Epic', 'Sub-task'].map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setSelectedType(t)}
-                className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                className={`px-2 py-1.5 sm:py-1 min-h-[34px] sm:min-h-0 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap shrink-0 ${
                   selectedType === t
                     ? 'bg-[#1A1A1A] text-white'
                     : 'text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8]'
@@ -316,7 +317,7 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
                 setSelectedType('ALL');
                 setSearchKeyword('');
               }}
-              className="text-[11px] text-[#E53E3E] hover:underline ml-1"
+              className="text-[11px] text-[#E53E3E] hover:underline ml-1 py-1"
             >
               Xóa bộ lọc
             </button>
@@ -324,21 +325,21 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
         </div>
 
         {/* Search input in board */}
-        <div className="relative w-48 sm:w-60">
+        <div className="relative w-full sm:w-56 md:w-64 shrink-0">
           <Search className="w-3.5 h-3.5 text-[#9B9B9F] absolute left-2.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Lọc mã hoặc tiêu đề..."
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            className="w-full pl-8 pr-3 py-1 bg-white border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
+            className="w-full pl-8 pr-3 py-1.5 sm:py-1 bg-white border border-[#E5E5E7] rounded-lg text-xs sm:text-sm text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
           />
         </div>
       </div>
 
       {/* Error alert */}
       {errorMessage && (
-        <div className="mx-6 mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between text-xs text-red-700">
+        <div className="mx-4 sm:mx-6 mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between text-xs text-red-700">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
             <span>{errorMessage}</span>
@@ -346,7 +347,7 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
           <button
             type="button"
             onClick={() => setErrorMessage(null)}
-            className="text-red-600 hover:text-red-800 text-xs font-semibold"
+            className="text-red-600 hover:text-red-800 text-xs font-semibold p-1"
           >
             Đóng
           </button>
@@ -354,8 +355,8 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
       )}
 
       {/* Columns */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
-        <div className="flex gap-4 h-full min-w-max">
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-4 md:p-6">
+        <div className="flex gap-3 sm:gap-4 h-full min-w-max">
           {statuses.map((col) => {
             const colIssues = filteredIssues.filter(
               (i) => i.status && i.status.toLowerCase() === col.name.toLowerCase()

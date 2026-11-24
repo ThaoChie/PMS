@@ -90,7 +90,7 @@ export const BugReportTab: React.FC<BugReportTabProps> = ({ from, to }) => {
   return (
     <div className="space-y-6">
       {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="border border-[#E5E5E7] rounded-xl p-4 bg-white">
           <p className="text-[10px] font-medium text-[#9B9B9F] uppercase tracking-wider mb-1">Tổng số lỗi</p>
           <p className="text-2xl font-bold text-[#1A1A1A]">{totalBugs}</p>

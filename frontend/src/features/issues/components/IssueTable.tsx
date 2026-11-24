@@ -213,8 +213,8 @@ export default function IssueTable({
   });
 
   return (
-    <div className="flex-1 overflow-auto bg-white">
-      <table className="w-full">
+    <div className="flex-1 overflow-x-auto overflow-y-auto bg-white">
+      <table className="w-full min-w-[760px]">
         <thead className="sticky top-0 bg-[#F7F7F8] border-b border-[#E5E5E7] z-10">
           <tr>
             {[

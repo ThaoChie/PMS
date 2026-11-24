@@ -38,7 +38,7 @@ export const SavedFiltersWidget: React.FC<SavedFiltersWidgetProps> = ({
           {filters.slice(0, 4).map((f) => (
             <div
               key={f.id}
-              className="flex items-center justify-between px-5 py-2.5 hover:bg-[#F7F7F8] transition-colors cursor-pointer group"
+              className="flex items-center justify-between px-4 sm:px-5 py-3 min-h-[48px] hover:bg-[#F7F7F8] transition-colors cursor-pointer group"
               onClick={() => {
                 if (onSelectFilter) {
                   onSelectFilter(f.id);

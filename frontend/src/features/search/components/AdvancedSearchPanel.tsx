@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, X } from 'lucide-react';
 import { ISSUE_TYPE_OPTIONS, PRIORITY_OPTIONS } from '../../../constants/enums';
 import { MESSAGES } from '../../../constants/messages';
 
@@ -33,6 +33,7 @@ interface AdvancedSearchPanelProps {
   hasFilters: boolean;
   onClearFilters: () => void;
   onSaveFilter?: () => void;
+  onClose?: () => void;
 }
 
 function toggle(list: string[], value: string): string[] {
@@ -52,20 +53,33 @@ export default function AdvancedSearchPanel({
   hasFilters,
   onClearFilters,
   onSaveFilter,
+  onClose,
 }: AdvancedSearchPanelProps) {
   return (
-    <aside className="w-60 shrink-0 border-r border-[#E5E5E7] flex flex-col overflow-y-auto bg-white">
+    <aside className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white border-r border-[#E5E5E7] flex flex-col overflow-y-auto shadow-2xl md:shadow-none md:static md:w-60 md:z-auto shrink-0">
       <div className="px-4 py-3 border-b border-[#E5E5E7] flex items-center justify-between">
         <span className="text-xs font-semibold text-[#1A1A1A]">{MESSAGES.SEARCH.PANEL_TITLE}</span>
-        {hasFilters && (
-          <button
-            type="button"
-            onClick={onClearFilters}
-            className="text-[10px] text-[#E53E3E] hover:text-[#C53030]"
-          >
-            {MESSAGES.SEARCH.CLEAR_ALL}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              className="text-[10px] text-[#E53E3E] hover:text-[#C53030]"
+            >
+              {MESSAGES.SEARCH.CLEAR_ALL}
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] md:hidden"
+              aria-label="Đóng bộ lọc"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="p-4 space-y-5 flex-1">

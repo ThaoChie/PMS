@@ -22,7 +22,7 @@ export default function UserMenu({
     <div className="relative">
       <button
         type="button"
-        className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-white/60 transition-colors"
+        className="w-full flex items-center gap-2.5 px-2 py-2 min-h-[44px] rounded-lg hover:bg-white/60 transition-colors"
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen((o) => !o);

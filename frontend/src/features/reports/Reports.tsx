@@ -30,11 +30,11 @@ export default function Reports({ role }: ReportsProps) {
 
   return (
     <div className="h-full overflow-y-auto bg-white">
-      <div className="max-w-5xl mx-auto px-6 sm:px-8 py-8 sm:py-10">
+      <div className="max-w-5xl mx-auto px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-[#1A1A1A]">Báo cáo & Thống kê</h1>
-            <p className="text-sm text-[#6B6B70] mt-0.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1A1A1A]">Báo cáo & Thống kê</h1>
+            <p className="text-xs sm:text-sm text-[#6B6B70] mt-0.5 leading-relaxed">
               {currentProject
                 ? `Tiến độ và hiệu suất công việc trong dự án: ${currentProject.name} (${currentProject.key})`
                 : 'Tiến độ và hiệu suất công việc trong dự án'}
@@ -57,9 +57,9 @@ export default function Reports({ role }: ReportsProps) {
         ) : (
           <>
             {/* Filter bar: Tabs + Date preset + Metric toggle */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#E5E5E7] mb-8 pb-2 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#E5E5E7] mb-6 sm:mb-8 pb-2 gap-4">
               {/* Tabs */}
-              <div className="flex -mb-2 space-x-1">
+              <div className="flex -mb-2 space-x-1 overflow-x-auto no-scrollbar whitespace-nowrap min-w-0 pb-1">
                 {[
                   { id: 'progress' as const, label: 'Tiến độ (Burn-down)' },
                   { id: 'productivity' as const, label: 'Năng suất' },
@@ -68,7 +68,7 @@ export default function Reports({ role }: ReportsProps) {
                   <button
                     key={t.id}
                     onClick={() => setActiveTab(t.id)}
-                    className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                    className={`px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors shrink-0 ${
                       activeTab === t.id
                         ? 'border-[#1A1A1A] text-[#1A1A1A]'
                         : 'border-transparent text-[#6B6B70] hover:text-[#1A1A1A]'

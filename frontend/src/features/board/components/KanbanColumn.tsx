@@ -29,7 +29,7 @@ export default function KanbanColumn({
 }: KanbanColumnProps) {
   return (
     <div
-      className="flex flex-col w-64 shrink-0"
+      className="flex flex-col w-[82vw] max-w-xs sm:w-72 shrink-0"
       onDragOver={(e) => {
         e.preventDefault();
         onDragOver?.(e);

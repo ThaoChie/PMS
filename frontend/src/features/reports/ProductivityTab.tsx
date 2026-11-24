@@ -802,7 +802,7 @@ export const ProductivityTab: React.FC<ProductivityTabProps> = ({ role, from: pr
 
       {/* Summary KPI row */}
       {!loading && report && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           <div className="border border-[#E5E5E7] rounded-xl p-3.5 bg-white">
             <p className="text-[10px] font-medium text-[#9B9B9F] uppercase tracking-wider mb-0.5">{MESSAGES.REPORTS.KPI_ASSIGNED}</p>
             <p className="text-xl font-bold text-[#1A1A1A]">{report.totalAssigned ?? 0}</p>
@@ -1030,7 +1030,8 @@ export const ProductivityTab: React.FC<ProductivityTabProps> = ({ role, from: pr
               <button
                 type="button"
                 onClick={() => currentProject && selectMember(Number(currentProject.id), null)}
-                className="p-1 rounded-md text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-white"
+                className="w-11 h-11 flex items-center justify-center rounded-lg text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-white transition-colors"
+                aria-label="Đóng chi tiết thành viên"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

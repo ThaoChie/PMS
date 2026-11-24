@@ -49,6 +49,7 @@ export default function Topbar({
   // Nhịp đồng hồ 30 giây: nhãn "x phút trước" trong chuông thông báo tự chạy
   const now = useNow(30000);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const toggleMobileSidebar = useUIStore((s) => s.toggleMobileSidebar);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -62,60 +63,77 @@ export default function Topbar({
 
   return (
     <header
-      className="h-14 border-b border-[#E5E5E7] flex items-center gap-3 px-5 bg-white shrink-0"
+      className="h-14 border-b border-[#E5E5E7] flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-5 bg-white shrink-0 w-full relative z-20"
       onClick={(e) => {
         e.stopPropagation();
         setNotifOpen(false);
         setUserDropdownOpen(false);
       }}
     >
-      {/* Toggle sidebar button for tablet & desktop */}
-      <button
-        type="button"
-        title="Thu gọn / Mở rộng menu"
-        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F7F7F8] text-[#6B6B70] transition-colors shrink-0"
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleSidebar();
-        }}
-      >
-        <Menu className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        {/* Toggle sidebar button: mobile opens mobile drawer, desktop toggles collapse */}
+        <button
+          type="button"
+          title="Thu gọn / Mở rộng menu"
+          className="w-11 h-11 flex items-center justify-center rounded-lg hover:bg-[#F7F7F8] text-[#6B6B70] transition-colors shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (typeof window !== 'undefined' && window.innerWidth < 768) {
+              toggleMobileSidebar();
+            } else {
+              toggleSidebar();
+            }
+          }}
+        >
+          <Menu className="w-5 h-5 sm:w-4 sm:h-4" />
+        </button>
 
-      {/* Search trigger */}
-      <button
-        type="button"
-        className="flex-1 max-w-xs flex items-center gap-2 px-3 py-2 bg-[#F7F7F8] border border-[#E5E5E7] rounded-lg text-sm text-[#6B6B70] hover:border-[#C5C5C8] transition-colors"
-        onClick={onSearch}
-      >
-        <Search className="w-3.5 h-3.5" />
-        <span className="text-xs">Tìm kiếm công việc, dự án…</span>
-        <kbd className="ml-auto text-[10px] text-[#9B9B9F] border border-[#E5E5E7] rounded px-1 py-0.5">
-          ⌘K
-        </kbd>
-      </button>
+        {/* Mobile search trigger icon */}
+        <button
+          type="button"
+          aria-label="Tìm kiếm công việc, dự án"
+          className="sm:hidden w-11 h-11 flex items-center justify-center rounded-lg hover:bg-[#F7F7F8] text-[#6B6B70] border border-[#E5E5E7] transition-colors shrink-0"
+          onClick={onSearch}
+        >
+          <Search className="w-4 h-4" />
+        </button>
 
-      <div className="flex items-center gap-2 ml-auto">
+        {/* Tablet & Desktop search bar trigger */}
+        <button
+          type="button"
+          className="hidden sm:flex flex-1 max-w-xs items-center gap-2 px-3 py-2 bg-[#F7F7F8] border border-[#E5E5E7] rounded-lg text-sm text-[#6B6B70] hover:border-[#C5C5C8] transition-colors"
+          onClick={onSearch}
+        >
+          <Search className="w-3.5 h-3.5 shrink-0" />
+          <span className="text-xs truncate">Tìm kiếm công việc, dự án…</span>
+          <kbd className="ml-auto text-[10px] text-[#9B9B9F] border border-[#E5E5E7] rounded px-1 py-0.5 shrink-0">
+            ⌘K
+          </kbd>
+        </button>
+      </div>
+
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {/* Notification bell */}
         <div className="relative">
           <button
             type="button"
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F7F7F8] transition-colors relative"
+            aria-label="Thông báo"
+            className="w-11 h-11 flex items-center justify-center rounded-lg hover:bg-[#F7F7F8] transition-colors relative"
             onClick={(e) => {
               e.stopPropagation();
               setNotifOpen((o) => !o);
               setUserDropdownOpen(false);
             }}
           >
-            <Bell className="w-4 h-4 text-[#6B6B70]" />
+            <Bell className="w-5 h-5 sm:w-4 sm:h-4 text-[#6B6B70]" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-[#E53E3E] rounded-full" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#E53E3E] rounded-full" />
             )}
           </button>
 
           {notifOpen && (
             <div
-              className="absolute right-0 top-10 w-96 bg-white border border-[#E5E5E7] rounded-xl shadow-lg z-50 overflow-hidden fade-in"
+              className="fixed inset-x-3 top-14 sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 w-auto sm:w-96 max-w-sm bg-white border border-[#E5E5E7] rounded-xl shadow-2xl z-50 overflow-hidden fade-in"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E5E7]">
@@ -131,7 +149,7 @@ export default function Topbar({
                   {unreadCount > 0 && (
                     <button
                       type="button"
-                      className="text-[11px] text-[#6B6B70] hover:text-[#1A1A1A] flex items-center gap-1"
+                      className="text-[11px] text-[#6B6B70] hover:text-[#1A1A1A] flex items-center gap-1 py-1"
                       onClick={() => markAllAsRead()}
                     >
                       <Check className="w-3 h-3" /> Đã đọc hết
@@ -139,7 +157,7 @@ export default function Topbar({
                   )}
                   <button
                     type="button"
-                    className="text-[11px] text-[#E53E3E] hover:text-[#C53030] font-medium"
+                    className="text-[11px] text-[#E53E3E] hover:text-[#C53030] font-medium py-1"
                     onClick={() => {
                       onNavigate('notifications');
                       setNotifOpen(false);
@@ -193,21 +211,24 @@ export default function Topbar({
           )}
         </div>
 
-        {/* Create Issue */}
-        <button id="topbar-create-issue-btn"
+        {/* Create Issue button */}
+        <button
+          id="topbar-create-issue-btn"
           type="button"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
+          aria-label="Tạo công việc"
+          className="flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 min-h-[40px] sm:min-h-0 bg-[#E53E3E] text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-[#C53030] transition-colors shrink-0"
           onClick={onCreateIssue}
         >
-          <Plus className="w-3.5 h-3.5" />
-          Tạo công việc
+          <Plus className="w-4 h-4 shrink-0" />
+          <span className="hidden sm:inline">Tạo công việc</span>
         </button>
 
         {/* User profile dropdown */}
         <div className="relative">
           <button
             type="button"
-            className="flex items-center gap-2 p-1 rounded-lg hover:bg-[#F7F7F8] transition-colors"
+            aria-label="Menu cá nhân"
+            className="w-11 h-11 flex items-center justify-center rounded-lg hover:bg-[#F7F7F8] transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               setUserDropdownOpen((o) => !o);
@@ -219,7 +240,7 @@ export default function Topbar({
 
           {userDropdownOpen && (
             <div
-              className="absolute right-0 top-10 w-52 bg-white border border-[#E5E5E7] rounded-xl shadow-lg z-50 overflow-hidden fade-in py-1"
+              className="absolute right-0 top-12 w-52 bg-white border border-[#E5E5E7] rounded-xl shadow-xl z-50 overflow-hidden fade-in py-1"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="px-3 py-2 border-b border-[#E5E5E7]">
@@ -228,7 +249,7 @@ export default function Topbar({
               </div>
               <button
                 type="button"
-                className="w-full text-left px-3 py-2 text-xs text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
+                className="w-full text-left px-3 py-2.5 text-xs sm:text-sm text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
                 onClick={() => {
                   onNavigate('profile');
                   setUserDropdownOpen(false);
@@ -238,7 +259,7 @@ export default function Topbar({
               </button>
               <button
                 type="button"
-                className="w-full text-left px-3 py-2 text-xs text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
+                className="w-full text-left px-3 py-2.5 text-xs sm:text-sm text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
                 onClick={() => {
                   onNavigate('invitations');
                   setUserDropdownOpen(false);
@@ -249,7 +270,7 @@ export default function Topbar({
               <div className="border-t border-[#E5E5E7] my-1" />
               <button
                 type="button"
-                className="w-full text-left px-3 py-2 text-xs text-[#E53E3E] hover:bg-[#FDECEC] transition-colors"
+                className="w-full text-left px-3 py-2.5 text-xs sm:text-sm text-[#E53E3E] hover:bg-[#FDECEC] transition-colors font-medium"
                 onClick={onLogout}
               >
                 Đăng xuất

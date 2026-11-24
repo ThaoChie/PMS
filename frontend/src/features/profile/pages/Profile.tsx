@@ -82,10 +82,10 @@ export default function Profile() {
 
   return (
     <div className="h-full overflow-y-auto bg-white">
-      <div className="max-w-2xl mx-auto px-8 py-10">
-        <div className="mb-8">
-          <h1 className="text-xl font-bold text-[#1A1A1A]">Hồ sơ cá nhân</h1>
-          <p className="text-sm text-[#6B6B70] mt-0.5">
+      <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#1A1A1A]">Hồ sơ cá nhân</h1>
+          <p className="text-xs sm:text-sm text-[#6B6B70] mt-0.5 leading-relaxed">
             Quản lý thông tin cá nhân và cài đặt tài khoản của bạn
           </p>
         </div>
@@ -97,7 +97,7 @@ export default function Profile() {
         )}
 
         {/* Profile section */}
-        <div className="bg-white border border-[#E5E5E7] rounded-xl p-6 mb-5">
+        <div className="bg-white border border-[#E5E5E7] rounded-xl p-4 sm:p-6 mb-5">
           <h2 className="text-sm font-semibold text-[#1A1A1A] mb-5">Thông tin tài khoản</h2>
 
           <AvatarUpload
@@ -148,11 +148,11 @@ export default function Profile() {
               />
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-3 pt-3">
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-60 transition-colors cursor-pointer"
+                className="px-4 py-2 min-h-[44px] bg-[#E53E3E] text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-60 transition-colors cursor-pointer"
               >
                 {saving ? 'Đang lưu…' : 'Lưu thay đổi'}
               </button>

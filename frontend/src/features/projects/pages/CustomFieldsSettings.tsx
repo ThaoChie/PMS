@@ -454,22 +454,23 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
 
         {/* Modal Add / Edit Custom Field */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E5E7]">
-                <h3 className="text-sm font-semibold text-[#1A1A1A]">
+          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-[#E5E5E7] sticky top-0 bg-white z-10">
+                <h3 className="text-sm sm:text-base font-semibold text-[#1A1A1A]">
                   {editingFieldId !== null ? 'Chỉnh sửa trường tùy chỉnh' : 'Thêm trường tùy chỉnh mới'}
                 </h3>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="text-[#9B9B9F] hover:text-[#1A1A1A] p-1 rounded-md"
+                  aria-label="Đóng"
+                  className="w-10 h-10 flex items-center justify-center text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] rounded-lg transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5 sm:w-4 sm:h-4" />
                 </button>
               </div>
 
-              <form onSubmit={handleSave} className="p-5 space-y-4">
+              <form onSubmit={handleSave} className="p-4 sm:p-5 space-y-4">
                 {error && (
                   <div className="p-2.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-xs">
                     {error}
@@ -515,7 +516,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-[#1A1A1A] mb-1">
                       Kiểu dữ liệu <span className="text-red-500">*</span>
@@ -580,7 +581,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                     <div className="text-xs font-medium text-[#1A1A1A]">
                       Quy tắc giới hạn số (Validation Rules)
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[11px] font-medium text-[#6B6B70] mb-1">
                           Giá trị tối thiểu (Min)
@@ -647,7 +648,7 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                     id="cf-btn-cancel"
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-3 py-1.5 border border-[#E5E5E7] rounded-lg text-xs text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
+                    className="px-4 py-2 min-h-[44px] border border-[#E5E5E7] rounded-lg text-xs sm:text-sm text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
                   >
                     Hủy
                   </button>
@@ -655,9 +656,9 @@ export default function CustomFieldsSettings({ role = 'pm' }: CustomFieldsSettin
                     id="cf-btn-submit"
                     type="submit"
                     disabled={saving}
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-[#E53E3E] hover:bg-[#C53030] disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
+                    className="flex items-center gap-1.5 px-4 py-2 min-h-[44px] bg-[#E53E3E] hover:bg-[#C53030] disabled:opacity-50 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors shadow-sm"
                   >
-                    {saving && <Loader2 className="w-3 h-3 animate-spin" />}
+                    {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     <span>{editingFieldId !== null ? 'Lưu thay đổi' : 'Tạo trường'}</span>
                   </button>
                 </div>

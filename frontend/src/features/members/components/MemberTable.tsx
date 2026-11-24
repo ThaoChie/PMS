@@ -34,8 +34,8 @@ export default function MemberTable({
   cancellingId = null,
 }: MemberTableProps) {
   return (
-    <div className="border border-[#E5E5E7] rounded-xl overflow-hidden bg-white">
-      <table className="w-full">
+    <div className="border border-[#E5E5E7] rounded-xl overflow-x-auto bg-white">
+      <table className="w-full min-w-[560px]">
         <thead className="bg-[#F7F7F8] border-b border-[#E5E5E7]">
           <tr>
             <th className="px-5 py-3 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">

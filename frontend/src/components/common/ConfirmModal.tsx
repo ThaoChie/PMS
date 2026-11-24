@@ -34,28 +34,29 @@ export default function ConfirmModal({
           </div>
           <button
             onClick={onCancel}
-            className="w-6 h-6 rounded flex items-center justify-center text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8]"
+            aria-label="Đóng"
+            className="w-10 h-10 rounded-lg flex items-center justify-center text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F7F7F8]"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="p-5">
-          <p className="text-xs text-[#6B6B70] leading-relaxed">{message}</p>
+          <p className="text-xs sm:text-sm text-[#6B6B70] leading-relaxed">{message}</p>
         </div>
 
         <div className="flex items-center justify-end gap-2 px-5 py-3.5 bg-[#F7F7F8] border-t border-[#E5E5E7]">
           <button
             type="button"
             onClick={onCancel}
-            className="px-3.5 py-1.5 border border-[#E5E5E7] bg-white rounded-lg text-xs font-medium text-[#1A1A1A] hover:bg-[#F2F2F3] transition-colors"
+            className="px-4 py-2 min-h-[44px] border border-[#E5E5E7] bg-white rounded-lg text-xs sm:text-sm font-medium text-[#1A1A1A] hover:bg-[#F2F2F3] transition-colors"
           >
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium text-white transition-colors ${
+            className={`px-4 py-2 min-h-[44px] rounded-lg text-xs sm:text-sm font-medium text-white transition-colors ${
               isDanger ? 'bg-[#E53E3E] hover:bg-[#C53030]' : 'bg-[#1A1A1A] hover:bg-black'
             }`}
           >
