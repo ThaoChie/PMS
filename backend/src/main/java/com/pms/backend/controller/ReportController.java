@@ -97,4 +97,27 @@ public class ReportController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ApiResponse.success(reportService.getBugReport(projectId, from, to));
     }
+
+    /** Tạo file cho tab Báo cáo lỗi (tách riêng khỏi xuất danh sách công việc). */
+    @Autowired(required = false)
+    private com.pms.backend.service.impl.BugReportExportService bugReportExportService;
+
+    @GetMapping({"/api/projects/{projectId}/reports/bugs/export", "/projects/{projectId}/reports/bugs/export"})
+    @PreAuthorize("@projectSecurity.hasRole(#projectId, 'PM', 'QA')")
+    public ResponseEntity<byte[]> exportBugReport(
+            @PathVariable Long projectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(defaultValue = "xlsx") String format) {
+        String f = com.pms.backend.service.impl.BugReportExportService.normalizeFormat(format);
+        byte[] data = bugReportExportService.export(projectId, from, to, f);
+        String filename = "bug-report-" + projectId + "-" + LocalDate.now() + "." + f;
+        MediaType type = MediaType.parseMediaType("csv".equals(f)
+                ? com.pms.backend.service.impl.BugReportExportService.CSV_MIME
+                : com.pms.backend.service.impl.BugReportExportService.XLSX_MIME);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(type)
+                .body(data);
+    }
 }
