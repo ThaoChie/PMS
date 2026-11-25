@@ -2,6 +2,8 @@ package com.pms.backend.hibernateDao;
 
 import com.pms.backend.dto.BugReportItemDto;
 import com.pms.backend.dto.BugReportResponse;
+import com.pms.backend.dto.BugReportRowDto;
+import com.pms.backend.model.User;
 import com.pms.backend.enu.IssueType;
 import com.pms.backend.enu.Priority;
 import com.pms.backend.enu.StatusCategory;
@@ -31,42 +33,13 @@ public class BugReportHibernateDao extends BaseHibernateDao {
             to = tmp;
         }
 
-        LocalDateTime endOfTo = to.atTime(23, 59, 59);
-
-        CriteriaBuilder cb = em().getCriteriaBuilder();
-        CriteriaQuery<Issue> bugQuery = cb.createQuery(Issue.class);
-        Root<Issue> bugRoot = bugQuery.from(Issue.class);
-        bugRoot.fetch("status", JoinType.LEFT);
-
-        List<Predicate> preds = new ArrayList<>();
-        preds.add(cb.equal(bugRoot.get("project").get("id"), projectId));
-        preds.add(cb.equal(bugRoot.get("type"), IssueType.BUG));
-        preds.add(cb.isNull(bugRoot.get("deletedAt")));
-        preds.add(cb.lessThanOrEqualTo(bugRoot.get("createdAt"), endOfTo));
-        bugQuery.select(bugRoot).where(preds.toArray(new Predicate[0]));
-
-        List<Issue> bugs = em().createQuery(bugQuery).getResultList();
+        List<Issue> bugs = queryBugs(projectId, to);
 
         if (bugs.isEmpty()) {
             return new BugReportResponse(projectId, from, to, 0, 0, 0, 0.0, null, Collections.emptyList(), Collections.emptyMap());
         }
 
-        // Fetch history to get first DONE time (A-10)
-        CriteriaQuery<IssueStatusHistory> histQuery = cb.createQuery(IssueStatusHistory.class);
-        Root<IssueStatusHistory> histRoot = histQuery.from(IssueStatusHistory.class);
-        histRoot.fetch("toStatus", JoinType.LEFT);
-        histRoot.fetch("issue", JoinType.LEFT);
-        histQuery.select(histRoot).where(
-                cb.equal(histRoot.get("issue").get("project").get("id"), projectId)
-        ).orderBy(cb.asc(histRoot.get("changedAt")));
-        List<IssueStatusHistory> histories = em().createQuery(histQuery).getResultList();
-
-        Map<Long, LocalDateTime> firstDoneTimeByIssue = new HashMap<>();
-        for (IssueStatusHistory h : histories) {
-            if (h.getIssue() != null && h.getToStatus() != null && h.getToStatus().getCategory() == StatusCategory.DONE) {
-                firstDoneTimeByIssue.putIfAbsent(h.getIssue().getId(), h.getChangedAt());
-            }
-        }
+        Map<Long, LocalDateTime> firstDoneTimeByIssue = firstDoneTimes(projectId);
 
         int totalBugs = bugs.size();
         int resolvedBugs = 0;
@@ -126,5 +99,98 @@ public class BugReportHibernateDao extends BaseHibernateDao {
                 resolutionRate, avgClosingTimeHours,
                 byPriority, openBugsByPriority
         );
+    }
+
+    /**
+     * Danh sách chi tiết từng lỗi, cùng điều kiện lọc với {@link #generateBugReport} (để file xuất
+     * khớp số liệu tổng hợp). Sắp xếp: chưa khắc phục trước, rồi theo mức ưu tiên giảm dần, mới tạo trước.
+     */
+    public List<BugReportRowDto> listBugRows(Long projectId, LocalDate from, LocalDate to) {
+        if (to == null) {
+            to = LocalDate.now();
+        }
+        if (from != null && from.isAfter(to)) {
+            to = from;
+        }
+        List<Issue> bugs = queryBugs(projectId, to);
+        if (bugs.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Map<Long, LocalDateTime> firstDone = firstDoneTimes(projectId);
+
+        List<BugReportRowDto> rows = new ArrayList<>();
+        for (Issue bug : bugs) {
+            Priority p = bug.getPriority() != null ? bug.getPriority() : Priority.MEDIUM;
+            boolean resolved = bug.getStatus() != null && bug.getStatus().getCategory() == StatusCategory.DONE;
+            LocalDateTime doneAt = resolved ? firstDone.get(bug.getId()) : null;
+            Double hours = null;
+            if (doneAt != null && bug.getCreatedAt() != null && !doneAt.isBefore(bug.getCreatedAt())) {
+                hours = Math.round(Duration.between(bug.getCreatedAt(), doneAt).toMinutes() / 6.0) / 10.0;
+            }
+            rows.add(new BugReportRowDto(
+                    bug.getIssueKey(),
+                    bug.getSummary(),
+                    p.name(),
+                    bug.getStatus() != null ? bug.getStatus().getName() : "",
+                    resolved,
+                    displayName(bug.getAssignee()),
+                    displayName(bug.getReporter()),
+                    bug.getCreatedAt(),
+                    doneAt,
+                    hours
+            ));
+        }
+        rows.sort(Comparator
+                .comparing(BugReportRowDto::isResolved)
+                .thenComparing(r -> Priority.valueOf(r.getPriority()).ordinal())
+                .thenComparing(BugReportRowDto::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+        return rows;
+    }
+
+    private static String displayName(User u) {
+        if (u == null) return "";
+        return u.getFullName() != null && !u.getFullName().isBlank() ? u.getFullName() : u.getEmail();
+    }
+
+    /** Lỗi (type BUG, chưa xóa) của dự án, tạo đến hết ngày {@code to}. */
+    private List<Issue> queryBugs(Long projectId, LocalDate to) {
+        LocalDateTime endOfTo = to.atTime(23, 59, 59);
+
+        CriteriaBuilder cb = em().getCriteriaBuilder();
+        CriteriaQuery<Issue> bugQuery = cb.createQuery(Issue.class);
+        Root<Issue> bugRoot = bugQuery.from(Issue.class);
+        bugRoot.fetch("status", JoinType.LEFT);
+        bugRoot.fetch("assignee", JoinType.LEFT);
+        bugRoot.fetch("reporter", JoinType.LEFT);
+
+        List<Predicate> preds = new ArrayList<>();
+        preds.add(cb.equal(bugRoot.get("project").get("id"), projectId));
+        preds.add(cb.equal(bugRoot.get("type"), IssueType.BUG));
+        preds.add(cb.isNull(bugRoot.get("deletedAt")));
+        preds.add(cb.lessThanOrEqualTo(bugRoot.get("createdAt"), endOfTo));
+        bugQuery.select(bugRoot).where(preds.toArray(new Predicate[0]));
+
+        return em().createQuery(bugQuery).getResultList();
+    }
+
+    /** Thời điểm đầu tiên mỗi issue của dự án chuyển sang trạng thái DONE (A-10). */
+    private Map<Long, LocalDateTime> firstDoneTimes(Long projectId) {
+        CriteriaBuilder cb = em().getCriteriaBuilder();
+        CriteriaQuery<IssueStatusHistory> histQuery = cb.createQuery(IssueStatusHistory.class);
+        Root<IssueStatusHistory> histRoot = histQuery.from(IssueStatusHistory.class);
+        histRoot.fetch("toStatus", JoinType.LEFT);
+        histRoot.fetch("issue", JoinType.LEFT);
+        histQuery.select(histRoot).where(
+                cb.equal(histRoot.get("issue").get("project").get("id"), projectId)
+        ).orderBy(cb.asc(histRoot.get("changedAt")));
+        List<IssueStatusHistory> histories = em().createQuery(histQuery).getResultList();
+
+        Map<Long, LocalDateTime> firstDoneTimeByIssue = new HashMap<>();
+        for (IssueStatusHistory h : histories) {
+            if (h.getIssue() != null && h.getToStatus() != null && h.getToStatus().getCategory() == StatusCategory.DONE) {
+                firstDoneTimeByIssue.putIfAbsent(h.getIssue().getId(), h.getChangedAt());
+            }
+        }
+        return firstDoneTimeByIssue;
     }
 }

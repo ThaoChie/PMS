@@ -5,7 +5,8 @@ import { toast } from '../../../store/toastStore';
 import { downloadBlob } from '../../../utils/download';
 
 interface ExportButtonProps {
-  onExport?: (format: 'xlsx' | 'csv') => void;
+  /** Xuất theo cách riêng (vd tab Báo cáo lỗi). Có thể trả Promise: nút sẽ hiện "Đang xuất…" và báo lỗi nếu hỏng. */
+  onExport?: (format: 'xlsx' | 'csv') => void | Promise<void>;
   criteria?: any;
   issues?: any[];
   projectId?: string | number;
@@ -42,18 +43,17 @@ export default function ExportButton({ onExport, criteria, issues, projectId }: 
 
   async function handleExport(format: 'xlsx' | 'csv') {
     setOpen(false);
-    if (onExport) {
-      onExport(format);
-      return;
-    }
     setLoading(true);
     try {
-      const exportCriteria = {
-        ...(criteria || {}),
-        ...(projectId ? { projectIds: [Number(projectId)] } : {}),
-      };
-
-      await exportService.exportIssues(exportCriteria, format);
+      if (onExport) {
+        await onExport(format);
+      } else {
+        const exportCriteria = {
+          ...(criteria || {}),
+          ...(projectId ? { projectIds: [Number(projectId)] } : {}),
+        };
+        await exportService.exportIssues(exportCriteria, format);
+      }
       toast.success(`Xuất dữ liệu ${format.toUpperCase()} thành công!`);
     } catch (err: any) {
       console.error('Export error:', err);

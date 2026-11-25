@@ -87,6 +87,29 @@ export const reportService = {
     downloadBlob(blob, filename);
   },
 
+  /**
+   * Xuất NỘI DUNG BÁO CÁO LỖI (chỉ số tổng hợp, lỗi theo mức ưu tiên, danh sách lỗi) ra .xlsx / .csv.
+   * Trước đây tab Báo cáo lỗi dùng chung API xuất danh sách công việc nên ra cùng file với tab Tiến độ.
+   */
+  async exportBugReport(
+    projectId: string | number,
+    from: string | undefined,
+    to: string | undefined,
+    format: 'xlsx' | 'csv'
+  ): Promise<void> {
+    const response = await axiosClient.get(`/projects/${projectId}/reports/bugs/export`, {
+      params: { from, to, format },
+      responseType: 'blob',
+    });
+    const blob = new Blob([response as any], {
+      type:
+        format === 'csv'
+          ? 'text/csv;charset=utf-8'
+          : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    downloadBlob(blob, `bug-report-${projectId}-${new Date().toISOString().slice(0, 10)}.${format}`);
+  },
+
   async getBugReport(
     projectId: string | number,
     from?: string,

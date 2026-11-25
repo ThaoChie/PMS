@@ -5,6 +5,7 @@ import { ProgressTab } from './ProgressTab';
 import { ProductivityTab } from './ProductivityTab';
 import { BugReportTab } from './BugReportTab';
 import ExportButton from '../issues/components/ExportButton';
+import { reportService } from '../../services/reportService';
 
 interface ReportsProps {
   role: Role;
@@ -42,7 +43,15 @@ export default function Reports({ role }: ReportsProps) {
           </div>
           {currentProject && activeTab !== 'productivity' && (
             <div className="shrink-0 relative z-30">
-              <ExportButton projectId={currentProject.id} criteria={{ fromDate: from, toDate: to }} />
+              {activeTab === 'bugs' ? (
+                // Tab Báo cáo lỗi: xuất đúng nội dung báo cáo lỗi, không dùng chung với tab Tiến độ
+                <ExportButton
+                  key="export-bugs"
+                  onExport={(format) => reportService.exportBugReport(currentProject.id, from, to, format)}
+                />
+              ) : (
+                <ExportButton key="export-progress" projectId={currentProject.id} criteria={{ fromDate: from, toDate: to }} />
+              )}
             </div>
           )}
         </div>
