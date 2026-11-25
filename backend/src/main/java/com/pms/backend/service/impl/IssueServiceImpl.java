@@ -56,6 +56,12 @@ public class IssueServiceImpl implements IIssueService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private ICustomFieldService customFieldService;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private NotificationRepository notificationRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private InvitationRepository invitationRepository;
+
     public IssueServiceImpl(IssueRepository issueRepository,
                         ProjectRepository projectRepository,
                         UserRepository userRepository,
@@ -666,8 +672,12 @@ public class IssueServiceImpl implements IIssueService {
             return new ShareIssueResponse(warnings);
         }
 
-        String note = request.getNote() != null ? request.getNote() : "";
-        String link = "/projects/" + issue.getProject().getProjectKey() + "/issues/" + issue.getIssueKey();
+        String note = request.getNote() != null ? request.getNote().trim() : "";
+        String frontendBase = appProperties != null && appProperties.getFrontendUrl() != null 
+                ? appProperties.getFrontendUrl().replaceAll("/+$", "") 
+                : "https://pms-chi-self.vercel.app";
+        String issuePath = "/issues/" + issue.getIssueKey();
+        String fullLink = frontendBase + issuePath;
 
         for (String recipient : request.getRecipients()) {
             if (recipient == null || recipient.isBlank()) continue;
@@ -678,37 +688,69 @@ public class IssueServiceImpl implements IIssueService {
                 userOpt = userRepository.findById(Long.parseLong(recTrimmed));
             }
             if (userOpt.isEmpty()) {
-                userOpt = userRepository.findByEmail(recTrimmed);
+                userOpt = userRepository.findByEmailIgnoreCase(recTrimmed);
             }
+
+            String targetEmail = userOpt.map(User::getEmail).orElse(recTrimmed);
+            String recipientDisplayName = userOpt.map(User::getFullName).orElse(targetEmail);
 
             if (userOpt.isPresent()) {
                 User internalUser = userOpt.get();
-                // Check project membership warning (BR-COL-06)
+
+                // Gán quyền thành viên dự án (MEMBER) nếu người dùng chưa có trong dự án để họ xem được công việc
                 if (!memberRepository.existsByProjectIdAndUserId(issue.getProject().getId(), internalUser.getId())) {
-                    warnings.add("Người dùng " + internalUser.getEmail() + " không có quyền truy cập vào dự án này");
+                    ProjectMember member = new ProjectMember();
+                    member.setProject(issue.getProject());
+                    member.setUser(internalUser);
+                    member.setRole(ProjectRole.MEMBER);
+                    memberRepository.save(member);
                 }
 
-                // Notify in-app + email
-                notificationService.notify(
-                        NotificationType.MENTION,
-                        List.of(internalUser),
-                        currentUser.getFullName() + " đã chia sẻ một Issue với bạn: " + issue.getIssueKey(),
-                        (note.isBlank() ? "Bạn được chia sẻ Issue " : (note + " - ")) + issue.getIssueKey() + ": " + issue.getSummary(),
-                        link,
-                        issue.getIssueKey(),
-                        currentUser
-                );
-            } else if (recTrimmed.contains("@") && mailService != null) {
-                // External recipient email
+                // Lưu thông báo trong ứng dụng
+                if (notificationRepository != null) {
+                    Notification notification = new Notification();
+                    notification.setRecipient(internalUser);
+                    notification.setSender(currentUser);
+                    notification.setType(NotificationType.MENTION);
+                    notification.setTitle(currentUser.getFullName() + " đã chia sẻ công việc với bạn: " + issue.getIssueKey());
+                    notification.setMessage((note.isBlank() ? "Bạn được chia sẻ công việc " : (note + " - ")) + issue.getIssueKey() + ": " + issue.getSummary());
+                    notification.setLink(issuePath);
+                    notification.setData(issue.getIssueKey());
+                    notification.setRead(false);
+                    notificationRepository.save(notification);
+                }
+            } else if (invitationRepository != null && recTrimmed.contains("@")) {
+                // Tạo lời mời chờ sẵn để khi tài khoản ngoài này đăng ký, hệ thống tự động thêm vào dự án
+                try {
+                    String cleanEmail = recTrimmed.toLowerCase();
+                    if (invitationRepository.findByProjectIdAndEmailIgnoreCaseAndStatus(issue.getProject().getId(), cleanEmail, InvitationStatus.PENDING).isEmpty()) {
+                        Invitation inv = new Invitation();
+                        inv.setProject(issue.getProject());
+                        inv.setEmail(cleanEmail);
+                        inv.setInvitedBy(currentUser);
+                        inv.setRole(ProjectRole.MEMBER);
+                        inv.setStatus(InvitationStatus.PENDING);
+                        inv.setCreatedAt(LocalDateTime.now());
+                        inv.setExpiresAt(LocalDateTime.now().plusDays(30));
+                        inv.setToken(UUID.randomUUID().toString());
+                        invitationRepository.save(inv);
+                    }
+                } catch (Exception ex) {
+                    // Ignore transient invitation duplicate
+                }
+            }
+
+            // Gửi email thông báo chứa link tuyệt đối đến task được chia sẻ
+            if (targetEmail != null && targetEmail.contains("@") && mailService != null) {
                 mailService.sendMailAsync(
-                        recTrimmed,
-                        "[EPMS] " + currentUser.getFullName() + " đã chia sẻ Issue " + issue.getIssueKey(),
+                        targetEmail,
+                        "[EPMS] " + currentUser.getFullName() + " đã chia sẻ công việc " + issue.getIssueKey(),
                         "notification",
                         Map.of(
-                                "recipientName", recTrimmed,
-                                "title", currentUser.getFullName() + " đã chia sẻ Issue: " + issue.getIssueKey(),
+                                "recipientName", recipientDisplayName,
+                                "title", currentUser.getFullName() + " đã chia sẻ công việc: " + issue.getIssueKey(),
                                 "message", (note.isBlank() ? "Nội dung công việc: " : (note + "\n\n")) + issue.getSummary(),
-                                "link", link
+                                "link", fullLink
                         )
                 );
             }

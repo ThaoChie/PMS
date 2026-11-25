@@ -14,6 +14,9 @@ public class IssueSecurity {
     private final IssueRepository issueRepository;
     private final ProjectSecurity projectSecurity;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.pms.backend.dao.NotificationRepository notificationRepository;
+
     public IssueSecurity(IssueRepository issueRepository, ProjectSecurity projectSecurity) {
         this.issueRepository = issueRepository;
         this.projectSecurity = projectSecurity;
@@ -47,7 +50,21 @@ public class IssueSecurity {
         if (issueOpt.isEmpty()) return false;
 
         Long projectId = issueOpt.get().getProject().getId();
-        return projectSecurity.isMember(projectId);
+        if (projectSecurity.isMember(projectId)) {
+            return true;
+        }
+
+        // Cho phép xem nếu công việc được giao, được báo cáo, hoặc được chia sẻ trực tiếp với người dùng
+        Long userId = user.getId();
+        Issue issue = issueOpt.get();
+        if (issue.getAssignee() != null && userId.equals(issue.getAssignee().getId())) return true;
+        if (issue.getReporter() != null && userId.equals(issue.getReporter().getId())) return true;
+
+        if (notificationRepository != null && notificationRepository.existsByRecipientIdAndData(userId, issue.getIssueKey())) {
+            return true;
+        }
+
+        return false;
     }
 
     public boolean canEdit(String issueKey) {

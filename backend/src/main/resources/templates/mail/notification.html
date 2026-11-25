@@ -8,12 +8,15 @@
     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e5e7; padding: 32px;">
         <h2 style="color: #1a1a1a; margin-top: 0;" th:text="${title}">Notification</h2>
         <p style="color: #6b6b70; font-size: 14px;">Xin chào <span th:text="${recipientName}">Thành viên</span>,</p>
-        <p style="color: #1a1a1a; font-size: 14px; line-height: 1.6;" th:text="${message}">Nội dung thông báo.</p>
+        <p style="color: #1a1a1a; font-size: 14px; line-height: 1.6; white-space: pre-line;" th:text="${message}">Nội dung thông báo.</p>
         <div style="margin-top: 24px;">
-            <a th:href="${link}" style="background-color: #e53e3e; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; display: inline-block;">Xem chi tiết</a>
+            <a th:href="${link}" style="background-color: #e53e3e; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; display: inline-block;">Xem chi tiết công việc</a>
         </div>
-        <hr style="border: none; border-top: 1px solid #f0f0f1; margin: 32px 0 16px 0;" />
-        <p style="color: #9b9b9f; font-size: 12px; margin: 0;">Email này được gửi tự động từ hệ thống EPMS. Vui lòng không phản hồi trực tiếp.</p>
+        <p style="color: #6b6b70; font-size: 12px; margin-top: 16px; font-style: italic;">
+            * Lưu ý: Bạn cần đăng nhập (hoặc đăng ký tài khoản mới nếu chưa có) để truy cập và xem chi tiết công việc được chia sẻ.
+        </p>
+        <hr style="border: none; border-top: 1px solid #f0f0f1; margin: 24px 0 16px 0;" />
+        <p style="color: #9b9b9f; font-size: 12px; margin: 0;">Email này được gửi tự động từ hệ thống Quản lý Dự án EPMS. Vui lòng không phản hồi trực tiếp.</p>
     </div>
 </body>
 </html>

@@ -4,15 +4,21 @@ import com.pms.backend.service.interfaces.*;
 
 import com.pms.backend.config.AppProperties;
 import com.pms.backend.dao.UserRepository;
+import com.pms.backend.dao.InvitationRepository;
+import com.pms.backend.dao.ProjectMemberRepository;
 import com.pms.backend.dto.LoginRequest;
 import com.pms.backend.dto.RegisterRequest;
 import com.pms.backend.dto.TokenResponse;
 import com.pms.backend.dto.UserResponse;
 import com.pms.backend.enu.AuthProvider;
 import com.pms.backend.enu.UserStatus;
+import com.pms.backend.enu.InvitationStatus;
+import com.pms.backend.enu.ProjectRole;
 import com.pms.backend.exception.BusinessException;
 import com.pms.backend.exception.UnauthorizedException;
 import com.pms.backend.model.User;
+import com.pms.backend.model.Invitation;
+import com.pms.backend.model.ProjectMember;
 import com.pms.backend.security.JwtTokenProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,6 +33,12 @@ public class AuthServiceImpl implements IAuthService {
     private final IRefreshTokenService refreshTokenService;
     private final AppProperties appProperties;
     private final com.pms.backend.security.LoginRateLimiter loginRateLimiter;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private InvitationRepository invitationRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ProjectMemberRepository memberRepository;
 
     public AuthServiceImpl(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
@@ -94,6 +106,25 @@ public class AuthServiceImpl implements IAuthService {
         user.setStatus(UserStatus.ACTIVE);
 
         user = userRepository.save(user);
+
+        // Auto-accept any pending invitations for this email so they immediately have access to the projects/issues shared with them
+        if (invitationRepository != null && memberRepository != null) {
+            try {
+                java.util.List<Invitation> pendingInvs = invitationRepository.findByEmailIgnoreCaseAndStatus(email, InvitationStatus.PENDING);
+                for (Invitation inv : pendingInvs) {
+                    if (!memberRepository.existsByProjectIdAndUserId(inv.getProject().getId(), user.getId())) {
+                        ProjectMember member = new ProjectMember();
+                        member.setProject(inv.getProject());
+                        member.setUser(user);
+                        member.setRole(inv.getRole() != null ? inv.getRole() : ProjectRole.MEMBER);
+                        memberRepository.save(member);
+                    }
+                    inv.setStatus(InvitationStatus.ACCEPTED);
+                    invitationRepository.save(inv);
+                }
+            } catch (Exception ignored) {}
+        }
+
         return UserResponse.from(user);
     }
 }
