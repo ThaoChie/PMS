@@ -93,9 +93,12 @@ export default function Dashboard({ onSelectIssue, onNavigate }: DashboardProps)
   const [projectIssues, setProjectIssues] = useState<Issue[]>([]);
   const [loadingStats, setLoadingStats] = useState(false);
 
-  const fetchDashboard = useCallback(async () => {
-    setLoadingDashboard(true);
-    setDashboardFailed(false);
+  // silent = tải ngầm (định kỳ), không bật khung "đang tải" để màn hình không nhấp nháy
+  const fetchDashboard = useCallback(async (silent: boolean = false) => {
+    if (!silent) {
+      setLoadingDashboard(true);
+      setDashboardFailed(false);
+    }
     try {
       const res = await dashboardService.getDashboardData();
       const data = res?.data;
@@ -104,13 +107,14 @@ export default function Dashboard({ onSelectIssue, onNavigate }: DashboardProps)
       setActivities((data?.recentActivities || []).map(activityToItem));
       setSavedFilters((data?.savedFilters || []).map(mapSavedFilter));
     } catch {
+      if (silent) return; // lỗi mạng thoáng qua khi tải ngầm: giữ dữ liệu đang hiện
       setDashboardFailed(true);
       setAssignedIssues([]);
       setWatchingIssues([]);
       setActivities([]);
       setSavedFilters([]);
     } finally {
-      setLoadingDashboard(false);
+      if (!silent) setLoadingDashboard(false);
     }
   }, []);
 
@@ -118,12 +122,39 @@ export default function Dashboard({ onSelectIssue, onNavigate }: DashboardProps)
     fetchDashboard();
   }, [fetchDashboard]);
 
+  // Thời gian thực: tải ngầm mỗi 30 giây (thấy cả hoạt động của người khác) và ngay khi quay lại tab;
+  // tạm dừng khi tab bị ẩn để không gọi API thừa.
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (!timer) timer = setInterval(() => fetchDashboard(true), 30000);
+    };
+    const stop = () => {
+      if (timer) clearInterval(timer);
+      timer = null;
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchDashboard(true);
+        start();
+      } else {
+        stop();
+      }
+    };
+    start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [fetchDashboard]);
+
   // Lắng nghe sự kiện thay đổi công việc để cập nhật Dashboard real-time
   useEffect(() => {
     const handleIssuesChanged = (e: Event) => {
       const detail = (e as CustomEvent<IssueEventDetail>)?.detail;
       if (!detail?.projectId || !currentProject?.id || String(detail.projectId) === String(currentProject.id)) {
-        fetchDashboard();
+        fetchDashboard(true);
         if (currentProject?.id) {
           issueService
             .getIssues(currentProject.id, { page: 1, size: 100 })
@@ -273,7 +304,7 @@ export default function Dashboard({ onSelectIssue, onNavigate }: DashboardProps)
           <ErrorState
             title={MESSAGES.DASHBOARD.LOAD_FAILED}
             message={MESSAGES.COMMON.NETWORK_ERROR}
-            onRetry={fetchDashboard}
+            onRetry={() => fetchDashboard()}
             className="mb-6"
           />
         )}
