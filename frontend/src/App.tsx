@@ -496,13 +496,11 @@ export default function App() {
     if (authView === 'register') {
       authContent = (
         <Register
-          onLogin={() => {
-            setAuthView('login');
-            window.history.pushState({}, '', '/login');
-          }}
+          onLogin={handleLogin}
           onBack={() => {
             setAuthView('login');
-            window.history.pushState({}, '', '/login');
+            const search = window.location.search;
+            window.history.pushState({}, '', '/login' + search);
           }}
         />
       );
@@ -530,7 +528,8 @@ export default function App() {
           onLogin={handleLogin}
           onRegister={() => {
             setAuthView('register');
-            window.history.pushState({}, '', '/register');
+            const search = window.location.search;
+            window.history.pushState({}, '', '/register' + search);
           }}
           onForgotPassword={() => {
             setAuthView('forgot-password');
