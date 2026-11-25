@@ -1,9 +1,8 @@
 package com.pms.backend.dto;
 
+import com.pms.backend.common.TimeFormat;
 import com.pms.backend.model.Worklog;
 import com.pms.backend.util.DurationParser;
-
-import java.time.format.DateTimeFormatter;
 
 public class WorklogResponse {
     private String id;
@@ -28,7 +27,7 @@ public class WorklogResponse {
         }
         res.setComment(w.getComment());
         if (w.getCreatedAt() != null) {
-            res.setCreatedAt(w.getCreatedAt().format(DateTimeFormatter.ISO_DATE_TIME));
+            res.setCreatedAt(TimeFormat.isoWithZone(w.getCreatedAt()));
         }
         return res;
     }

@@ -77,7 +77,6 @@ public class DashboardServiceImpl implements IDashboardService {
         // 4. Recent activities (top 20)
         if (!userProjectIds.isEmpty()) {
             List<AuditLog> recentLogs = auditLogRepository.findRecentActivitiesForProjects(userProjectIds, PageRequest.of(0, 20));
-            DateTimeFormatter dtf = DateTimeFormatter.ISO_DATE_TIME;
 
             List<DashboardResponse.DashboardActivityDto> activities = new ArrayList<>();
             for (AuditLog log : recentLogs) {
@@ -89,7 +88,8 @@ public class DashboardServiceImpl implements IDashboardService {
                         log.getUserEmail() != null ? log.getUserEmail() : "Hệ thống",
                         issueKey,
                         log.getAfterState() != null ? log.getAfterState() : log.getAction(),
-                        log.getCreatedAt() != null ? log.getCreatedAt().format(dtf) : ""
+                        // Kèm múi giờ: máy chủ Render chạy UTC, thiếu múi giờ thì mọi hoạt động hiện "7 giờ trước"
+                        log.getCreatedAt() != null ? com.pms.backend.common.TimeFormat.isoWithZone(log.getCreatedAt()) : ""
                 ));
             }
             response.setRecentActivities(activities);

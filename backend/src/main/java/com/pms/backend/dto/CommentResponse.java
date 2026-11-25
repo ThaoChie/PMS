@@ -1,9 +1,9 @@
 package com.pms.backend.dto;
 
+import com.pms.backend.common.TimeFormat;
 import com.pms.backend.model.Comment;
 import com.pms.backend.model.User;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,10 +26,10 @@ public class CommentResponse {
         res.setAuthor(UserResponse.from(comment.getUser()));
         res.setContent(comment.getContent());
         if (comment.getCreatedAt() != null) {
-            res.setCreatedAt(comment.getCreatedAt().format(DateTimeFormatter.ISO_DATE_TIME));
+            res.setCreatedAt(TimeFormat.isoWithZone(comment.getCreatedAt()));
         }
         if (comment.getUpdatedAt() != null) {
-            res.setUpdatedAt(comment.getUpdatedAt().format(DateTimeFormatter.ISO_DATE_TIME));
+            res.setUpdatedAt(TimeFormat.isoWithZone(comment.getUpdatedAt()));
         }
         if (comment.getMentions() != null) {
             res.setMentionedUserIds(comment.getMentions().stream().map(User::getId).collect(Collectors.toList()));
