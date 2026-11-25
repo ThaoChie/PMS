@@ -1,13 +1,8 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import type { NotificationItem } from '../../types';
-
-function formatRelTime(iso: string) {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
-  return `${Math.floor(diff / 86400)} ngày trước`;
-}
+import { formatRelativeTime } from '../../utils/date';
+import { useNow } from '../../hooks/useNow';
 
 interface RecentActivityWidgetProps {
   notifications: NotificationItem[];
@@ -18,6 +13,8 @@ export const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({
   notifications,
   onNavigate,
 }) => {
+  // Nhịp đồng hồ 30 giây: "x phút trước" tự tăng, không đứng yên tới khi tải lại trang
+  const now = useNow(30000);
   return (
     <div className="border border-[#E5E5E7] rounded-xl overflow-hidden">
       <div className="px-5 py-3 border-b border-[#E5E5E7] flex items-center justify-between">
@@ -57,7 +54,7 @@ export const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({
                 <p className="text-[10px] text-[#6B6B70] mt-0.5 line-clamp-1">
                   {n.description}
                 </p>
-                <p className="text-[10px] text-[#9B9B9F] mt-1">{formatRelTime(n.createdAt)}</p>
+                <p className="text-[10px] text-[#9B9B9F] mt-1">{formatRelativeTime(n.createdAt, now)}</p>
               </div>
             </div>
           ))}
