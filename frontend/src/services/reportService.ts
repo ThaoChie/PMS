@@ -101,12 +101,14 @@ export const reportService = {
       params: { from, to, format },
       responseType: 'blob',
     });
-    const blob = new Blob([response as any], {
-      type:
-        format === 'csv'
-          ? 'text/csv;charset=utf-8'
-          : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
+    const mimeType =
+      format === 'csv'
+        ? 'text/csv;charset=utf-8'
+        : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const blob =
+      response instanceof Blob
+        ? response
+        : new Blob([response as any], { type: mimeType });
     downloadBlob(blob, `bug-report-${projectId}-${new Date().toISOString().slice(0, 10)}.${format}`);
   },
 
