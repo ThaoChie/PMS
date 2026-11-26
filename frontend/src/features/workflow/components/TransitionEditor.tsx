@@ -18,7 +18,7 @@ export default function TransitionEditor({
 
   useEffect(() => {
     if (transition) {
-      setEditRequiresField(transition.requiresField ?? '');
+      setEditRequiresField(transition.requiresField ?? (transition as any).requiredFields ?? '');
       setEditIsApproval(transition.isApprovalStep);
     }
   }, [transition]);
@@ -99,7 +99,7 @@ export default function TransitionEditor({
       <div className="flex gap-2 mt-5">
         <button
           type="button"
-          onClick={() => onSave(editRequiresField || undefined, editIsApproval)}
+          onClick={() => onSave(editRequiresField.trim(), editIsApproval)}
           className="flex-1 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
         >
           Lưu
