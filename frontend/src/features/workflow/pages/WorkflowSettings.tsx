@@ -425,6 +425,66 @@ export default function WorkflowSettings() {
           </div>
         </div>
 
+        {/* All Transitions list */}
+        <div className="mt-6 border border-[#E5E5E7] rounded-xl overflow-hidden bg-white shadow-xs">
+          <div className="px-5 py-3 border-b border-[#E5E5E7] bg-[#F7F7F8]">
+            <span className="text-xs font-semibold text-[#1A1A1A]">Danh sách tất cả bước chuyển ({transitions.length} luồng)</span>
+          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#F0F0F1]">
+                <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
+                  Từ trạng thái
+                </th>
+                <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
+                  Đến trạng thái
+                </th>
+                <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
+                  Yêu cầu trường dữ liệu
+                </th>
+                <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
+                  Cần phê duyệt PM/QA
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#F0F0F1]">
+              {transitions.map((t) => (
+                <tr
+                  key={t.id}
+                  className="hover:bg-[#F7F7F8] cursor-pointer transition-colors"
+                  onClick={() => setSelectedTransition(t)}
+                >
+                  <td className="px-5 py-2.5">
+                    <span className="text-xs font-medium text-[#1A1A1A]">{t.from}</span>
+                  </td>
+                  <td className="px-5 py-2.5">
+                    <span className="text-xs font-medium text-[#1A1A1A]">{t.to}</span>
+                  </td>
+                  <td className="px-5 py-2.5">
+                    <span className="text-xs text-[#6B6B70]">
+                      {(t.requiresField && t.requiresField.trim())
+                        ? t.requiresField.trim()
+                        : ((t as any).requiredFields && (t as any).requiredFields.trim())
+                        ? (t as any).requiredFields.trim()
+                        : '—'}
+                    </span>
+                  </td>
+                  <td className="px-5 py-2.5">
+                    {t.isApprovalStep ? (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#FDECEC] text-[#E53E3E] border border-[#E53E3E]/20 inline-flex items-center gap-1">
+                        <Shield className="w-3 h-3 text-[#E53E3E]" />
+                        Bắt buộc duyệt
+                      </span>
+                    ) : (
+                      <span className="text-xs text-[#9B9B9F]">Không</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
         {/* MA TRẬN CÁC BƯỚC CHUYỂN TIẾP HỢP LỆ (TRANSITION MATRIX) */}
         <div className="mt-6 border border-[#E5E5E7] rounded-xl overflow-hidden bg-white shadow-xs" id="transition-matrix-section">
           <div className="px-5 py-3.5 border-b border-[#E5E5E7] bg-[#F7F7F8] flex items-center justify-between">
@@ -531,66 +591,6 @@ export default function WorkflowSettings() {
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* All Transitions list */}
-        <div className="mt-6 border border-[#E5E5E7] rounded-xl overflow-hidden bg-white shadow-xs">
-          <div className="px-5 py-3 border-b border-[#E5E5E7] bg-[#F7F7F8]">
-            <span className="text-xs font-semibold text-[#1A1A1A]">Danh sách tất cả bước chuyển ({transitions.length} luồng)</span>
-          </div>
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[#F0F0F1]">
-                <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-                  Từ trạng thái
-                </th>
-                <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-                  Đến trạng thái
-                </th>
-                <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-                  Yêu cầu trường dữ liệu
-                </th>
-                <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-                  Cần phê duyệt PM/QA
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F0F0F1]">
-              {transitions.map((t) => (
-                <tr
-                  key={t.id}
-                  className="hover:bg-[#F7F7F8] cursor-pointer transition-colors"
-                  onClick={() => setSelectedTransition(t)}
-                >
-                  <td className="px-5 py-2.5">
-                    <span className="text-xs font-medium text-[#1A1A1A]">{t.from}</span>
-                  </td>
-                  <td className="px-5 py-2.5">
-                    <span className="text-xs font-medium text-[#1A1A1A]">{t.to}</span>
-                  </td>
-                  <td className="px-5 py-2.5">
-                    <span className="text-xs text-[#6B6B70]">
-                      {(t.requiresField && t.requiresField.trim())
-                        ? t.requiresField.trim()
-                        : ((t as any).requiredFields && (t as any).requiredFields.trim())
-                        ? (t as any).requiredFields.trim()
-                        : '—'}
-                    </span>
-                  </td>
-                  <td className="px-5 py-2.5">
-                    {t.isApprovalStep ? (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#FDECEC] text-[#E53E3E] border border-[#E53E3E]/20 inline-flex items-center gap-1">
-                        <Shield className="w-3 h-3 text-[#E53E3E]" />
-                        Bắt buộc duyệt
-                      </span>
-                    ) : (
-                      <span className="text-xs text-[#9B9B9F]">Không</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
