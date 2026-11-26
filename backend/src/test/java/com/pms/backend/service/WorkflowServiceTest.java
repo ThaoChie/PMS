@@ -9,6 +9,7 @@ import com.pms.backend.dto.WorkflowStatusDto;
 import com.pms.backend.dto.WorkflowTransitionDto;
 import com.pms.backend.enu.ErrorCode;
 import com.pms.backend.enu.StatusCategory;
+import com.pms.backend.enu.TransitionType;
 import com.pms.backend.exception.BusinessException;
 import com.pms.backend.exception.ValidationException;
 import com.pms.backend.model.Issue;
@@ -329,5 +330,99 @@ public class WorkflowServiceTest {
         var response = workflowService.updateWorkflow(1L, req);
         assertNotNull(response);
         verify(transitionRepository).save(argThat(tr -> "resolution".equals(tr.getRequiredFields())));
+    }
+
+    @Test
+    public void testUpdateWorkflow_ToggleApprovalStepOff_SavesNormalType() {
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+
+        WorkflowStatus ws1 = new WorkflowStatus();
+        ws1.setId(10L);
+        ws1.setName("In Progress");
+        ws1.setCategory(StatusCategory.IN_PROGRESS);
+
+        WorkflowStatus ws2 = new WorkflowStatus();
+        ws2.setId(20L);
+        ws2.setName("Done");
+        ws2.setCategory(StatusCategory.DONE);
+
+        when(statusRepository.findById(10L)).thenReturn(Optional.of(ws1));
+        when(statusRepository.findById(20L)).thenReturn(Optional.of(ws2));
+        when(statusRepository.save(any(WorkflowStatus.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SaveWorkflowRequest req = new SaveWorkflowRequest();
+        WorkflowStatusDto s1 = new WorkflowStatusDto();
+        s1.setId(10L);
+        s1.setName("In Progress");
+        s1.setCategory(StatusCategory.IN_PROGRESS);
+        s1.setIsInitial(true);
+
+        WorkflowStatusDto s2 = new WorkflowStatusDto();
+        s2.setId(20L);
+        s2.setName("Done");
+        s2.setCategory(StatusCategory.DONE);
+
+        req.setStatuses(List.of(s1, s2));
+
+        // Previously APPROVE, but user toggled to Thường (isApprovalStep = false)
+        WorkflowTransitionDto tDto = new WorkflowTransitionDto();
+        tDto.setFromStatusId(10L);
+        tDto.setToStatusId(20L);
+        tDto.setType(TransitionType.APPROVE);
+        tDto.setIsApprovalStep(false);
+
+        req.setTransitions(List.of(tDto));
+
+        when(transitionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = workflowService.updateWorkflow(1L, req);
+        assertNotNull(response);
+        verify(transitionRepository).save(argThat(tr -> tr.getType() == TransitionType.NORMAL));
+    }
+
+    @Test
+    public void testUpdateWorkflow_ToggleApprovalStepOn_SavesApproveType() {
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+
+        WorkflowStatus ws1 = new WorkflowStatus();
+        ws1.setId(10L);
+        ws1.setName("In Progress");
+        ws1.setCategory(StatusCategory.IN_PROGRESS);
+
+        WorkflowStatus ws2 = new WorkflowStatus();
+        ws2.setId(20L);
+        ws2.setName("Done");
+        ws2.setCategory(StatusCategory.DONE);
+
+        when(statusRepository.findById(10L)).thenReturn(Optional.of(ws1));
+        when(statusRepository.findById(20L)).thenReturn(Optional.of(ws2));
+        when(statusRepository.save(any(WorkflowStatus.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SaveWorkflowRequest req = new SaveWorkflowRequest();
+        WorkflowStatusDto s1 = new WorkflowStatusDto();
+        s1.setId(10L);
+        s1.setName("In Progress");
+        s1.setCategory(StatusCategory.IN_PROGRESS);
+        s1.setIsInitial(true);
+
+        WorkflowStatusDto s2 = new WorkflowStatusDto();
+        s2.setId(20L);
+        s2.setName("Done");
+        s2.setCategory(StatusCategory.DONE);
+
+        req.setStatuses(List.of(s1, s2));
+
+        WorkflowTransitionDto tDto = new WorkflowTransitionDto();
+        tDto.setFromStatusId(10L);
+        tDto.setToStatusId(20L);
+        tDto.setIsApprovalStep(true);
+
+        req.setTransitions(List.of(tDto));
+
+        when(transitionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = workflowService.updateWorkflow(1L, req);
+        assertNotNull(response);
+        verify(transitionRepository).save(argThat(tr -> tr.getType() == TransitionType.APPROVE));
     }
 }

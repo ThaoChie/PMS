@@ -87,6 +87,7 @@ export default function WorkflowSettings() {
   function handleSaveTransition(requiresField?: string, isApprovalStep?: boolean) {
     if (!selectedTransition) return;
     const cleanField = requiresField && requiresField.trim() ? requiresField.trim() : undefined;
+    const approval = !!isApprovalStep;
     setTransitions((ts) =>
       ts.map((t) => {
         const matches =
@@ -98,7 +99,8 @@ export default function WorkflowSettings() {
           ...t,
           requiresField: cleanField,
           requiredFields: cleanField,
-          isApprovalStep: !!isApprovalStep,
+          isApprovalStep: approval,
+          type: approval ? (t.type === 'REJECT' ? 'REJECT' : 'APPROVE') : 'NORMAL',
         };
       })
     );
@@ -151,12 +153,14 @@ export default function WorkflowSettings() {
   function handleToggleMatrixTransition(from: string, to: string, allowed: boolean) {
     if (allowed) {
       // Add transition
+      const isApproval = to.toLowerCase() === 'done' || from.toLowerCase() === 'pending approval';
       const newTrans: WorkflowTransition = {
         id: `trans_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         from: from as IssueStatus,
         to: to as IssueStatus,
         name: `Chuyển sang ${to}`,
-        isApprovalStep: to.toLowerCase() === 'done' || from.toLowerCase() === 'pending approval',
+        isApprovalStep: isApproval,
+        type: isApproval ? 'APPROVE' : 'NORMAL',
       };
       setTransitions((prev) => [...prev, newTrans]);
     } else {
@@ -174,7 +178,12 @@ export default function WorkflowSettings() {
     setTransitions((prev) =>
       prev.map((t) => {
         if (t.from.toLowerCase() === from.toLowerCase() && t.to.toLowerCase() === to.toLowerCase()) {
-          return { ...t, isApprovalStep: !t.isApprovalStep };
+          const nextApproval = !t.isApprovalStep;
+          return {
+            ...t,
+            isApprovalStep: nextApproval,
+            type: nextApproval ? (t.type === 'REJECT' ? 'REJECT' : 'APPROVE') : 'NORMAL',
+          };
         }
         return t;
       })
@@ -209,10 +218,13 @@ export default function WorkflowSettings() {
       }));
       const payloadTransitions = transitions.map((t) => {
         const cleanField = t.requiresField && t.requiresField.trim() ? t.requiresField.trim() : null;
+        const approval = Boolean(t.isApprovalStep);
         return {
           ...t,
           requiresField: cleanField,
           requiredFields: cleanField,
+          isApprovalStep: approval,
+          type: approval ? (t.type === 'REJECT' ? 'REJECT' : 'APPROVE') : 'NORMAL',
         };
       });
       const res = await workflowService.updateWorkflow(currentProject.id, {

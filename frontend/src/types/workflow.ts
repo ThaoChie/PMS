@@ -15,6 +15,7 @@ export interface WorkflowTransition {
   name?: string;
   from: IssueStatus;
   to: IssueStatus;
+  type?: 'NORMAL' | 'APPROVE' | 'REJECT' | string;
   requiresField?: string | null;
   requiredFields?: string | null;
   isApprovalStep: boolean;
