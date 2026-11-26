@@ -447,42 +447,89 @@ public class WorkflowServiceImpl implements IWorkflowService {
         auditService.log("CHANGE_STATUS", "ISSUE", savedIssue.getId(), savedIssue.getProject().getId(),
                 fromStatus.getName(), toStatus.getName());
 
-        // Notifications
-        List<User> recipients = new ArrayList<>();
-        if (savedIssue.getReporter() != null) recipients.add(savedIssue.getReporter());
-        if (savedIssue.getAssignee() != null) recipients.add(savedIssue.getAssignee());
-        if (watcherService != null) {
-            recipients.addAll(watcherService.getWatchers(savedIssue.getId()));
-        }
+        // Notifications: Only notify for approval actions or transitions into approval statuses
+        if (transition.getType() == TransitionType.APPROVE) {
+            List<User> recipients = new ArrayList<>();
+            if (savedIssue.getAssignee() != null) recipients.add(savedIssue.getAssignee());
+            if (savedIssue.getReporter() != null && !recipients.contains(savedIssue.getReporter())) {
+                recipients.add(savedIssue.getReporter());
+            }
+            if (watcherService != null) {
+                for (User w : watcherService.getWatchers(savedIssue.getId())) {
+                    if (!recipients.contains(w)) recipients.add(w);
+                }
+            }
+            recipients.removeIf(u -> u.getId().equals(currentUser.getId()));
 
-        String issueTitle = savedIssue.getIssueKey() + ": " + savedIssue.getSummary();
-        notificationService.notify(
-                NotificationType.STATUS_CHANGED,
-                recipients,
-                "Trạng thái Issue thay đổi: " + savedIssue.getIssueKey(),
-                "Trạng thái đã chuyển sang '" + toStatus.getName() + "'" + (comment != null ? " (" + comment + ")" : ""),
-                "/projects/" + savedIssue.getProject().getProjectKey() + "/issues/" + savedIssue.getIssueKey(),
-                savedIssue.getIssueKey(),
-                currentUser
-        );
+            if (!recipients.isEmpty()) {
+                notificationService.notify(
+                        NotificationType.APPROVAL_RESULT,
+                        recipients,
+                        "Công việc đã được phê duyệt: " + savedIssue.getIssueKey(),
+                        "Công việc " + savedIssue.getIssueKey() + " (" + savedIssue.getSummary() + ") đã được phê duyệt chuyển sang trạng thái '" + toStatus.getName() + "' bởi " + currentUser.getFullName() + (comment != null && !comment.isBlank() ? " (" + comment + ")" : ""),
+                        "/projects/" + savedIssue.getProject().getProjectKey() + "/issues/" + savedIssue.getIssueKey(),
+                        savedIssue.getIssueKey(),
+                        currentUser
+                );
+            }
+        } else if (transition.getType() == TransitionType.REJECT) {
+            List<User> recipients = new ArrayList<>();
+            if (savedIssue.getAssignee() != null) recipients.add(savedIssue.getAssignee());
+            if (savedIssue.getReporter() != null && !recipients.contains(savedIssue.getReporter())) {
+                recipients.add(savedIssue.getReporter());
+            }
+            if (watcherService != null) {
+                for (User w : watcherService.getWatchers(savedIssue.getId())) {
+                    if (!recipients.contains(w)) recipients.add(w);
+                }
+            }
+            recipients.removeIf(u -> u.getId().equals(currentUser.getId()));
 
-        // If moved to "Pending Approval" status, notify all PMs
-        if (toStatus.getName().equalsIgnoreCase("Pending Approval") || toStatus.getName().equalsIgnoreCase("Chờ xác nhận")) {
-            List<ProjectMember> pmMembers = memberRepository.findByProjectId(savedIssue.getProject().getId())
-                    .stream()
-                    .filter(m -> m.getRole() == ProjectRole.PM)
-                    .collect(Collectors.toList());
+            if (!recipients.isEmpty()) {
+                notificationService.notify(
+                        NotificationType.APPROVAL_RESULT,
+                        recipients,
+                        "Công việc bị từ chối phê duyệt: " + savedIssue.getIssueKey(),
+                        "Công việc " + savedIssue.getIssueKey() + " (" + savedIssue.getSummary() + ") đã bị từ chối và chuyển về trạng thái '" + toStatus.getName() + "'" + (comment != null && !comment.isBlank() ? ". Lý do: " + comment : ""),
+                        "/projects/" + savedIssue.getProject().getProjectKey() + "/issues/" + savedIssue.getIssueKey(),
+                        savedIssue.getIssueKey(),
+                        currentUser
+                );
+            }
+        } else {
+            // Check if toStatus is an approval status
+            boolean isApprovalStatus = toStatus.getName().equalsIgnoreCase("Pending Approval")
+                    || toStatus.getName().equalsIgnoreCase("Chờ xác nhận")
+                    || toStatus.getName().toLowerCase().contains("approval")
+                    || toStatus.getName().toLowerCase().contains("chờ duyệt")
+                    || toStatus.getName().toLowerCase().contains("phê duyệt")
+                    || transitionRepository.findByFromStatusId(toStatus.getId()).stream()
+                            .anyMatch(t -> t.getType() == TransitionType.APPROVE || t.getType() == TransitionType.REJECT);
 
-            List<User> pmUsers = pmMembers.stream().map(ProjectMember::getUser).collect(Collectors.toList());
-            notificationService.notify(
-                    NotificationType.APPROVAL_REQUESTED,
-                    pmUsers,
-                    "Yêu cầu phê duyệt: " + savedIssue.getIssueKey(),
-                    "Issue " + issueTitle + " đang chờ phê duyệt",
-                    "/projects/" + savedIssue.getProject().getProjectKey() + "/issues/" + savedIssue.getIssueKey(),
-                    savedIssue.getIssueKey(),
-                    currentUser
-            );
+            if (isApprovalStatus) {
+                List<ProjectMember> approverMembers = memberRepository.findByProjectId(savedIssue.getProject().getId())
+                        .stream()
+                        .filter(m -> m.getRole() == ProjectRole.PM || m.getRole() == ProjectRole.QA)
+                        .collect(Collectors.toList());
+
+                List<User> approverUsers = new ArrayList<>(approverMembers.stream().map(ProjectMember::getUser).distinct().toList());
+                if (savedIssue.getProject().getCreatedBy() != null && !approverUsers.contains(savedIssue.getProject().getCreatedBy())) {
+                    approverUsers.add(savedIssue.getProject().getCreatedBy());
+                }
+                approverUsers.removeIf(u -> u.getId().equals(currentUser.getId()));
+
+                if (!approverUsers.isEmpty()) {
+                    notificationService.notify(
+                            NotificationType.APPROVAL_REQUESTED,
+                            approverUsers,
+                            "Yêu cầu phê duyệt: " + savedIssue.getIssueKey(),
+                            "Công việc " + savedIssue.getIssueKey() + " (" + savedIssue.getSummary() + ") đã chuyển sang trạng thái '" + toStatus.getName() + "' và đang chờ phê duyệt",
+                            "/projects/" + savedIssue.getProject().getProjectKey() + "/issues/" + savedIssue.getIssueKey(),
+                            savedIssue.getIssueKey(),
+                            currentUser
+                    );
+                }
+            }
         }
 
         return savedIssue;
@@ -527,12 +574,24 @@ public class WorkflowServiceImpl implements IWorkflowService {
 
         auditService.log("APPROVE_ISSUE", "ISSUE", saved.getId(), saved.getProject().getId(), fromStatus.getName(), doneStatus.getName());
 
-        if (saved.getAssignee() != null) {
+        List<User> recipients = new ArrayList<>();
+        if (saved.getAssignee() != null) recipients.add(saved.getAssignee());
+        if (saved.getReporter() != null && !recipients.contains(saved.getReporter())) {
+            recipients.add(saved.getReporter());
+        }
+        if (watcherService != null) {
+            for (User w : watcherService.getWatchers(saved.getId())) {
+                if (!recipients.contains(w)) recipients.add(w);
+            }
+        }
+        recipients.removeIf(u -> u.getId().equals(currentUser.getId()));
+
+        if (!recipients.isEmpty()) {
             notificationService.notify(
                     NotificationType.APPROVAL_RESULT,
-                    List.of(saved.getAssignee()),
-                    "Issue đã được phê duyệt: " + saved.getIssueKey(),
-                    "Issue " + saved.getIssueKey() + " đã được phê duyệt bởi " + currentUser.getFullName(),
+                    recipients,
+                    "Công việc đã được phê duyệt: " + saved.getIssueKey(),
+                    "Công việc " + saved.getIssueKey() + " (" + saved.getSummary() + ") đã được phê duyệt chuyển sang trạng thái '" + doneStatus.getName() + "' bởi " + currentUser.getFullName() + (comment != null && !comment.isBlank() && !comment.equals("Approved") ? " (" + comment + ")" : ""),
                     "/projects/" + saved.getProject().getProjectKey() + "/issues/" + saved.getIssueKey(),
                     saved.getIssueKey(),
                     currentUser
@@ -579,12 +638,24 @@ public class WorkflowServiceImpl implements IWorkflowService {
 
         auditService.log("REJECT_ISSUE", "ISSUE", saved.getId(), saved.getProject().getId(), fromStatus.getName(), inProgressStatus.getName());
 
-        if (saved.getAssignee() != null) {
+        List<User> recipients = new ArrayList<>();
+        if (saved.getAssignee() != null) recipients.add(saved.getAssignee());
+        if (saved.getReporter() != null && !recipients.contains(saved.getReporter())) {
+            recipients.add(saved.getReporter());
+        }
+        if (watcherService != null) {
+            for (User w : watcherService.getWatchers(saved.getId())) {
+                if (!recipients.contains(w)) recipients.add(w);
+            }
+        }
+        recipients.removeIf(u -> u.getId().equals(currentUser.getId()));
+
+        if (!recipients.isEmpty()) {
             notificationService.notify(
                     NotificationType.APPROVAL_RESULT,
-                    List.of(saved.getAssignee()),
-                    "Issue bị từ chối phê duyệt: " + saved.getIssueKey(),
-                    "Lý do: " + reason,
+                    recipients,
+                    "Công việc bị từ chối phê duyệt: " + saved.getIssueKey(),
+                    "Công việc " + saved.getIssueKey() + " (" + saved.getSummary() + ") đã bị từ chối và chuyển về trạng thái '" + inProgressStatus.getName() + "'. Lý do: " + reason,
                     "/projects/" + saved.getProject().getProjectKey() + "/issues/" + saved.getIssueKey(),
                     saved.getIssueKey(),
                     currentUser
