@@ -499,18 +499,24 @@ public class WorkflowServiceImpl implements IWorkflowService {
 
         projectSecurity.assertProjectWritable(issue.getProject());
 
-        // Find approve transition or DONE status
+        if (issue.getStatus() == null) {
+            throw new BusinessException(ErrorCode.INVALID_TRANSITION, "Issue has no current status");
+        }
+
+        // Must have an explicit APPROVE transition or a transition to a DONE status from the current status
         List<WorkflowTransition> transitions = transitionRepository.findByFromStatusId(issue.getStatus().getId());
         WorkflowTransition approveTrans = transitions.stream()
-                .filter(t -> t.getType() == TransitionType.APPROVE || t.getToStatus().getCategory() == StatusCategory.DONE)
+                .filter(t -> t.getType() == TransitionType.APPROVE)
                 .findFirst()
-                .orElse(null);
+                .or(() -> transitions.stream()
+                        .filter(t -> t.getToStatus() != null && t.getToStatus().getCategory() == StatusCategory.DONE)
+                        .findFirst())
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.INVALID_TRANSITION,
+                        "Không có luồng phê duyệt hợp lệ từ trạng thái '" + issue.getStatus().getName() + "' sang trạng thái hoàn thành"
+                ));
 
-        WorkflowStatus doneStatus = approveTrans != null ? approveTrans.getToStatus() :
-                statusRepository.findByProjectIdOrderByPositionAsc(issue.getProject().getId()).stream()
-                        .filter(s -> s.getCategory() == StatusCategory.DONE)
-                        .findFirst()
-                        .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TRANSITION, "No DONE status found in workflow"));
+        WorkflowStatus doneStatus = approveTrans.getToStatus();
 
         WorkflowStatus fromStatus = issue.getStatus();
         issue.setStatus(doneStatus);
