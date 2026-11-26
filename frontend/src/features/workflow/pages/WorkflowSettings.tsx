@@ -68,7 +68,8 @@ export default function WorkflowSettings() {
       const res = await workflowService.getWorkflow(currentProject.id);
       const data = res?.data;
       if (data) {
-        setStatuses(data.statuses || []);
+        const sorted = (data.statuses || []).slice().sort((a, b) => a.position - b.position);
+        setStatuses(sorted);
         setTransitions(data.transitions || []);
         setWarnings(data.warnings || []);
       }
@@ -113,11 +114,29 @@ export default function WorkflowSettings() {
   }
 
   function handleRemoveStatus(name: string) {
-    setStatuses((prev) => prev.filter((s) => s.name !== name));
+    setStatuses((prev) => {
+      const filtered = prev.filter((s) => s.name !== name);
+      return filtered.map((s, idx) => ({ ...s, position: idx }));
+    });
     setTransitions((prev) => prev.filter((t) => t.from !== name && t.to !== name));
     if (selectedTransition?.from === name || selectedTransition?.to === name) {
       setSelectedTransition(null);
     }
+  }
+
+  function handleMoveStatus(index: number, direction: 'left' | 'right') {
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= statuses.length) return;
+    const copy = [...statuses];
+    const [moved] = copy.splice(index, 1);
+    copy.splice(targetIndex, 0, moved);
+    const reindexed = copy.map((s, idx) => ({ ...s, position: idx }));
+    setStatuses(reindexed);
+  }
+
+  function handleReorderStatuses(newStatuses: WorkflowStatus[]) {
+    const reindexed = newStatuses.map((s, idx) => ({ ...s, position: idx }));
+    setStatuses(reindexed);
   }
 
   function handleToggleMatrixTransition(from: string, to: string, allowed: boolean) {
@@ -175,8 +194,12 @@ export default function WorkflowSettings() {
     }
 
     try {
+      const payloadStatuses = statuses.map((s, idx) => ({
+        ...s,
+        position: idx,
+      }));
       const res = await workflowService.updateWorkflow(currentProject.id, {
-        statuses,
+        statuses: payloadStatuses,
         transitions,
       });
       setWarnings(res?.data?.warnings || []);
@@ -325,8 +348,26 @@ export default function WorkflowSettings() {
                         stroke={status.isInitial ? '#1A1A1A' : '#E5E5E7'}
                         strokeWidth={status.isInitial ? 2 : 1.5}
                       />
+                      {/* Step index badge */}
+                      <circle
+                        cx={x + 15}
+                        cy={NODE_Y + NODE_H / 2}
+                        r={8}
+                        fill="#F0F0F1"
+                      />
                       <text
-                        x={x + NODE_W / 2}
+                        x={x + 15}
+                        y={NODE_Y + NODE_H / 2 + 3}
+                        textAnchor="middle"
+                        fontSize={9}
+                        fontFamily="Inter, sans-serif"
+                        fontWeight={700}
+                        fill="#6B6B70"
+                      >
+                        {idx + 1}
+                      </text>
+                      <text
+                        x={x + (NODE_W + 15) / 2}
                         y={NODE_Y + NODE_H / 2 + 4}
                         textAnchor="middle"
                         fontSize={11}
@@ -347,6 +388,8 @@ export default function WorkflowSettings() {
                 statuses={statuses}
                 onAddStatus={handleAddStatus}
                 onRemoveStatus={handleRemoveStatus}
+                onMoveStatus={handleMoveStatus}
+                onReorderStatuses={handleReorderStatuses}
               />
             </div>
           </div>

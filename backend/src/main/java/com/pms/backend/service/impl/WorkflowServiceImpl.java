@@ -171,17 +171,22 @@ public class WorkflowServiceImpl implements IWorkflowService {
 
         for (int i = 0; i < newStatuses.size(); i++) {
             WorkflowStatusDto dto = newStatuses.get(i);
-            WorkflowStatus status;
+            WorkflowStatus status = null;
             if (dto.getId() != null) {
-                status = statusRepository.findById(dto.getId()).orElse(new WorkflowStatus());
-            } else {
-                status = currentByName.getOrDefault(dto.getName().trim().toLowerCase(), new WorkflowStatus());
+                status = statusRepository.findById(dto.getId()).orElse(null);
+            }
+            if (status == null && dto.getName() != null) {
+                status = currentByName.get(dto.getName().trim().toLowerCase());
+            }
+            if (status == null) {
+                status = new WorkflowStatus();
             }
             status.setProject(project);
             status.setName(dto.getName().trim());
             status.setCategory(dto.getCategory() != null ? dto.getCategory() : StatusCategory.TODO);
-            status.setPosition(dto.getPosition() != null ? dto.getPosition() : i);
+            status.setPosition(i);
             status.setInitial(Boolean.TRUE.equals(dto.getIsInitial()));
+            dto.setPosition(i);
 
             status = statusRepository.save(status);
             statusMapByName.put(status.getName().toLowerCase(), status);

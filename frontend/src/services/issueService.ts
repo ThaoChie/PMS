@@ -134,7 +134,7 @@ export const issueService = {
   async uploadAttachment(issueKey: string, file: File): Promise<ApiResponse<any>> {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await axiosClient.post(`/issues/${issueKey}/attachments`, formData, {
+    const res = await axiosClient.post<any, ApiResponse<any>>(`/issues/${issueKey}/attachments`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     notifyIssueChanged({ issueKey, action: 'update' });
@@ -142,7 +142,7 @@ export const issueService = {
   },
 
   async deleteAttachment(issueKey: string, attachmentId: string): Promise<ApiResponse<void>> {
-    const res = await axiosClient.delete(`/issues/${issueKey}/attachments/${attachmentId}`);
+    const res = await axiosClient.delete<any, ApiResponse<void>>(`/issues/${issueKey}/attachments/${attachmentId}`);
     notifyIssueChanged({ issueKey, action: 'update' });
     return res;
   },
