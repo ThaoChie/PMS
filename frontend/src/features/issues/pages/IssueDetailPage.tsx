@@ -12,6 +12,7 @@ import {
   AlertCircle,
   FileText,
   GitFork,
+  Shield,
 } from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
 import { issueService } from '../../../services/issueService';
@@ -412,17 +413,35 @@ export default function IssueDetailPage({
                   </button>
 
                   {showStatusMenu && transitions.length > 0 && (
-                    <div className="absolute top-8 right-0 bg-white border border-[#E5E5E7] rounded-lg shadow-lg z-30 py-1 min-w-[150px]">
-                      {transitions.map((t: any) => (
-                        <button
-                          key={t.id || t.toStatus}
-                          type="button"
-                          onClick={() => handleStatusTransition(t)}
-                          className="w-full text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F8] text-[#1A1A1A]"
-                        >
-                          &rarr; Chuyển sang {t.toStatus || t.name}
-                        </button>
-                      ))}
+                    <div className="absolute top-8 right-0 bg-white border border-[#E5E5E7] rounded-lg shadow-lg z-30 py-1 min-w-[180px]">
+                      {transitions.map((t: any) => {
+                        const isApproval = t.type === 'APPROVE' || t.type === 'REJECT' || Boolean(t.isApprovalStep);
+                        const targetStatus = t.toStatusName || t.to || t.toStatus;
+                        const label = !isApproval
+                          ? targetStatus || t.name
+                          : t.name && !/^\d+$/.test(t.name.trim())
+                          ? t.name
+                          : t.type === 'REJECT'
+                          ? (targetStatus ? `Từ chối về ${targetStatus}` : 'Từ chối')
+                          : (targetStatus ? `Duyệt sang ${targetStatus}` : 'Phê duyệt');
+
+                        return (
+                          <button
+                            key={t.id || targetStatus}
+                            type="button"
+                            onClick={() => handleStatusTransition(t)}
+                            className="w-full text-left px-3 py-2 text-xs hover:bg-[#F7F7F8] text-[#1A1A1A] flex items-center justify-between gap-2 transition-colors"
+                          >
+                            <span className="font-medium truncate">{label}</span>
+                            {isApproval && (
+                              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[#FDECEC] text-[#E53E3E] font-medium border border-[#E53E3E]/20 flex items-center gap-1">
+                                <Shield className="w-2.5 h-2.5" />
+                                Duyệt PM/QA
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
