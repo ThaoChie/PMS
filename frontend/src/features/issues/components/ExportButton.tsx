@@ -10,9 +10,16 @@ interface ExportButtonProps {
   criteria?: any;
   issues?: any[];
   projectId?: string | number;
+  formats?: Array<'xlsx' | 'csv'>;
 }
 
-export default function ExportButton({ onExport, criteria, issues, projectId }: ExportButtonProps) {
+export default function ExportButton({
+  onExport,
+  criteria,
+  issues,
+  projectId,
+  formats = ['xlsx', 'csv'],
+}: ExportButtonProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -111,22 +118,26 @@ export default function ExportButton({ onExport, criteria, issues, projectId }: 
 
       {open && (
         <div className="absolute right-0 mt-1 w-40 bg-white border border-[#E5E5E7] rounded-lg shadow-lg z-30 py-1 overflow-hidden fade-in">
-          <button
-            type="button"
-            onClick={() => handleExport('xlsx')}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-            Excel (.xlsx)
-          </button>
-          <button
-            type="button"
-            onClick={() => handleExport('csv')}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
-          >
-            <FileText className="w-3.5 h-3.5 text-blue-600" />
-            CSV (.csv)
-          </button>
+          {formats.includes('xlsx') && (
+            <button
+              type="button"
+              onClick={() => handleExport('xlsx')}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              Excel (.xlsx)
+            </button>
+          )}
+          {formats.includes('csv') && (
+            <button
+              type="button"
+              onClick={() => handleExport('csv')}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-[#1A1A1A] hover:bg-[#F7F7F8] transition-colors"
+            >
+              <FileText className="w-3.5 h-3.5 text-blue-600" />
+              CSV (.csv)
+            </button>
+          )}
         </div>
       )}
     </div>
