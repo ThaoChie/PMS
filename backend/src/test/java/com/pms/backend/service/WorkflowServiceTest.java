@@ -425,4 +425,60 @@ public class WorkflowServiceTest {
         assertNotNull(response);
         verify(transitionRepository).save(argThat(tr -> tr.getType() == TransitionType.APPROVE));
     }
+
+    @Test
+    public void testUpdateWorkflow_MultipleInitialStatuses_NormalizesToSingleInitial() {
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+
+        WorkflowStatus ws1 = new WorkflowStatus();
+        ws1.setId(10L);
+        ws1.setName("To Do");
+        ws1.setCategory(StatusCategory.TODO);
+        ws1.setInitial(true);
+
+        WorkflowStatus ws2 = new WorkflowStatus();
+        ws2.setId(20L);
+        ws2.setName("Backlog");
+        ws2.setCategory(StatusCategory.TODO);
+        ws2.setInitial(true);
+
+        WorkflowStatus ws3 = new WorkflowStatus();
+        ws3.setId(30L);
+        ws3.setName("Done");
+        ws3.setCategory(StatusCategory.DONE);
+        ws3.setInitial(false);
+
+        when(statusRepository.findByProjectIdOrderByPositionAsc(1L)).thenReturn(List.of(ws1, ws2, ws3));
+        when(statusRepository.findById(10L)).thenReturn(Optional.of(ws1));
+        when(statusRepository.findById(20L)).thenReturn(Optional.of(ws2));
+        when(statusRepository.findById(30L)).thenReturn(Optional.of(ws3));
+        when(statusRepository.save(any(WorkflowStatus.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SaveWorkflowRequest req = new SaveWorkflowRequest();
+        WorkflowStatusDto s1 = new WorkflowStatusDto();
+        s1.setId(10L);
+        s1.setName("To Do");
+        s1.setCategory(StatusCategory.TODO);
+        s1.setIsInitial(true);
+
+        WorkflowStatusDto s2 = new WorkflowStatusDto();
+        s2.setId(20L);
+        s2.setName("Backlog");
+        s2.setCategory(StatusCategory.TODO);
+        s2.setIsInitial(true); // Duplicate initial flag
+
+        WorkflowStatusDto s3 = new WorkflowStatusDto();
+        s3.setId(30L);
+        s3.setName("Done");
+        s3.setCategory(StatusCategory.DONE);
+        s3.setIsInitial(false);
+
+        req.setStatuses(List.of(s1, s2, s3));
+
+        var response = workflowService.updateWorkflow(1L, req);
+        assertNotNull(response);
+        assertTrue(ws1.isInitial());
+        assertFalse(ws2.isInitial());
+        assertFalse(ws3.isInitial());
+    }
 }

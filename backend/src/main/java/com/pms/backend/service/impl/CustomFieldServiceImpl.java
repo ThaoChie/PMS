@@ -211,8 +211,9 @@ public class CustomFieldServiceImpl implements ICustomFieldService {
             if (Boolean.TRUE.equals(def.getRequired())) {
                 if (!StringUtils.hasText(submittedVal)) {
                     // Check if already has value in DB
-                    Optional<IssueCustomFieldValue> existing = customFieldValueRepository.findByIssueIdAndFieldId(issue.getId(), def.getId());
-                    if (existing.isEmpty() || !StringUtils.hasText(existing.get().getFieldValue())) {
+                    List<IssueCustomFieldValue> existingList = customFieldValueRepository.findAllByIssueIdAndFieldIdOrderByIdAsc(issue.getId(), def.getId());
+                    boolean hasExisting = existingList.stream().anyMatch(v -> StringUtils.hasText(v.getFieldValue()));
+                    if (!hasExisting) {
                         throw new ValidationException("Trường '" + def.getName() + "' là bắt buộc");
                     }
                 }
@@ -257,19 +258,24 @@ public class CustomFieldServiceImpl implements ICustomFieldService {
                     }
                 }
 
-                // Upsert
-                Optional<IssueCustomFieldValue> existingOpt = customFieldValueRepository.findByIssueIdAndFieldId(issue.getId(), def.getId());
-                if (existingOpt.isPresent()) {
-                    IssueCustomFieldValue existing = existingOpt.get();
+                // Upsert safely even if legacy rows lack the unique constraint
+                List<IssueCustomFieldValue> existingList = customFieldValueRepository.findAllByIssueIdAndFieldIdOrderByIdAsc(issue.getId(), def.getId());
+                if (!existingList.isEmpty()) {
+                    IssueCustomFieldValue existing = existingList.get(0);
                     existing.setFieldValue(trimmed);
                     customFieldValueRepository.save(existing);
+                    if (existingList.size() > 1) {
+                        customFieldValueRepository.deleteAll(existingList.subList(1, existingList.size()));
+                    }
                 } else {
                     customFieldValueRepository.save(new IssueCustomFieldValue(issue, def, trimmed));
                 }
             } else if (safeValues.containsKey(def.getFieldKey()) || safeValues.containsKey(String.valueOf(def.getId()))) {
                 // Explicit null or empty -> clear value
-                customFieldValueRepository.findByIssueIdAndFieldId(issue.getId(), def.getId())
-                        .ifPresent(customFieldValueRepository::delete);
+                List<IssueCustomFieldValue> existingList = customFieldValueRepository.findAllByIssueIdAndFieldIdOrderByIdAsc(issue.getId(), def.getId());
+                if (!existingList.isEmpty()) {
+                    customFieldValueRepository.deleteAll(existingList);
+                }
             }
         }
     }

@@ -58,7 +58,20 @@ public class WorkflowServiceImpl implements IWorkflowService {
         List<WorkflowStatus> statuses = statusRepository.findByProjectIdOrderByPositionAsc(projectId);
         List<WorkflowTransition> transitions = transitionRepository.findByProjectId(projectId);
 
-        List<WorkflowStatusDto> statusDtos = statuses.stream()
+        // Deduplicate statuses by normalized name
+        Map<String, WorkflowStatus> uniqueStatusMap = new LinkedHashMap<>();
+        for (WorkflowStatus s : statuses) {
+            if (s.getName() != null) {
+                String key = s.getName().trim().toLowerCase();
+                uniqueStatusMap.putIfAbsent(key, s);
+            }
+        }
+        List<WorkflowStatus> dedupStatuses = new ArrayList<>(uniqueStatusMap.values());
+        for (int i = 0; i < dedupStatuses.size(); i++) {
+            dedupStatuses.get(i).setPosition(i);
+        }
+
+        List<WorkflowStatusDto> statusDtos = dedupStatuses.stream()
                 .map(WorkflowStatusDto::from)
                 .collect(Collectors.toList());
 
@@ -66,7 +79,7 @@ public class WorkflowServiceImpl implements IWorkflowService {
                 .map(WorkflowTransitionDto::from)
                 .collect(Collectors.toList());
 
-        List<String> warnings = findOrphanStatusWarnings(statuses, transitions);
+        List<String> warnings = findOrphanStatusWarnings(dedupStatuses, transitions);
 
         return new WorkflowResponse(statusDtos, transitionDtos, warnings);
     }
@@ -112,9 +125,15 @@ public class WorkflowServiceImpl implements IWorkflowService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
         Map<String, WorkflowStatus> currentByName = new HashMap<>();
+        List<WorkflowStatus> extraDuplicates = new ArrayList<>();
         for (WorkflowStatus curr : currentStatuses) {
             if (curr.getName() != null) {
-                currentByName.putIfAbsent(curr.getName().trim().toLowerCase(), curr);
+                String key = curr.getName().trim().toLowerCase();
+                if (!currentByName.containsKey(key)) {
+                    currentByName.put(key, curr);
+                } else {
+                    extraDuplicates.add(curr);
+                }
             }
         }
         Set<String> incomingNamesLower = newStatuses.stream()
@@ -123,6 +142,9 @@ public class WorkflowServiceImpl implements IWorkflowService {
 
         List<WorkflowStatus> statusesToDelete = new ArrayList<>();
         for (WorkflowStatus curr : currentStatuses) {
+            if (extraDuplicates.contains(curr)) {
+                continue;
+            }
             boolean keptById = incomingStatusIds.contains(curr.getId());
             boolean keptByName = curr.getName() != null
                     && incomingNamesLower.contains(curr.getName().trim().toLowerCase());
@@ -147,6 +169,26 @@ public class WorkflowServiceImpl implements IWorkflowService {
             }
         }
 
+        // Clean up any extra duplicate statuses in database
+        for (WorkflowStatus dup : extraDuplicates) {
+            WorkflowStatus canonical = currentByName.get(dup.getName().trim().toLowerCase());
+            if (canonical != null && entityManager != null && dup.getId() != null) {
+                entityManager.createQuery("UPDATE Issue i SET i.status = :canon WHERE i.status.id = :sid")
+                        .setParameter("canon", canonical)
+                        .setParameter("sid", dup.getId())
+                        .executeUpdate();
+                entityManager.createQuery("UPDATE IssueStatusHistory h SET h.fromStatus = :canon WHERE h.fromStatus.id = :sid")
+                        .setParameter("canon", canonical)
+                        .setParameter("sid", dup.getId())
+                        .executeUpdate();
+                entityManager.createQuery("UPDATE IssueStatusHistory h SET h.toStatus = :canon WHERE h.toStatus.id = :sid")
+                        .setParameter("canon", canonical)
+                        .setParameter("sid", dup.getId())
+                        .executeUpdate();
+            }
+            statusesToDelete.add(dup);
+        }
+
         // Delete existing transitions before removing unused statuses
         transitionRepository.deleteByProjectId(projectId);
         transitionRepository.flush();
@@ -165,15 +207,32 @@ public class WorkflowServiceImpl implements IWorkflowService {
             statusRepository.flush();
         }
 
-        // Map existing statuses or create new ones
+        // Map existing statuses or create new ones (enforce at most one initial status per project)
         Map<String, WorkflowStatus> statusMapByName = new HashMap<>();
         Map<Long, WorkflowStatus> statusMapById = new HashMap<>();
 
+        // Clear any existing initial flags first when switching or normalizing initial status to avoid partial unique index conflicts
+        Set<WorkflowStatus> deletedSet = new HashSet<>(statusesToDelete);
+        boolean clearedInitial = false;
+        for (WorkflowStatus curr : currentStatuses) {
+            if (!deletedSet.contains(curr) && curr.isInitial()) {
+                curr.setInitial(false);
+                statusRepository.save(curr);
+                clearedInitial = true;
+            }
+        }
+        if (clearedInitial) {
+            statusRepository.flush();
+        }
+
+        boolean assignedInitial = false;
         for (int i = 0; i < newStatuses.size(); i++) {
             WorkflowStatusDto dto = newStatuses.get(i);
             WorkflowStatus status = null;
             if (dto.getId() != null) {
-                status = statusRepository.findById(dto.getId()).orElse(null);
+                status = statusRepository.findById(dto.getId())
+                        .filter(st -> st.getProject() == null || Objects.equals(st.getProject().getId(), projectId))
+                        .orElse(null);
             }
             if (status == null && dto.getName() != null) {
                 status = currentByName.get(dto.getName().trim().toLowerCase());
@@ -181,12 +240,17 @@ public class WorkflowServiceImpl implements IWorkflowService {
             if (status == null) {
                 status = new WorkflowStatus();
             }
+            boolean isInitial = Boolean.TRUE.equals(dto.getIsInitial()) && !assignedInitial;
+            if (isInitial) {
+                assignedInitial = true;
+            }
             status.setProject(project);
             status.setName(dto.getName().trim());
             status.setCategory(dto.getCategory() != null ? dto.getCategory() : StatusCategory.TODO);
             status.setPosition(i);
-            status.setInitial(Boolean.TRUE.equals(dto.getIsInitial()));
+            status.setInitial(isInitial);
             dto.setPosition(i);
+            dto.setIsInitial(isInitial);
 
             status = statusRepository.save(status);
             statusMapByName.put(status.getName().toLowerCase(), status);

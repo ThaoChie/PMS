@@ -216,5 +216,34 @@ public class CustomFieldServiceTest {
             customFieldService.validateAndSaveIssueCustomFields(issue, Map.of("score", "abc"));
         });
     }
+
+    @Test
+    public void testValidateAndSaveIssueCustomFields_DuplicateRowsInDb_UpdatesFirstAndDeletesExtras() {
+        Issue issue = new Issue();
+        issue.setId(200L);
+        issue.setProject(project);
+
+        ProjectCustomField textField = new ProjectCustomField();
+        textField.setId(13L);
+        textField.setFieldKey("note");
+        textField.setName("Note");
+        textField.setType("TEXT");
+
+        com.pms.backend.model.IssueCustomFieldValue row1 = new com.pms.backend.model.IssueCustomFieldValue(issue, textField, "old1");
+        row1.setId(1L);
+        com.pms.backend.model.IssueCustomFieldValue row2 = new com.pms.backend.model.IssueCustomFieldValue(issue, textField, "old2");
+        row2.setId(2L);
+
+        when(customFieldRepository.findByProjectIdOrderByPositionAscIdAsc(1L))
+                .thenReturn(List.of(textField));
+        when(customFieldValueRepository.findAllByIssueIdAndFieldIdOrderByIdAsc(200L, 13L))
+                .thenReturn(List.of(row1, row2));
+
+        customFieldService.validateAndSaveIssueCustomFields(issue, Map.of("note", "updated"));
+
+        assertEquals("updated", row1.getFieldValue());
+        verify(customFieldValueRepository).save(row1);
+        verify(customFieldValueRepository).deleteAll(List.of(row2));
+    }
 }
 

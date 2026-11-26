@@ -9,6 +9,7 @@ import java.util.Optional;
 public interface WorkflowStatusRepository extends JpaRepository<WorkflowStatus, Long> {
     List<WorkflowStatus> findByProjectIdOrderByPositionAsc(Long projectId);
     Optional<WorkflowStatus> findByProjectIdAndIsInitialTrue(Long projectId);
+    Optional<WorkflowStatus> findFirstByProjectIdAndIsInitialTrueOrderByPositionAscIdAsc(Long projectId);
     Optional<WorkflowStatus> findByProjectIdAndName(Long projectId, String name);
     void deleteByProjectId(Long projectId);
 }
