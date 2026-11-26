@@ -69,7 +69,16 @@ export default function WorkflowSettings() {
       const data = res?.data;
       if (data) {
         const sorted = (data.statuses || []).slice().sort((a, b) => a.position - b.position);
-        setStatuses(sorted);
+        const seen = new Set<string>();
+        const deduped: WorkflowStatus[] = [];
+        for (const st of sorted) {
+          const key = (st.name || '').trim().toLowerCase();
+          if (key && !seen.has(key)) {
+            seen.add(key);
+            deduped.push({ ...st, position: deduped.length });
+          }
+        }
+        setStatuses(deduped);
         setTransitions(data.transitions || []);
         setWarnings(data.warnings || []);
       }
@@ -126,11 +135,11 @@ export default function WorkflowSettings() {
 
   function handleRemoveStatus(name: string) {
     setStatuses((prev) => {
-      const filtered = prev.filter((s) => s.name !== name);
+      const filtered = prev.filter((s) => s.name.toLowerCase() !== name.toLowerCase());
       return filtered.map((s, idx) => ({ ...s, position: idx }));
     });
-    setTransitions((prev) => prev.filter((t) => t.from !== name && t.to !== name));
-    if (selectedTransition?.from === name || selectedTransition?.to === name) {
+    setTransitions((prev) => prev.filter((t) => t.from.toLowerCase() !== name.toLowerCase() && t.to.toLowerCase() !== name.toLowerCase()));
+    if (selectedTransition?.from.toLowerCase() === name.toLowerCase() || selectedTransition?.to.toLowerCase() === name.toLowerCase()) {
       setSelectedTransition(null);
     }
   }

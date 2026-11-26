@@ -17,7 +17,6 @@ import { searchService, type IssueSearchCriteria } from '../../../services/searc
 import { filterService } from '../../../services/filterService';
 import { toast } from '../../../store/toastStore';
 import { MESSAGES } from '../../../constants/messages';
-import { QUICK_FILTER_OPTIONS } from '../../../constants/enums';
 import { ISSUE_CHANGED_EVENT, type IssueEventDetail } from '../../../utils/issueEvents';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { filtersToSearchParams, searchParamsToFilters } from '../../../utils/searchParams';
@@ -28,7 +27,6 @@ import AdvancedSearchPanel, {
   EMPTY_CRITERIA,
   type AdvancedSearchCriteria,
 } from '../../search/components/AdvancedSearchPanel';
-import QuickFilterChips from '../../search/components/QuickFilterChips';
 import SaveFilterModal, { type SaveFilterData } from '../../filters/components/SaveFilterModal';
 import { mapSavedFilter } from '../../filters';
 
@@ -497,8 +495,8 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top toolbar */}
-        <div className="px-4 py-2.5 sm:px-6 sm:py-3 border-b border-[#E5E5E7] flex flex-wrap items-center justify-between gap-2.5 shrink-0">
-          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+        <div className="px-4 py-2.5 sm:px-6 sm:py-3 border-b border-[#E5E5E7] flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap sm:flex-nowrap">
             <button
               type="button"
               onClick={() => setFilterPanelOpen((o) => !o)}
@@ -667,17 +665,11 @@ export default function IssueList({ onSelectIssue }: IssueListProps) {
               value={criteria.keyword}
               onChange={(e) => patchCriteria({ keyword: e.target.value })}
               placeholder={MESSAGES.SEARCH.KEYWORD_PLACEHOLDER}
-              className="px-3 py-1.5 border border-[#E5E5E7] rounded-md text-xs sm:text-sm text-[#1A1A1A] placeholder:text-[#9B9B9F] w-full sm:w-56 focus:outline-none focus:border-[#1A1A1A] shrink-0"
-            />
-            <QuickFilterChips
-              options={QUICK_FILTER_OPTIONS.map((q) => ({ id: q.id, label: q.label }))}
-              activeId={activeQuick || null}
-              onSelect={(id) => setActiveQuick(id || '')}
-              className="min-w-0 overflow-x-auto"
+              className="px-3 py-1.5 border border-[#E5E5E7] rounded-md text-xs sm:text-sm text-[#1A1A1A] placeholder:text-[#9B9B9F] w-full sm:w-auto sm:flex-1 min-w-[180px] focus:outline-none focus:border-[#1A1A1A]"
             />
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
             {/* Xuất dữ liệu theo đúng bộ lọc đang áp dụng (UC010) */}
             <ExportButton criteria={searchCriteria} issues={issues} projectId={currentProject?.id} />
           </div>
