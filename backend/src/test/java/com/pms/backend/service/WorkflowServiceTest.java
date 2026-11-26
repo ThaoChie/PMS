@@ -157,6 +157,63 @@ public class WorkflowServiceTest {
     }
 
     @Test
+    public void testUpdateWorkflow_ReorderStatuses_UpdatesPositionsCorrectly() {
+        SaveWorkflowRequest req = new SaveWorkflowRequest();
+
+        WorkflowStatusDto s1 = new WorkflowStatusDto();
+        s1.setId(100L);
+        s1.setName("To Do");
+        s1.setCategory(StatusCategory.TODO);
+        s1.setIsInitial(true);
+
+        // Newly added status moved to index 1
+        WorkflowStatusDto sNew = new WorkflowStatusDto();
+        sNew.setName("Review");
+        sNew.setCategory(StatusCategory.IN_PROGRESS);
+
+        WorkflowStatusDto s2 = new WorkflowStatusDto();
+        s2.setId(101L);
+        s2.setName("In Progress");
+        s2.setCategory(StatusCategory.IN_PROGRESS);
+
+        WorkflowStatusDto s3 = new WorkflowStatusDto();
+        s3.setId(102L);
+        s3.setName("Done");
+        s3.setCategory(StatusCategory.DONE);
+
+        req.setStatuses(List.of(s1, sNew, s2, s3));
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(statusRepository.findByProjectIdOrderByPositionAsc(1L)).thenReturn(List.of());
+
+        WorkflowStatus ws1 = new WorkflowStatus();
+        ws1.setId(100L);
+        ws1.setName("To Do");
+
+        WorkflowStatus ws2 = new WorkflowStatus();
+        ws2.setId(101L);
+        ws2.setName("In Progress");
+
+        WorkflowStatus ws3 = new WorkflowStatus();
+        ws3.setId(102L);
+        ws3.setName("Done");
+
+        when(statusRepository.findById(100L)).thenReturn(Optional.of(ws1));
+        when(statusRepository.findById(101L)).thenReturn(Optional.of(ws2));
+        when(statusRepository.findById(102L)).thenReturn(Optional.of(ws3));
+
+        when(statusRepository.save(any(WorkflowStatus.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = workflowService.updateWorkflow(1L, req);
+
+        assertNotNull(response);
+        verify(statusRepository).save(argThat(st -> "To Do".equals(st.getName()) && st.getPosition() == 0));
+        verify(statusRepository).save(argThat(st -> "Review".equals(st.getName()) && st.getPosition() == 1));
+        verify(statusRepository).save(argThat(st -> "In Progress".equals(st.getName()) && st.getPosition() == 2));
+        verify(statusRepository).save(argThat(st -> "Done".equals(st.getName()) && st.getPosition() == 3));
+    }
+
+    @Test
     public void testApproveIssue_NonPmMember_ThrowsForbidden() {
         Issue issue = new Issue();
         issue.setId(1L);
