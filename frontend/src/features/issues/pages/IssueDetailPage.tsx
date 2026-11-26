@@ -28,6 +28,7 @@ import ConvertIssueModal from '../components/ConvertIssueModal';
 import ShareIssueModal from '../components/ShareIssueModal';
 import CommentSection from '../../comments/components/CommentSection';
 import WorklogSection from '../../worklog/components/WorklogSection';
+import TransitionModal from '../../workflow/components/TransitionModal';
 
 interface IssueDetailPageProps {
   issueKey: string;
@@ -53,6 +54,7 @@ export default function IssueDetailPage({
   const [projectMembers, setProjectMembers] = useState<Array<{ id: string; name: string }>>([]);
   const [transitions, setTransitions] = useState<any[]>([]);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [pendingTransition, setPendingTransition] = useState<any | null>(null);
   const [showTypeMenu, setShowTypeMenu] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -212,12 +214,19 @@ export default function IssueDetailPage({
   }
 
   /** Chuyển trạng thái theo đúng transition đã cấu hình trong Workflow (BR-WF-01) */
-  async function handleStatusTransition(transition: any) {
+  async function handleStatusTransition(transition: any, fields?: Record<string, any>, comment?: string) {
     if (!issue || !transition?.id) return;
-    setActionLoading(true);
-    try {
-      await workflowService.executeTransition(issue.key, String(transition.id));
+    const reqField = (transition.requiredFields || transition.requiresField || '').trim();
+    if (reqField && !fields) {
+      setPendingTransition(transition);
       setShowStatusMenu(false);
+      return;
+    }
+
+    setActionLoading(true);
+    setShowStatusMenu(false);
+    try {
+      await workflowService.executeTransition(issue.key, String(transition.id), fields, comment);
       await fetchDetail();
     } catch (err: any) {
       setErrorMessage(err?.response?.data?.message || err?.message || 'Không thể chuyển trạng thái');
@@ -640,6 +649,24 @@ export default function IssueDetailPage({
           isSubtask={isSubtask}
           onClose={() => setShowConvertModal(false)}
           onSuccess={fetchDetail}
+        />
+      )}
+
+      {/* Transition Modal for Required Fields (e.g. resolution) */}
+      {pendingTransition && (
+        <TransitionModal
+          isOpen={Boolean(pendingTransition)}
+          transition={{
+            ...pendingTransition,
+            from: issue.status,
+            to: pendingTransition.toStatusName || pendingTransition.to || pendingTransition.toStatus,
+          }}
+          onClose={() => setPendingTransition(null)}
+          onExecute={(fields, comment) => {
+            const trans = pendingTransition;
+            setPendingTransition(null);
+            handleStatusTransition(trans, fields, comment);
+          }}
         />
       )}
     </div>
