@@ -23,13 +23,13 @@ SET status_id = m.canonical_id
 FROM tmp_status_mapping m
 WHERE i.status_id = m.duplicate_id;
 
--- 3. Re-point issue_status_histories
-UPDATE issue_status_histories h
+-- 3. Re-point issue_status_history
+UPDATE issue_status_history h
 SET from_status_id = m.canonical_id
 FROM tmp_status_mapping m
 WHERE h.from_status_id = m.duplicate_id;
 
-UPDATE issue_status_histories h
+UPDATE issue_status_history h
 SET to_status_id = m.canonical_id
 FROM tmp_status_mapping m
 WHERE h.to_status_id = m.duplicate_id;
