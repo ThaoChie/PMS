@@ -22,15 +22,23 @@ public class ReportController {
 
     private final IReportService reportService;
     private final IUserService userService;
+    private final com.pms.backend.service.impl.BugReportExportService bugReportExportService;
 
     public ReportController(IReportService reportService) {
-        this(reportService, null);
+        this(reportService, null, null);
+    }
+
+    public ReportController(IReportService reportService, IUserService userService) {
+        this(reportService, userService, null);
     }
 
     @Autowired
-    public ReportController(IReportService reportService, IUserService userService) {
+    public ReportController(IReportService reportService,
+                            IUserService userService,
+                            @Autowired(required = false) com.pms.backend.service.impl.BugReportExportService bugReportExportService) {
         this.reportService = reportService;
         this.userService = userService;
+        this.bugReportExportService = bugReportExportService;
     }
 
     private User getCurrentUser() {
@@ -90,7 +98,7 @@ public class ReportController {
     }
 
     @GetMapping({"/api/projects/{projectId}/reports/bugs", "/projects/{projectId}/reports/bugs"})
-    @PreAuthorize("@projectSecurity.hasRole(#projectId, 'PM', 'QA')")
+    @PreAuthorize("@projectSecurity.hasRole(#projectId, 'PM', 'QA') or @projectSecurity.isPmOrAdmin(#projectId) or @projectSecurity.isMember(#projectId)")
     public ApiResponse<BugReportResponse> getBugReport(
             @PathVariable Long projectId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -98,17 +106,16 @@ public class ReportController {
         return ApiResponse.success(reportService.getBugReport(projectId, from, to));
     }
 
-    /** Tạo file cho tab Báo cáo lỗi (tách riêng khỏi xuất danh sách công việc). */
-    @Autowired(required = false)
-    private com.pms.backend.service.impl.BugReportExportService bugReportExportService;
-
     @GetMapping({"/api/projects/{projectId}/reports/bugs/export", "/projects/{projectId}/reports/bugs/export"})
-    @PreAuthorize("@projectSecurity.hasRole(#projectId, 'PM', 'QA')")
+    @PreAuthorize("@projectSecurity.hasRole(#projectId, 'PM', 'QA') or @projectSecurity.isPmOrAdmin(#projectId) or @projectSecurity.isMember(#projectId)")
     public ResponseEntity<byte[]> exportBugReport(
             @PathVariable Long projectId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(defaultValue = "xlsx") String format) {
+        if (bugReportExportService == null) {
+            throw new com.pms.backend.exception.BusinessException(com.pms.backend.enu.ErrorCode.INTERNAL_SERVER_ERROR, "Dịch vụ xuất báo cáo lỗi chưa sẵn sàng");
+        }
         String f = com.pms.backend.service.impl.BugReportExportService.normalizeFormat(format);
         byte[] data = bugReportExportService.export(projectId, from, to, f);
         String filename = "bug-report-" + projectId + "-" + LocalDate.now() + "." + f;
