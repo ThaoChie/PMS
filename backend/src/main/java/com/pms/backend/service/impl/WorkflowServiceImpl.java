@@ -32,6 +32,10 @@ public class WorkflowServiceImpl implements IWorkflowService {
     private IWatcherService watcherService;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private IDefaultWorkflowSeeder defaultWorkflowSeeder;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private IMailService mailService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.pms.backend.config.AppProperties appProperties;
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager entityManager;
 
@@ -43,7 +47,9 @@ public class WorkflowServiceImpl implements IWorkflowService {
                            IssueStatusHistoryRepository historyRepository,
                            ProjectSecurity projectSecurity,
                            INotificationService notificationService,
-                           IAuditService auditService) {
+                           IAuditService auditService,
+                           @org.springframework.beans.factory.annotation.Autowired(required = false) IMailService mailService,
+                           @org.springframework.beans.factory.annotation.Autowired(required = false) com.pms.backend.config.AppProperties appProperties) {
         this.statusRepository = statusRepository;
         this.transitionRepository = transitionRepository;
         this.issueRepository = issueRepository;
@@ -53,6 +59,8 @@ public class WorkflowServiceImpl implements IWorkflowService {
         this.projectSecurity = projectSecurity;
         this.notificationService = notificationService;
         this.auditService = auditService;
+        this.mailService = mailService;
+        this.appProperties = appProperties;
     }
 
     @Transactional
@@ -398,7 +406,7 @@ public class WorkflowServiceImpl implements IWorkflowService {
     }
 
     @Transactional
-    public Issue executeTransition(String issueKey, Long transitionId, Map<String, Object> fields, String comment, User currentUser) {
+    public Issue executeTransition(String issueKey, Long transitionId, Map<String, Object> fields, String comment, Boolean sendEmail, User currentUser) {
         Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found"));
 
@@ -532,11 +540,22 @@ public class WorkflowServiceImpl implements IWorkflowService {
             }
         }
 
+        // Dedicated email to assignee when requested by PM/QA
+        if (Boolean.TRUE.equals(sendEmail)) {
+            sendApprovalFeedbackEmail(savedIssue, toStatus, fields, comment, currentUser);
+        }
+
         return savedIssue;
     }
 
+    @Override
     @Transactional
-    public Issue approveIssue(String issueKey, String comment, User currentUser) {
+    public Issue executeTransition(String issueKey, Long transitionId, Map<String, Object> fields, String comment, User currentUser) {
+        return executeTransition(issueKey, transitionId, fields, comment, false, currentUser);
+    }
+
+    @Transactional
+    public Issue approveIssue(String issueKey, String comment, Boolean sendEmail, User currentUser) {
         Issue issue = issueRepository.findByIssueKeyAndDeletedAtIsNull(issueKey)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found"));
 
@@ -598,11 +617,21 @@ public class WorkflowServiceImpl implements IWorkflowService {
             );
         }
 
+        if (Boolean.TRUE.equals(sendEmail)) {
+            sendApprovalFeedbackEmail(saved, doneStatus, null, comment, currentUser);
+        }
+
         return saved;
     }
 
+    @Override
     @Transactional
-    public Issue rejectIssue(String issueKey, String reason, User currentUser) {
+    public Issue approveIssue(String issueKey, String comment, User currentUser) {
+        return approveIssue(issueKey, comment, false, currentUser);
+    }
+
+    @Transactional
+    public Issue rejectIssue(String issueKey, String reason, Boolean sendEmail, User currentUser) {
         if (reason == null || reason.trim().isEmpty()) {
             throw new ValidationException("Reject reason is mandatory");
         }
@@ -662,6 +691,73 @@ public class WorkflowServiceImpl implements IWorkflowService {
             );
         }
 
+        if (Boolean.TRUE.equals(sendEmail)) {
+            Map<String, Object> fields = Map.of("Lý do từ chối", reason);
+            sendApprovalFeedbackEmail(saved, inProgressStatus, fields, null, currentUser);
+        }
+
         return saved;
+    }
+
+    @Override
+    @Transactional
+    public Issue rejectIssue(String issueKey, String reason, User currentUser) {
+        return rejectIssue(issueKey, reason, false, currentUser);
+    }
+
+    private void sendApprovalFeedbackEmail(Issue issue, WorkflowStatus toStatus, Map<String, Object> fields, String comment, User currentUser) {
+        if (mailService == null || issue.getAssignee() == null || issue.getAssignee().getEmail() == null || issue.getAssignee().getEmail().isBlank()) {
+            return;
+        }
+
+        // Determine sender's role in the project (PM or QA)
+        String roleLabel = "PM";
+        if (memberRepository != null && issue.getProject() != null && currentUser != null) {
+            ProjectMember member = memberRepository.findByProjectIdAndUserId(issue.getProject().getId(), currentUser.getId()).orElse(null);
+            if (member != null && member.getRole() == ProjectRole.QA) {
+                roleLabel = "QA";
+            }
+        }
+
+        String emailSubject = "Phản hồi của " + roleLabel + " về công việc của bạn";
+
+        StringBuilder msgBuilder = new StringBuilder();
+        msgBuilder.append("Công việc: ").append(issue.getIssueKey()).append(" - ").append(issue.getSummary()).append("\n");
+        msgBuilder.append("Trạng thái sau khi duyệt: ").append(toStatus != null ? toStatus.getName() : "Không xác định").append("\n");
+        msgBuilder.append("Người duyệt: ").append(currentUser != null && currentUser.getFullName() != null ? currentUser.getFullName() : (currentUser != null ? currentUser.getEmail() : "")).append(" (").append(roleLabel).append(")\n\n");
+
+        if (fields != null && !fields.isEmpty()) {
+            msgBuilder.append("Thông tin trường bắt buộc:\n");
+            for (Map.Entry<String, Object> entry : fields.entrySet()) {
+                String fieldLabel = entry.getKey();
+                if ("resolution".equalsIgnoreCase(fieldLabel)) {
+                    fieldLabel = "Kết quả xử lý (Resolution)";
+                }
+                msgBuilder.append("- ").append(fieldLabel).append(": ").append(entry.getValue() != null ? entry.getValue() : "").append("\n");
+            }
+            msgBuilder.append("\n");
+        }
+
+        if (comment != null && !comment.isBlank()) {
+            msgBuilder.append("Ghi chú chuyển đổi trạng thái:\n");
+            msgBuilder.append(comment.trim()).append("\n");
+        }
+
+        String frontendBase = appProperties != null && appProperties.getFrontendUrl() != null 
+                ? appProperties.getFrontendUrl().replaceAll("/+$", "") 
+                : "https://pms-chi-self.vercel.app";
+        String link = frontendBase + "/projects/" + (issue.getProject() != null ? issue.getProject().getProjectKey() : "") + "/issues/" + issue.getIssueKey();
+
+        mailService.sendMailAsync(
+                issue.getAssignee().getEmail(),
+                emailSubject,
+                "notification",
+                Map.of(
+                        "recipientName", issue.getAssignee().getFullName() != null ? issue.getAssignee().getFullName() : issue.getAssignee().getEmail(),
+                        "title", emailSubject,
+                        "message", msgBuilder.toString(),
+                        "link", link
+                )
+        );
     }
 }

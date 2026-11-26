@@ -13,7 +13,16 @@ public interface IWorkflowService {
     WorkflowResponse getWorkflow(Long projectId);
     WorkflowResponse updateWorkflow(Long projectId, SaveWorkflowRequest request);
     List<TransitionOptionResponse> getTransitionsForIssue(String issueKey, User currentUser);
-    Issue executeTransition(String issueKey, Long transitionId, Map<String, Object> fields, String comment, User currentUser);
-    Issue approveIssue(String issueKey, String comment, User currentUser);
-    Issue rejectIssue(String issueKey, String reason, User currentUser);
+    Issue executeTransition(String issueKey, Long transitionId, Map<String, Object> fields, String comment, Boolean sendEmail, User currentUser);
+    default Issue executeTransition(String issueKey, Long transitionId, Map<String, Object> fields, String comment, User currentUser) {
+        return executeTransition(issueKey, transitionId, fields, comment, false, currentUser);
+    }
+    Issue approveIssue(String issueKey, String comment, Boolean sendEmail, User currentUser);
+    default Issue approveIssue(String issueKey, String comment, User currentUser) {
+        return approveIssue(issueKey, comment, false, currentUser);
+    }
+    Issue rejectIssue(String issueKey, String reason, Boolean sendEmail, User currentUser);
+    default Issue rejectIssue(String issueKey, String reason, User currentUser) {
+        return rejectIssue(issueKey, reason, false, currentUser);
+    }
 }

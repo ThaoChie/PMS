@@ -39,11 +39,13 @@ export const workflowService = {
     transitionId: string,
     fields?: Record<string, any>,
     comment?: string,
+    sendEmail?: boolean,
   ): Promise<ApiResponse<void>> {
     return axiosClient.post(`/issues/${issueKey}/transitions`, {
       transitionId,
       fields,
       comment,
+      sendEmail,
     });
   },
 

@@ -210,7 +210,7 @@ public class IssueController {
             @Valid @RequestBody TransitionRequest request
     ) {
         Issue updated = workflowService.executeTransition(
-                issueKey, request.getTransitionId(), request.getFields(), request.getComment(), getCurrentUser());
+                issueKey, request.getTransitionId(), request.getFields(), request.getComment(), request.getSendEmail(), getCurrentUser());
         return ApiResponse.success(IssueResponse.from(updated));
     }
 
@@ -221,7 +221,8 @@ public class IssueController {
             @RequestBody(required = false) TransitionRequest request
     ) {
         String comment = request != null ? request.getComment() : null;
-        Issue updated = workflowService.approveIssue(issueKey, comment, getCurrentUser());
+        Boolean sendEmail = request != null ? request.getSendEmail() : null;
+        Issue updated = workflowService.approveIssue(issueKey, comment, sendEmail, getCurrentUser());
         return ApiResponse.success(IssueResponse.from(updated));
     }
 
@@ -231,7 +232,8 @@ public class IssueController {
             @PathVariable String issueKey,
             @Valid @RequestBody RejectIssueRequest request
     ) {
-        Issue updated = workflowService.rejectIssue(issueKey, request.getReason(), getCurrentUser());
+        Boolean sendEmail = request != null ? request.getSendEmail() : null;
+        Issue updated = workflowService.rejectIssue(issueKey, request.getReason(), sendEmail, getCurrentUser());
         return ApiResponse.success(IssueResponse.from(updated));
     }
 
