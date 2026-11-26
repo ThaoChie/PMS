@@ -10,6 +10,21 @@ const NODE_Y = 100;
 const NODE_W = 125;
 const NODE_H = 44;
 
+const DEFAULT_WORKFLOW_STATUSES: WorkflowStatus[] = [
+  { id: 'default-1', name: 'To Do', category: 'TODO', position: 0, isInitial: true },
+  { id: 'default-2', name: 'In Progress', category: 'IN_PROGRESS', position: 1, isInitial: false },
+  { id: 'default-3', name: 'Pending Approval', category: 'IN_PROGRESS', position: 2, isInitial: false },
+  { id: 'default-4', name: 'Done', category: 'DONE', position: 3, isInitial: false },
+];
+
+const DEFAULT_WORKFLOW_TRANSITIONS: WorkflowTransition[] = [
+  { id: 'default-t1', from: 'To Do' as IssueStatus, to: 'In Progress' as IssueStatus, name: 'Chuyển sang In Progress', type: 'NORMAL', isApprovalStep: false },
+  { id: 'default-t2', from: 'In Progress' as IssueStatus, to: 'Pending Approval' as IssueStatus, name: 'Chuyển sang Pending Approval', type: 'NORMAL', isApprovalStep: false },
+  { id: 'default-t3', from: 'Pending Approval' as IssueStatus, to: 'Done' as IssueStatus, name: 'Chuyển sang Done', type: 'APPROVE', isApprovalStep: true },
+  { id: 'default-t4', from: 'Pending Approval' as IssueStatus, to: 'In Progress' as IssueStatus, name: 'Chuyển sang In Progress', type: 'REJECT', isApprovalStep: true },
+  { id: 'default-t5', from: 'Done' as IssueStatus, to: 'To Do' as IssueStatus, name: 'Chuyển sang To Do', type: 'NORMAL', isApprovalStep: false },
+];
+
 interface ArrowProps {
   startX: number;
   endX: number;
@@ -66,43 +81,54 @@ export default function WorkflowSettings() {
     setErrorMessage(null);
     try {
       const res = await workflowService.getWorkflow(currentProject.id);
-      const data = res?.data;
-      if (data) {
-        const sorted = (data.statuses || []).slice().sort((a, b) => a.position - b.position);
-        const seen = new Set<string>();
-        const deduped: WorkflowStatus[] = [];
-        for (const st of sorted) {
-          const key = (st.name || '').trim().toLowerCase();
-          if (key && !seen.has(key)) {
-            seen.add(key);
-            deduped.push({ ...st, position: deduped.length });
-          }
-        }
-        setStatuses(deduped);
+      const data = (res as any)?.data?.statuses !== undefined
+        ? (res as any).data
+        : (res as any)?.statuses !== undefined
+        ? res
+        : (res as any)?.data || res;
 
-        const validStatusNames = new Set(deduped.map((s) => (s.name || '').trim().toLowerCase()));
-        const cleanTransitions = (data.transitions || []).filter(
-          (t) =>
-            t &&
-            t.from &&
-            t.to &&
-            validStatusNames.has(t.from.trim().toLowerCase()) &&
-            validStatusNames.has(t.to.trim().toLowerCase())
-        );
-        const seenTrans = new Set<string>();
-        const dedupedTrans: WorkflowTransition[] = [];
-        for (const t of cleanTransitions) {
-          const pairKey = `${t.from.trim().toLowerCase()}->${t.to.trim().toLowerCase()}`;
-          if (!seenTrans.has(pairKey)) {
-            seenTrans.add(pairKey);
-            dedupedTrans.push(t);
-          }
+      const rawStatuses = data?.statuses;
+      const hasValidStatuses = Array.isArray(rawStatuses) && rawStatuses.length > 0;
+      const sourceStatuses: WorkflowStatus[] = hasValidStatuses ? rawStatuses : DEFAULT_WORKFLOW_STATUSES;
+
+      const sorted = sourceStatuses.slice().sort((a, b) => a.position - b.position);
+      const seen = new Set<string>();
+      const deduped: WorkflowStatus[] = [];
+      for (const st of sorted) {
+        const key = (st.name || '').trim().toLowerCase();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          deduped.push({ ...st, position: deduped.length });
         }
-        setTransitions(dedupedTrans);
-        setWarnings(data.warnings || []);
       }
+      setStatuses(deduped);
+
+      const validStatusNames = new Set(deduped.map((s) => (s.name || '').trim().toLowerCase()));
+      const rawTransitions = hasValidStatuses && Array.isArray(data?.transitions) ? data.transitions : DEFAULT_WORKFLOW_TRANSITIONS;
+      const cleanTransitions = rawTransitions.filter(
+        (t: any) =>
+          t &&
+          t.from &&
+          t.to &&
+          validStatusNames.has(t.from.trim().toLowerCase()) &&
+          validStatusNames.has(t.to.trim().toLowerCase())
+      );
+      const seenTrans = new Set<string>();
+      const dedupedTrans: WorkflowTransition[] = [];
+      for (const t of cleanTransitions) {
+        const pairKey = `${t.from.trim().toLowerCase()}->${t.to.trim().toLowerCase()}`;
+        if (!seenTrans.has(pairKey)) {
+          seenTrans.add(pairKey);
+          dedupedTrans.push(t);
+        }
+      }
+      setTransitions(dedupedTrans);
+      setWarnings(data?.warnings || []);
     } catch (err: any) {
       setErrorMessage(err?.response?.data?.message || err?.message || 'Không thể tải quy trình');
+      // If error or network problem, still provide default workflow so the screen is not empty
+      setStatuses(DEFAULT_WORKFLOW_STATUSES);
+      setTransitions(DEFAULT_WORKFLOW_TRANSITIONS);
     } finally {
       setLoading(false);
     }
