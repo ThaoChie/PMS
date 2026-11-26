@@ -15,6 +15,7 @@ import { mapUserResponseToUser } from '../../../store/authStore';
 import { ISSUE_CHANGED_EVENT, type IssueEventDetail } from '../../../utils/issueEvents';
 import type { Issue, IssueStatus, Role, Screen, WorkflowStatus } from '../../../types';
 import KanbanColumn from '../components/KanbanColumn';
+import { findTransitionForTargetStatus } from '../utils/boardTransition';
 
 interface BoardProps {
   role: Role;
@@ -59,7 +60,7 @@ function EmptyProjectBoardState({ onNavigate }: { onNavigate?: (screen: Screen) 
   );
 }
 
-export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
+export default function Board({ role: _role, onSelectIssue, onNavigate }: BoardProps) {
   const { currentProject } = useProjectStore();
   const currentUser = useAuthStore((s) => s.user);
 
@@ -208,12 +209,7 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
       const transRes = await workflowService.getTransitions(issueKey);
       const availableTrans: any[] = transRes?.data || [];
 
-      const targetTrans = availableTrans.find(
-        (t) =>
-          (t.toStatusName && t.toStatusName.toLowerCase() === targetStatusName.toLowerCase()) ||
-          (t.to && t.to.toLowerCase() === targetStatusName.toLowerCase()) ||
-          (t.name && t.name.toLowerCase() === targetStatusName.toLowerCase())
-      );
+      const targetTrans = findTransitionForTargetStatus(availableTrans, targetStatusName);
 
       if (!targetTrans) {
         // Check if issue is already at targetStatus in DB (e.g. concurrent or prior update)
@@ -227,17 +223,11 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
           return;
         }
 
-        // Special case: Approve / Reject transitions
-        if (targetStatusName.toLowerCase() === 'done' && (role === 'pm' || role === 'admin')) {
-          await workflowService.approveIssue(issueKey, 'Approved via Board');
-          toast.success(`Đã phê duyệt và hoàn thành công việc ${issueKey}`);
-        } else {
-          throw new Error(`Không có luồng chuyển hợp lệ từ "${prevStatus}" sang "${targetStatusName}"`);
-        }
-      } else {
-        await workflowService.executeTransition(issueKey, String(targetTrans.id));
-        toast.success(`Đã chuyển trạng thái ${issueKey} sang "${targetStatusName}"`);
+        throw new Error(`Không có luồng chuyển hợp lệ từ "${prevStatus}" sang "${targetStatusName}"`);
       }
+
+      await workflowService.executeTransition(issueKey, String(targetTrans.id));
+      toast.success(`Đã chuyển trạng thái ${issueKey} sang "${targetStatusName}"`);
 
       // Refresh board data to keep all columns in sync
       loadData();

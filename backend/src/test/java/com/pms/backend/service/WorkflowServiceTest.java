@@ -557,4 +557,75 @@ public class WorkflowServiceTest {
         assertEquals("Done", response.getTransitions().get(0).getTo());
         assertTrue(response.getTransitions().get(0).getIsApprovalStep());
     }
+
+    @Test
+    public void testApproveIssue_NoTransitionToDoneFromCurrentStatus_ThrowsInvalidTransition() {
+        WorkflowStatus todo = new WorkflowStatus();
+        todo.setId(1L);
+        todo.setName("To Do");
+        todo.setCategory(StatusCategory.TODO);
+
+        WorkflowStatus inProgress = new WorkflowStatus();
+        inProgress.setId(2L);
+        inProgress.setName("In Progress");
+        inProgress.setCategory(StatusCategory.IN_PROGRESS);
+
+        Issue issue = new Issue();
+        issue.setId(1L);
+        issue.setIssueKey("TEST-1");
+        issue.setProject(project);
+        issue.setStatus(todo);
+
+        WorkflowTransition toInProgress = new WorkflowTransition();
+        toInProgress.setId(10L);
+        toInProgress.setFromStatus(todo);
+        toInProgress.setToStatus(inProgress);
+        toInProgress.setType(TransitionType.NORMAL);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-1")).thenReturn(Optional.of(issue));
+        when(projectSecurity.isPmOrAdmin(1L)).thenReturn(true);
+        when(transitionRepository.findByFromStatusId(1L)).thenReturn(List.of(toInProgress));
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> {
+            workflowService.approveIssue("TEST-1", "Approved via Board", pmUser);
+        });
+
+        assertEquals(ErrorCode.INVALID_TRANSITION, ex.getErrorCode());
+        verify(issueRepository, never()).save(any(Issue.class));
+    }
+
+    @Test
+    public void testApproveIssue_WithApproveTransitionToDone_Succeeds() {
+        WorkflowStatus pendingApproval = new WorkflowStatus();
+        pendingApproval.setId(3L);
+        pendingApproval.setName("Pending Approval");
+        pendingApproval.setCategory(StatusCategory.IN_PROGRESS);
+
+        WorkflowStatus done = new WorkflowStatus();
+        done.setId(4L);
+        done.setName("Done");
+        done.setCategory(StatusCategory.DONE);
+
+        Issue issue = new Issue();
+        issue.setId(1L);
+        issue.setIssueKey("TEST-2");
+        issue.setProject(project);
+        issue.setStatus(pendingApproval);
+
+        WorkflowTransition approveTrans = new WorkflowTransition();
+        approveTrans.setId(20L);
+        approveTrans.setFromStatus(pendingApproval);
+        approveTrans.setToStatus(done);
+        approveTrans.setType(TransitionType.APPROVE);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-2")).thenReturn(Optional.of(issue));
+        when(projectSecurity.isPmOrAdmin(1L)).thenReturn(true);
+        when(transitionRepository.findByFromStatusId(3L)).thenReturn(List.of(approveTrans));
+        when(issueRepository.save(any(Issue.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Issue updated = workflowService.approveIssue("TEST-2", "Approved", pmUser);
+
+        assertEquals(done, updated.getStatus());
+        verify(issueRepository).save(issue);
+    }
 }
