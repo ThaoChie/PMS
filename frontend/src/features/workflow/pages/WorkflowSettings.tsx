@@ -79,7 +79,26 @@ export default function WorkflowSettings() {
           }
         }
         setStatuses(deduped);
-        setTransitions(data.transitions || []);
+
+        const validStatusNames = new Set(deduped.map((s) => (s.name || '').trim().toLowerCase()));
+        const cleanTransitions = (data.transitions || []).filter(
+          (t) =>
+            t &&
+            t.from &&
+            t.to &&
+            validStatusNames.has(t.from.trim().toLowerCase()) &&
+            validStatusNames.has(t.to.trim().toLowerCase())
+        );
+        const seenTrans = new Set<string>();
+        const dedupedTrans: WorkflowTransition[] = [];
+        for (const t of cleanTransitions) {
+          const pairKey = `${t.from.trim().toLowerCase()}->${t.to.trim().toLowerCase()}`;
+          if (!seenTrans.has(pairKey)) {
+            seenTrans.add(pairKey);
+            dedupedTrans.push(t);
+          }
+        }
+        setTransitions(dedupedTrans);
         setWarnings(data.warnings || []);
       }
     } catch (err: any) {
@@ -101,8 +120,9 @@ export default function WorkflowSettings() {
       ts.map((t) => {
         const matches =
           (t.id && selectedTransition.id && String(t.id) === String(selectedTransition.id)) ||
-          (t.from.toLowerCase() === selectedTransition.from.toLowerCase() &&
-           t.to.toLowerCase() === selectedTransition.to.toLowerCase());
+          (t.from && t.to && selectedTransition.from && selectedTransition.to &&
+           t.from.trim().toLowerCase() === selectedTransition.from.trim().toLowerCase() &&
+           t.to.trim().toLowerCase() === selectedTransition.to.trim().toLowerCase());
         if (!matches) return t;
         return {
           ...t,
@@ -160,14 +180,16 @@ export default function WorkflowSettings() {
   }
 
   function handleToggleMatrixTransition(from: string, to: string, allowed: boolean) {
+    const fromClean = from.trim();
+    const toClean = to.trim();
     if (allowed) {
       // Add transition
-      const isApproval = to.toLowerCase() === 'done' || from.toLowerCase() === 'pending approval';
+      const isApproval = toClean.toLowerCase() === 'done' || fromClean.toLowerCase() === 'pending approval';
       const newTrans: WorkflowTransition = {
         id: `trans_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        from: from as IssueStatus,
-        to: to as IssueStatus,
-        name: `Chuyển sang ${to}`,
+        from: fromClean as IssueStatus,
+        to: toClean as IssueStatus,
+        name: `Chuyển sang ${toClean}`,
         isApprovalStep: isApproval,
         type: isApproval ? 'APPROVE' : 'NORMAL',
       };
@@ -175,18 +197,25 @@ export default function WorkflowSettings() {
     } else {
       // Remove transition
       setTransitions((prev) =>
-        prev.filter((t) => !(t.from.toLowerCase() === from.toLowerCase() && t.to.toLowerCase() === to.toLowerCase()))
+        prev.filter((t) => !(t.from && t.to && t.from.trim().toLowerCase() === fromClean.toLowerCase() && t.to.trim().toLowerCase() === toClean.toLowerCase()))
       );
-      if (selectedTransition?.from.toLowerCase() === from.toLowerCase() && selectedTransition?.to.toLowerCase() === to.toLowerCase()) {
+      if (
+        selectedTransition?.from &&
+        selectedTransition?.to &&
+        selectedTransition.from.trim().toLowerCase() === fromClean.toLowerCase() &&
+        selectedTransition.to.trim().toLowerCase() === toClean.toLowerCase()
+      ) {
         setSelectedTransition(null);
       }
     }
   }
 
   function handleToggleApprovalMatrix(from: string, to: string) {
+    const fromClean = from.trim().toLowerCase();
+    const toClean = to.trim().toLowerCase();
     setTransitions((prev) =>
       prev.map((t) => {
-        if (t.from.toLowerCase() === from.toLowerCase() && t.to.toLowerCase() === to.toLowerCase()) {
+        if (t.from && t.to && t.from.trim().toLowerCase() === fromClean && t.to.trim().toLowerCase() === toClean) {
           const nextApproval = !t.isApprovalStep;
           return {
             ...t,
@@ -213,7 +242,7 @@ export default function WorkflowSettings() {
       return;
     }
 
-    const hasDone = statuses.some((s) => s.category === 'DONE' || s.name.toLowerCase() === 'done');
+    const hasDone = statuses.some((s) => s.category === 'DONE' || (s.name && s.name.trim().toLowerCase() === 'done'));
     if (!hasDone) {
       setErrorMessage('Quy trình phải có ít nhất 1 trạng thái thuộc nhóm Hoàn thành (DONE)!');
       setSaving(false);
@@ -221,21 +250,42 @@ export default function WorkflowSettings() {
     }
 
     try {
-      const payloadStatuses = statuses.map((s, idx) => ({
-        ...s,
-        position: idx,
-      }));
-      const payloadTransitions = transitions.map((t) => {
+      const seenNames = new Set<string>();
+      const payloadStatuses: WorkflowStatus[] = [];
+      for (const s of statuses) {
+        const key = (s.name || '').trim().toLowerCase();
+        if (key && !seenNames.has(key)) {
+          seenNames.add(key);
+          payloadStatuses.push({
+            ...s,
+            position: payloadStatuses.length,
+          });
+        }
+      }
+
+      const validNames = new Set(payloadStatuses.map((s) => (s.name || '').trim().toLowerCase()));
+      const seenTrans = new Set<string>();
+      const payloadTransitions: any[] = [];
+      for (const t of transitions) {
+        if (!t?.from || !t?.to) continue;
+        const fromK = t.from.trim().toLowerCase();
+        const toK = t.to.trim().toLowerCase();
+        if (!validNames.has(fromK) || !validNames.has(toK)) continue;
+        const pairKey = `${fromK}->${toK}`;
+        if (seenTrans.has(pairKey)) continue;
+        seenTrans.add(pairKey);
+
         const cleanField = t.requiresField && t.requiresField.trim() ? t.requiresField.trim() : null;
         const approval = Boolean(t.isApprovalStep);
-        return {
+        payloadTransitions.push({
           ...t,
           requiresField: cleanField,
           requiredFields: cleanField,
           isApprovalStep: approval,
           type: approval ? (t.type === 'REJECT' ? 'REJECT' : 'APPROVE') : 'NORMAL',
-        };
-      });
+        });
+      }
+
       const res = await workflowService.updateWorkflow(currentProject.id, {
         statuses: payloadStatuses,
         transitions: payloadTransitions,
@@ -351,8 +401,9 @@ export default function WorkflowSettings() {
               <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} className="min-w-[600px]">
                 {/* Transitions */}
                 {transitions.map((t) => {
-                  const fromIdx = statuses.findIndex((s) => s.name.toLowerCase() === t.from.toLowerCase());
-                  const toIdx = statuses.findIndex((s) => s.name.toLowerCase() === t.to.toLowerCase());
+                  if (!t?.from || !t?.to) return null;
+                  const fromIdx = statuses.findIndex((s) => (s.name || '').trim().toLowerCase() === t.from.trim().toLowerCase());
+                  const toIdx = statuses.findIndex((s) => (s.name || '').trim().toLowerCase() === t.to.trim().toLowerCase());
                   if (fromIdx < 0 || toIdx < 0) return null;
 
                   const startX = getNodeX(fromIdx) + NODE_W / 2;
@@ -527,91 +578,103 @@ export default function WorkflowSettings() {
               </span>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-center text-xs" id="transition-matrix-table">
-              <thead>
-                <tr className="border-b border-[#E5E5E7] bg-[#FAFAFA]">
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-[#6B6B70] bg-[#F0F0F1] sticky left-0 z-10 w-48">
-                    Từ \ Đến
-                  </th>
-                  {statuses.map((toSt) => (
-                    <th key={toSt.id || toSt.name} className="px-3 py-2.5 font-semibold text-[#1A1A1A] min-w-[120px]">
-                      <div className="truncate font-medium">{toSt.name}</div>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-medium ${
-                        toSt.category === 'TODO' ? 'bg-gray-100 text-gray-700 border-gray-300' :
-                        toSt.category === 'DONE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        'bg-blue-50 text-blue-700 border-blue-200'
-                      }`}>
-                        {toSt.category}
-                      </span>
+          {statuses.length === 0 ? (
+            <div className="p-8 text-center text-xs text-[#6B6B70]">
+              {loading ? 'Đang tải cấu hình quy trình làm việc…' : 'Chưa có trạng thái nào trong quy trình.'}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-center text-xs" id="transition-matrix-table">
+                <thead>
+                  <tr className="border-b border-[#E5E5E7] bg-[#FAFAFA]">
+                    <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-[#6B6B70] bg-[#F0F0F1] sticky left-0 z-10 w-48">
+                      Từ \ Đến
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E5E5E7]">
-                {statuses.map((fromSt) => (
-                  <tr key={fromSt.id || fromSt.name} className="hover:bg-[#F9FAFB]">
-                    <td className="px-4 py-3 text-left font-semibold text-[#1A1A1A] bg-[#FAFAFA] sticky left-0 z-10 border-r border-[#E5E5E7]">
-                      <div className="truncate">{fromSt.name}</div>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-medium ${
-                        fromSt.category === 'TODO' ? 'bg-gray-100 text-gray-700 border-gray-300' :
-                        fromSt.category === 'DONE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        'bg-blue-50 text-blue-700 border-blue-200'
-                      }`}>
-                        {fromSt.category}
-                      </span>
-                    </td>
-                    {statuses.map((toSt) => {
-                      const isSelf = fromSt.name.toLowerCase() === toSt.name.toLowerCase();
-                      const trans = transitions.find(
-                        (t) => t.from.toLowerCase() === fromSt.name.toLowerCase() && t.to.toLowerCase() === toSt.name.toLowerCase()
-                      );
-                      const isAllowed = Boolean(trans);
+                    {statuses.map((toSt) => (
+                      <th key={toSt.id || toSt.name} className="px-3 py-2.5 font-semibold text-[#1A1A1A] min-w-[120px]">
+                        <div className="truncate font-medium">{toSt.name}</div>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-medium ${
+                          toSt.category === 'TODO' ? 'bg-gray-100 text-gray-700 border-gray-300' :
+                          toSt.category === 'DONE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          'bg-blue-50 text-blue-700 border-blue-200'
+                        }`}>
+                          {toSt.category}
+                        </span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E5E5E7]">
+                  {statuses.map((fromSt) => (
+                    <tr key={fromSt.id || fromSt.name} className="hover:bg-[#F9FAFB]">
+                      <td className="px-4 py-3 text-left font-semibold text-[#1A1A1A] bg-[#FAFAFA] sticky left-0 z-10 border-r border-[#E5E5E7]">
+                        <div className="truncate">{fromSt.name}</div>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-medium ${
+                          fromSt.category === 'TODO' ? 'bg-gray-100 text-gray-700 border-gray-300' :
+                          fromSt.category === 'DONE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          'bg-blue-50 text-blue-700 border-blue-200'
+                        }`}>
+                          {fromSt.category}
+                        </span>
+                      </td>
+                      {statuses.map((toSt) => {
+                        const fromName = (fromSt.name || '').trim();
+                        const toName = (toSt.name || '').trim();
+                        const isSelf = fromName.toLowerCase() === toName.toLowerCase();
+                        const trans = transitions.find(
+                          (t) =>
+                            t?.from &&
+                            t?.to &&
+                            t.from.trim().toLowerCase() === fromName.toLowerCase() &&
+                            t.to.trim().toLowerCase() === toName.toLowerCase()
+                        );
+                        const isAllowed = Boolean(trans);
 
-                      if (isSelf) {
+                        if (isSelf) {
+                          return (
+                            <td key={toSt.id || toSt.name} className="px-3 py-3 bg-[#F2F2F3] text-[#A0A0A5] select-none">
+                              —
+                            </td>
+                          );
+                        }
+
                         return (
-                          <td key={toSt.id || toSt.name} className="px-3 py-3 bg-[#F2F2F3] text-[#A0A0A5] select-none">
-                            —
+                          <td key={toSt.id || toSt.name} className="px-3 py-3 transition-colors">
+                            <div className="flex flex-col items-center justify-center gap-1">
+                              <input
+                                type="checkbox"
+                                data-from={fromName}
+                                data-to={toName}
+                                id={`matrix-check-${fromName.replace(/\s+/g, '-')}-to-${toName.replace(/\s+/g, '-')}`}
+                                checked={isAllowed}
+                                onChange={(e) => handleToggleMatrixTransition(fromName, toName, e.target.checked)}
+                                className="w-4 h-4 rounded border-[#C5C5C8] text-[#1A1A1A] focus:ring-0 cursor-pointer"
+                              />
+                              {isAllowed && (
+                                <button
+                                  type="button"
+                                  title={trans?.isApprovalStep ? "Bước duyệt bắt buộc: Cần phê duyệt PM/QA" : "Click để đặt làm bước duyệt bắt buộc PM/QA"}
+                                  onClick={() => handleToggleApprovalMatrix(fromName, toName)}
+                                  className={`text-[9px] px-1.5 py-0.5 rounded font-medium transition-all flex items-center gap-0.5 ${
+                                    trans?.isApprovalStep
+                                      ? 'bg-[#FDECEC] text-[#E53E3E] border border-[#E53E3E]/30 font-semibold'
+                                      : 'bg-[#F0F0F1] text-[#9B9B9F] hover:text-[#1A1A1A]'
+                                  }`}
+                                >
+                                  {trans?.isApprovalStep && <Shield className="w-2.5 h-2.5 text-[#E53E3E]" />}
+                                  {trans?.isApprovalStep ? 'Duyệt PM/QA' : 'Thường'}
+                                </button>
+                              )}
+                            </div>
                           </td>
                         );
-                      }
-
-                      return (
-                        <td key={toSt.id || toSt.name} className="px-3 py-3 transition-colors">
-                          <div className="flex flex-col items-center justify-center gap-1">
-                            <input
-                              type="checkbox"
-                              data-from={fromSt.name}
-                              data-to={toSt.name}
-                              id={`matrix-check-${fromSt.name.replace(/\s+/g, '-')}-to-${toSt.name.replace(/\s+/g, '-')}`}
-                              checked={isAllowed}
-                              onChange={(e) => handleToggleMatrixTransition(fromSt.name, toSt.name, e.target.checked)}
-                              className="w-4 h-4 rounded border-[#C5C5C8] text-[#1A1A1A] focus:ring-0 cursor-pointer"
-                            />
-                            {isAllowed && (
-                              <button
-                                type="button"
-                                title={trans?.isApprovalStep ? "Bước duyệt bắt buộc: Cần phê duyệt PM/QA" : "Click để đặt làm bước duyệt bắt buộc PM/QA"}
-                                onClick={() => handleToggleApprovalMatrix(fromSt.name, toSt.name)}
-                                className={`text-[9px] px-1.5 py-0.5 rounded font-medium transition-all flex items-center gap-0.5 ${
-                                  trans?.isApprovalStep
-                                    ? 'bg-[#FDECEC] text-[#E53E3E] border border-[#E53E3E]/30 font-semibold'
-                                    : 'bg-[#F0F0F1] text-[#9B9B9F] hover:text-[#1A1A1A]'
-                                }`}
-                              >
-                                {trans?.isApprovalStep && <Shield className="w-2.5 h-2.5 text-[#E53E3E]" />}
-                                {trans?.isApprovalStep ? 'Duyệt PM/QA' : 'Thường'}
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

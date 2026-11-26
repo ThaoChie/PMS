@@ -1,51 +1,74 @@
 -- V26__deduplicate_workflow_statuses_and_add_unique_constraint.sql
 
--- 1. Identify surviving (canonical) status for each (project_id, lower(trim(name))):
---    Prioritize is_initial = TRUE, then lowest position, then lowest id.
-CREATE TEMP TABLE tmp_status_mapping AS
-WITH ranked_statuses AS (
-    SELECT id,
-           project_id,
-           LOWER(TRIM(name)) AS norm_name,
+-- 1. Re-point issues that reference duplicate statuses to canonical status
+UPDATE issues i
+SET status_id = c.canonical_id
+FROM (
+    SELECT id AS duplicate_id,
            FIRST_VALUE(id) OVER (
                PARTITION BY project_id, LOWER(TRIM(name))
                ORDER BY (CASE WHEN is_initial THEN 0 ELSE 1 END) ASC, position ASC, id ASC
            ) AS canonical_id
     FROM workflow_statuses
-)
-SELECT id AS duplicate_id, canonical_id
-FROM ranked_statuses
-WHERE id <> canonical_id;
+) c
+WHERE i.status_id = c.duplicate_id
+  AND c.duplicate_id <> c.canonical_id;
 
--- 2. Re-point issues that reference duplicate_id to canonical_id
-UPDATE issues i
-SET status_id = m.canonical_id
-FROM tmp_status_mapping m
-WHERE i.status_id = m.duplicate_id;
-
--- 3. Re-point issue_status_history
+-- 2. Re-point issue_status_history
 UPDATE issue_status_history h
-SET from_status_id = m.canonical_id
-FROM tmp_status_mapping m
-WHERE h.from_status_id = m.duplicate_id;
+SET from_status_id = c.canonical_id
+FROM (
+    SELECT id AS duplicate_id,
+           FIRST_VALUE(id) OVER (
+               PARTITION BY project_id, LOWER(TRIM(name))
+               ORDER BY (CASE WHEN is_initial THEN 0 ELSE 1 END) ASC, position ASC, id ASC
+           ) AS canonical_id
+    FROM workflow_statuses
+) c
+WHERE h.from_status_id = c.duplicate_id
+  AND c.duplicate_id <> c.canonical_id;
 
 UPDATE issue_status_history h
-SET to_status_id = m.canonical_id
-FROM tmp_status_mapping m
-WHERE h.to_status_id = m.duplicate_id;
+SET to_status_id = c.canonical_id
+FROM (
+    SELECT id AS duplicate_id,
+           FIRST_VALUE(id) OVER (
+               PARTITION BY project_id, LOWER(TRIM(name))
+               ORDER BY (CASE WHEN is_initial THEN 0 ELSE 1 END) ASC, position ASC, id ASC
+           ) AS canonical_id
+    FROM workflow_statuses
+) c
+WHERE h.to_status_id = c.duplicate_id
+  AND c.duplicate_id <> c.canonical_id;
 
--- 4. Re-point workflow_transitions
+-- 3. Re-point workflow_transitions
 UPDATE workflow_transitions t
-SET from_status_id = m.canonical_id
-FROM tmp_status_mapping m
-WHERE t.from_status_id = m.duplicate_id;
+SET from_status_id = c.canonical_id
+FROM (
+    SELECT id AS duplicate_id,
+           FIRST_VALUE(id) OVER (
+               PARTITION BY project_id, LOWER(TRIM(name))
+               ORDER BY (CASE WHEN is_initial THEN 0 ELSE 1 END) ASC, position ASC, id ASC
+           ) AS canonical_id
+    FROM workflow_statuses
+) c
+WHERE t.from_status_id = c.duplicate_id
+  AND c.duplicate_id <> c.canonical_id;
 
 UPDATE workflow_transitions t
-SET to_status_id = m.canonical_id
-FROM tmp_status_mapping m
-WHERE t.to_status_id = m.duplicate_id;
+SET to_status_id = c.canonical_id
+FROM (
+    SELECT id AS duplicate_id,
+           FIRST_VALUE(id) OVER (
+               PARTITION BY project_id, LOWER(TRIM(name))
+               ORDER BY (CASE WHEN is_initial THEN 0 ELSE 1 END) ASC, position ASC, id ASC
+           ) AS canonical_id
+    FROM workflow_statuses
+) c
+WHERE t.to_status_id = c.duplicate_id
+  AND c.duplicate_id <> c.canonical_id;
 
--- Delete any duplicate transitions resulting from re-pointing
+-- 4. Delete duplicate workflow_transitions resulting from re-pointing
 DELETE FROM workflow_transitions t
 WHERE t.id NOT IN (
     SELECT MIN(id)
@@ -55,9 +78,18 @@ WHERE t.id NOT IN (
 
 -- 5. Delete duplicate workflow_statuses
 DELETE FROM workflow_statuses
-WHERE id IN (SELECT duplicate_id FROM tmp_status_mapping);
-
-DROP TABLE tmp_status_mapping;
+WHERE id IN (
+    SELECT id
+    FROM (
+        SELECT id,
+               ROW_NUMBER() OVER (
+                   PARTITION BY project_id, LOWER(TRIM(name))
+                   ORDER BY (CASE WHEN is_initial THEN 0 ELSE 1 END) ASC, position ASC, id ASC
+               ) AS rn
+        FROM workflow_statuses
+    ) ranked
+    WHERE ranked.rn > 1
+);
 
 -- 6. Re-sequence position consecutively per project
 WITH reindexed AS (

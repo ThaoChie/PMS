@@ -75,9 +75,37 @@ public class WorkflowServiceImpl implements IWorkflowService {
                 .map(WorkflowStatusDto::from)
                 .collect(Collectors.toList());
 
-        List<WorkflowTransitionDto> transitionDtos = transitions.stream()
-                .map(WorkflowTransitionDto::from)
-                .collect(Collectors.toList());
+        Set<String> validNames = dedupStatuses.stream()
+                .map(s -> s.getName().trim().toLowerCase())
+                .collect(Collectors.toSet());
+
+        // Deduplicate and sanitize transitions so from/to status names are always valid and non-null
+        Map<String, WorkflowTransitionDto> uniqueTransMap = new LinkedHashMap<>();
+        for (WorkflowTransition t : transitions) {
+            if (t.getFromStatus() != null && t.getToStatus() != null
+                    && t.getFromStatus().getName() != null && t.getToStatus().getName() != null) {
+                String fromName = t.getFromStatus().getName().trim();
+                String toName = t.getToStatus().getName().trim();
+                String fromKey = fromName.toLowerCase();
+                String toKey = toName.toLowerCase();
+                if (validNames.contains(fromKey) && validNames.contains(toKey)) {
+                    String pairKey = fromKey + "->" + toKey;
+                    if (!uniqueTransMap.containsKey(pairKey)) {
+                        WorkflowTransitionDto dto = WorkflowTransitionDto.from(t);
+                        dto.setFrom(fromName);
+                        dto.setTo(toName);
+                        uniqueTransMap.put(pairKey, dto);
+                    } else {
+                        WorkflowTransitionDto existing = uniqueTransMap.get(pairKey);
+                        if (Boolean.TRUE.equals(t.getType() == TransitionType.APPROVE || t.getType() == TransitionType.REJECT)) {
+                            existing.setIsApprovalStep(true);
+                            existing.setType(t.getType());
+                        }
+                    }
+                }
+            }
+        }
+        List<WorkflowTransitionDto> transitionDtos = new ArrayList<>(uniqueTransMap.values());
 
         List<String> warnings = findOrphanStatusWarnings(dedupStatuses, transitions);
 
@@ -309,8 +337,14 @@ public class WorkflowServiceImpl implements IWorkflowService {
 
     private List<String> findOrphanStatusWarnings(List<WorkflowStatus> statuses, List<WorkflowTransition> transitions) {
         List<String> warnings = new ArrayList<>();
-        Set<Long> hasIncoming = transitions.stream().map(t -> t.getToStatus().getId()).collect(Collectors.toSet());
-        Set<Long> hasOutgoing = transitions.stream().map(t -> t.getFromStatus().getId()).collect(Collectors.toSet());
+        Set<Long> hasIncoming = transitions.stream()
+                .filter(t -> t.getToStatus() != null && t.getToStatus().getId() != null)
+                .map(t -> t.getToStatus().getId())
+                .collect(Collectors.toSet());
+        Set<Long> hasOutgoing = transitions.stream()
+                .filter(t -> t.getFromStatus() != null && t.getFromStatus().getId() != null)
+                .map(t -> t.getFromStatus().getId())
+                .collect(Collectors.toSet());
 
         for (WorkflowStatus s : statuses) {
             boolean isInitial = s.isInitial();

@@ -6,6 +6,10 @@ import { issueService } from '../../../services/issueService';
 import { customFieldService } from '../../../services/customFieldService';
 import { toast } from '../../../store/toastStore';
 import type { IssueType, Priority, CustomField } from '../../../types';
+import {
+  getMissingCreateIssueFieldError,
+  isCreateIssueFormValid,
+} from '../utils/createIssueValidation';
 
 interface CreateIssueModalProps {
   onClose: () => void;
@@ -54,6 +58,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
   const [members, setMembers] = useState<Array<{ id: string; name: string }>>([]);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
+  const [loadingCustomFields, setLoadingCustomFields] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -76,38 +81,66 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
 
   // Sync members & custom fields when selected project changes
   useEffect(() => {
-    if (form.projectId) {
-      memberService.getMembers(form.projectId)
-        .then((res) => {
-          const raw = res?.data || [];
-          const list = Array.isArray(raw) ? raw : (raw as any).content || [];
-          setMembers(
-            list.map((m: any) => ({
-              id: String(m.user?.id || m.userId || m.id),
-              name: m.user?.fullName || m.fullName || m.user?.email || m.email || 'Thành viên',
-            }))
-          );
-        })
-        .catch(() => setMembers([]));
-
-      customFieldService.getCustomFields(form.projectId)
-        .then((res) => {
-          const list = res?.data || [];
-          setCustomFields(list);
-          const initialValues: Record<string, string> = {};
-          list.forEach((f) => {
-            if (f.defaultValue) {
-              initialValues[f.fieldKey] = f.defaultValue;
-            }
-          });
-          setCustomFieldValues(initialValues);
-        })
-        .catch(() => setCustomFields([]));
+    if (!form.projectId) {
+      setMembers([]);
+      setCustomFields([]);
+      setCustomFieldValues({});
+      setLoadingCustomFields(false);
+      return;
     }
+
+    let active = true;
+    setCustomFields([]);
+    setCustomFieldValues({});
+    setLoadingCustomFields(true);
+
+    memberService.getMembers(form.projectId)
+      .then((res) => {
+        if (!active) return;
+        const raw = res?.data || [];
+        const list = Array.isArray(raw) ? raw : (raw as any).content || [];
+        setMembers(
+          list.map((m: any) => ({
+            id: String(m.user?.id || m.userId || m.id),
+            name: m.user?.fullName || m.fullName || m.user?.email || m.email || 'Thành viên',
+          }))
+        );
+      })
+      .catch(() => {
+        if (active) setMembers([]);
+      });
+
+    customFieldService.getCustomFields(form.projectId)
+      .then((res) => {
+        if (!active) return;
+        const list = res?.data || [];
+        setCustomFields(list);
+        const initialValues: Record<string, string> = {};
+        list.forEach((f) => {
+          if (f.defaultValue) {
+            initialValues[f.fieldKey] = f.defaultValue;
+          }
+        });
+        setCustomFieldValues(initialValues);
+      })
+      .catch(() => {
+        if (active) setCustomFields([]);
+      })
+      .finally(() => {
+        if (active) setLoadingCustomFields(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [form.projectId]);
 
   function set<K extends keyof typeof form>(key: K, val: (typeof form)[K]) {
-    setForm((f) => ({ ...f, [key]: val }));
+    setForm((f) => ({
+      ...f,
+      [key]: val,
+      ...(key === 'projectId' ? { assigneeId: '' } : {}),
+    }));
     if (errorMsg) setErrorMsg(null);
   }
 
@@ -116,9 +149,17 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
     if (errorMsg) setErrorMsg(null);
   }
 
+  const isFormComplete = isCreateIssueFormValid(form, customFields, customFieldValues);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.summary.trim()) return;
+    if (loadingCustomFields) return;
+
+    const missingErr = getMissingCreateIssueFieldError(form, customFields, customFieldValues);
+    if (missingErr) {
+      setErrorMsg(missingErr);
+      return;
+    }
 
     setSaving(true);
     setErrorMsg(null);
@@ -126,18 +167,6 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
     const labelsList = form.labels
       ? form.labels.split(',').map((l) => l.trim()).filter(Boolean)
       : undefined;
-
-    // Validate required custom fields
-    for (const cf of customFields) {
-      if (cf.required) {
-        const val = customFieldValues[cf.fieldKey];
-        if (!val || !val.trim()) {
-          setErrorMsg(`Trường "${cf.name}" là bắt buộc.`);
-          setSaving(false);
-          return;
-        }
-      }
-    }
 
     try {
       const payload: any = {
@@ -209,6 +238,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   value={form.projectId}
                   onChange={(e) => set('projectId', e.target.value)}
                   className={selectCls}
+                  required
                 >
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -222,6 +252,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   value={form.type}
                   onChange={(e) => set('type', e.target.value)}
                   className={selectCls}
+                  required
                 >
                   <option value="TASK">Task (Tác vụ)</option>
                   <option value="BUG">Bug (Lỗi phần mềm)</option>
@@ -275,6 +306,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   value={form.assigneeId}
                   onChange={(e) => set('assigneeId', e.target.value)}
                   className={selectCls}
+                  required
                 >
                   <option value="">Chưa phân công</option>
                   {members.map((m) => (
@@ -321,6 +353,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   value={form.dueDate}
                   onChange={(e) => set('dueDate', e.target.value)}
                   className={inputCls}
+                  required
                 />
               </Field>
             </div>
@@ -407,7 +440,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
             <button
               id="create-issue-submit-btn"
               type="submit"
-              disabled={saving || !form.summary.trim()}
+              disabled={saving || loadingCustomFields || !isFormComplete}
               className="px-4 py-2 min-h-[44px] bg-[#E53E3E] text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-[#C53030] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? 'Đang tạo…' : 'Tạo công việc'}

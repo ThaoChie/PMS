@@ -16,6 +16,7 @@ import com.pms.backend.model.Issue;
 import com.pms.backend.model.Project;
 import com.pms.backend.model.User;
 import com.pms.backend.model.WorkflowStatus;
+import com.pms.backend.model.WorkflowTransition;
 import com.pms.backend.security.ProjectSecurity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -512,5 +513,48 @@ public class WorkflowServiceTest {
         assertEquals("Done", response.getStatuses().get(1).getName());
         assertEquals(0, response.getStatuses().get(0).getPosition());
         assertEquals(1, response.getStatuses().get(1).getPosition());
+    }
+
+    @Test
+    public void testGetWorkflow_TransitionsWithNullOrDuplicates_AreSanitized() {
+        WorkflowStatus s1 = new WorkflowStatus();
+        s1.setId(1L);
+        s1.setName("To Do");
+        s1.setCategory(StatusCategory.TODO);
+        s1.setPosition(0);
+
+        WorkflowStatus s2 = new WorkflowStatus();
+        s2.setId(2L);
+        s2.setName("Done");
+        s2.setCategory(StatusCategory.DONE);
+        s2.setPosition(1);
+
+        WorkflowTransition t1 = new WorkflowTransition();
+        t1.setId(10L);
+        t1.setFromStatus(s1);
+        t1.setToStatus(s2);
+        t1.setType(TransitionType.APPROVE);
+
+        WorkflowTransition t2Duplicate = new WorkflowTransition();
+        t2Duplicate.setId(11L);
+        t2Duplicate.setFromStatus(s1);
+        t2Duplicate.setToStatus(s2);
+        t2Duplicate.setType(TransitionType.NORMAL);
+
+        WorkflowTransition tOrphan = new WorkflowTransition();
+        tOrphan.setId(12L);
+        tOrphan.setFromStatus(null);
+        tOrphan.setToStatus(s2);
+
+        when(statusRepository.findByProjectIdOrderByPositionAsc(1L)).thenReturn(List.of(s1, s2));
+        when(transitionRepository.findByProjectId(1L)).thenReturn(List.of(t1, t2Duplicate, tOrphan));
+
+        var response = workflowService.getWorkflow(1L);
+        assertNotNull(response);
+        assertEquals(2, response.getStatuses().size());
+        assertEquals(1, response.getTransitions().size());
+        assertEquals("To Do", response.getTransitions().get(0).getFrom());
+        assertEquals("Done", response.getTransitions().get(0).getTo());
+        assertTrue(response.getTransitions().get(0).getIsApprovalStep());
     }
 }
