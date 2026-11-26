@@ -628,4 +628,178 @@ public class WorkflowServiceTest {
         assertEquals(done, updated.getStatus());
         verify(issueRepository).save(issue);
     }
+
+    @Test
+    public void testExecuteTransition_Normal_DoesNotSendNotification() {
+        WorkflowStatus todo = new WorkflowStatus();
+        todo.setId(1L);
+        todo.setName("To Do");
+        todo.setCategory(StatusCategory.TODO);
+
+        WorkflowStatus inProgress = new WorkflowStatus();
+        inProgress.setId(2L);
+        inProgress.setName("In Progress");
+        inProgress.setCategory(StatusCategory.IN_PROGRESS);
+
+        Issue issue = new Issue();
+        issue.setId(1L);
+        issue.setIssueKey("TEST-10");
+        issue.setProject(project);
+        issue.setStatus(todo);
+
+        WorkflowTransition trans = new WorkflowTransition();
+        trans.setId(100L);
+        trans.setProject(project);
+        trans.setFromStatus(todo);
+        trans.setToStatus(inProgress);
+        trans.setType(TransitionType.NORMAL);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-10")).thenReturn(Optional.of(issue));
+        when(transitionRepository.findById(100L)).thenReturn(Optional.of(trans));
+        when(issueRepository.save(any(Issue.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(transitionRepository.findByFromStatusId(2L)).thenReturn(List.of());
+
+        workflowService.executeTransition("TEST-10", 100L, null, null, memberUser);
+
+        // Verification: NORMAL transition does not send notification
+        verify(notificationService, never()).notify(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testExecuteTransition_Approve_SendsApprovalResultNotification() {
+        WorkflowStatus pendingApproval = new WorkflowStatus();
+        pendingApproval.setId(3L);
+        pendingApproval.setName("Pending Approval");
+        pendingApproval.setCategory(StatusCategory.IN_PROGRESS);
+
+        WorkflowStatus done = new WorkflowStatus();
+        done.setId(4L);
+        done.setName("Done");
+        done.setCategory(StatusCategory.DONE);
+
+        Issue issue = new Issue();
+        issue.setId(1L);
+        issue.setIssueKey("TEST-11");
+        issue.setSummary("Fix bug");
+        issue.setProject(project);
+        issue.setStatus(pendingApproval);
+        issue.setAssignee(memberUser);
+
+        WorkflowTransition approveTrans = new WorkflowTransition();
+        approveTrans.setId(101L);
+        approveTrans.setProject(project);
+        approveTrans.setFromStatus(pendingApproval);
+        approveTrans.setToStatus(done);
+        approveTrans.setType(TransitionType.APPROVE);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-11")).thenReturn(Optional.of(issue));
+        when(transitionRepository.findById(101L)).thenReturn(Optional.of(approveTrans));
+        when(projectSecurity.isPmOrAdmin(1L)).thenReturn(true);
+        when(issueRepository.save(any(Issue.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        workflowService.executeTransition("TEST-11", 101L, null, "Well done", pmUser);
+
+        verify(notificationService).notify(
+                eq(com.pms.backend.enu.NotificationType.APPROVAL_RESULT),
+                argThat(recipients -> recipients.contains(memberUser)),
+                eq("Công việc đã được phê duyệt: TEST-11"),
+                contains("Done"),
+                any(),
+                eq("TEST-11"),
+                eq(pmUser)
+        );
+    }
+
+    @Test
+    public void testExecuteTransition_Reject_SendsApprovalResultNotification() {
+        WorkflowStatus pendingApproval = new WorkflowStatus();
+        pendingApproval.setId(3L);
+        pendingApproval.setName("Pending Approval");
+        pendingApproval.setCategory(StatusCategory.IN_PROGRESS);
+
+        WorkflowStatus inProgress = new WorkflowStatus();
+        inProgress.setId(2L);
+        inProgress.setName("In Progress");
+        inProgress.setCategory(StatusCategory.IN_PROGRESS);
+
+        Issue issue = new Issue();
+        issue.setId(1L);
+        issue.setIssueKey("TEST-12");
+        issue.setSummary("Fix bug");
+        issue.setProject(project);
+        issue.setStatus(pendingApproval);
+        issue.setAssignee(memberUser);
+
+        WorkflowTransition rejectTrans = new WorkflowTransition();
+        rejectTrans.setId(102L);
+        rejectTrans.setProject(project);
+        rejectTrans.setFromStatus(pendingApproval);
+        rejectTrans.setToStatus(inProgress);
+        rejectTrans.setType(TransitionType.REJECT);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-12")).thenReturn(Optional.of(issue));
+        when(transitionRepository.findById(102L)).thenReturn(Optional.of(rejectTrans));
+        when(projectSecurity.isPmOrAdmin(1L)).thenReturn(true);
+        when(issueRepository.save(any(Issue.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        workflowService.executeTransition("TEST-12", 102L, null, "Needs more unit tests", pmUser);
+
+        verify(notificationService).notify(
+                eq(com.pms.backend.enu.NotificationType.APPROVAL_RESULT),
+                argThat(recipients -> recipients.contains(memberUser)),
+                eq("Công việc bị từ chối phê duyệt: TEST-12"),
+                contains("In Progress"),
+                any(),
+                eq("TEST-12"),
+                eq(pmUser)
+        );
+    }
+
+    @Test
+    public void testExecuteTransition_ToPendingApproval_SendsApprovalRequestedNotification() {
+        WorkflowStatus inProgress = new WorkflowStatus();
+        inProgress.setId(2L);
+        inProgress.setName("In Progress");
+        inProgress.setCategory(StatusCategory.IN_PROGRESS);
+
+        WorkflowStatus pendingApproval = new WorkflowStatus();
+        pendingApproval.setId(3L);
+        pendingApproval.setName("Pending Approval");
+        pendingApproval.setCategory(StatusCategory.IN_PROGRESS);
+
+        Issue issue = new Issue();
+        issue.setId(1L);
+        issue.setIssueKey("TEST-13");
+        issue.setSummary("Fix bug");
+        issue.setProject(project);
+        issue.setStatus(inProgress);
+
+        WorkflowTransition submitTrans = new WorkflowTransition();
+        submitTrans.setId(103L);
+        submitTrans.setProject(project);
+        submitTrans.setFromStatus(inProgress);
+        submitTrans.setToStatus(pendingApproval);
+        submitTrans.setType(TransitionType.NORMAL);
+
+        com.pms.backend.model.ProjectMember pmMember = new com.pms.backend.model.ProjectMember();
+        pmMember.setUser(pmUser);
+        pmMember.setRole(com.pms.backend.enu.ProjectRole.PM);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-13")).thenReturn(Optional.of(issue));
+        when(transitionRepository.findById(103L)).thenReturn(Optional.of(submitTrans));
+        when(issueRepository.save(any(Issue.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(memberRepository.findByProjectId(1L)).thenReturn(List.of(pmMember));
+
+        workflowService.executeTransition("TEST-13", 103L, null, null, memberUser);
+
+        verify(notificationService).notify(
+                eq(com.pms.backend.enu.NotificationType.APPROVAL_REQUESTED),
+                argThat(approvers -> approvers.contains(pmUser)),
+                eq("Yêu cầu phê duyệt: TEST-13"),
+                contains("Pending Approval"),
+                any(),
+                eq("TEST-13"),
+                eq(memberUser)
+        );
+    }
 }
