@@ -576,15 +576,8 @@ export default function IssueDetailDrawer({
                   <div className="px-3 py-2 text-xs text-[#9B9B9F]">Không có luồng chuyển tiếp</div>
                 ) : (
                   transitions.map((t) => {
-                    const isApproval = t.type === 'APPROVE' || t.type === 'REJECT' || Boolean(t.isApprovalStep);
                     const targetStatus = t.toStatusName || t.to || t.toStatus;
-                    const label = !isApproval
-                      ? targetStatus || t.name
-                      : t.name && !/^\d+$/.test(t.name.trim())
-                      ? t.name
-                      : t.type === 'REJECT'
-                      ? (targetStatus ? `Từ chối về ${targetStatus}` : 'Từ chối')
-                      : (targetStatus ? `Duyệt sang ${targetStatus}` : 'Phê duyệt');
+                    const label = targetStatus || t.name;
 
                     return (
                       <button

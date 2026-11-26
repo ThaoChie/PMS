@@ -3,7 +3,7 @@ import { Search, X, ArrowRight, FolderGit2 } from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
 import { searchService } from '../../../services/searchService';
 import { mapUserResponseToUser } from '../../../store/authStore';
-import type { Issue } from '../../../types';
+import type { Issue, Project } from '../../../types';
 
 const TYPE_BADGE: Record<string, string> = {
   Story: 'text-[#6B6B70] bg-[#F7F7F8]',
@@ -20,9 +20,14 @@ const TYPE_BADGE: Record<string, string> = {
 interface QuickSearchModalProps {
   onClose: () => void;
   onSelectIssue: (id: string) => void;
+  onSelectProject?: (project: Project) => void;
 }
 
-export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearchModalProps) {
+export default function QuickSearchModal({
+  onClose,
+  onSelectIssue,
+  onSelectProject,
+}: QuickSearchModalProps) {
   const [query, setQuery] = useState('');
   const [issues, setIssues] = useState<Issue[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -161,7 +166,11 @@ export default function QuickSearchModal({ onClose, onSelectIssue }: QuickSearch
                     key={p.id}
                     className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left hover:bg-[#F7F7F8] transition-colors group"
                     onClick={() => {
-                      setCurrentProject(p);
+                      if (onSelectProject) {
+                        onSelectProject(p);
+                      } else {
+                        setCurrentProject(p);
+                      }
                       onClose();
                     }}
                   >

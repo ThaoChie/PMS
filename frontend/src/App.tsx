@@ -449,12 +449,17 @@ export default function App() {
 
   function handleSelectProject(proj: Project) {
     setCurrentProject(proj);
+    setSelectedIssueId(null);
+    setActiveIssueKey(null);
     const pid = proj.id;
     if (currentScreen === 'dashboard') {
       window.history.pushState({}, '', '/dashboard');
     } else if (currentScreen === 'board') {
       window.history.pushState({}, '', `/projects/${pid}/board`);
-    } else if (currentScreen === 'issues') {
+    } else if (currentScreen === 'issues' || currentScreen === 'issue-detail') {
+      if (currentScreen === 'issue-detail') {
+        setCurrentScreen('issues');
+      }
       window.history.pushState({}, '', `/projects/${pid}/issues`);
     } else if (currentScreen === 'reports') {
       window.history.pushState({}, '', `/projects/${pid}/reports`);
@@ -679,6 +684,10 @@ export default function App() {
           onClose={() => setShowQuickSearch(false)}
           onSelectIssue={(id) => {
             handleSelectIssue(id);
+            setShowQuickSearch(false);
+          }}
+          onSelectProject={(proj) => {
+            handleSelectProject(proj);
             setShowQuickSearch(false);
           }}
         />

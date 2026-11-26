@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CheckSquare, Plus, Loader2, UserMinus, Trash2 } from 'lucide-react';
 import type { SubTask } from '../../../types';
 import UserAvatar from '../../../components/common/UserAvatar';
+import ConfirmModal from '../../../components/common/ConfirmModal';
 import { issueService } from '../../../services/issueService';
 import { toast } from '../../../store/toastStore';
 
@@ -31,6 +32,8 @@ export default function SubtaskSection({
   const [assigneeId, setAssigneeId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDeleteSubtask, setPendingDeleteSubtask] = useState<SubTask | null>(null);
+  const [deletingSubtask, setDeletingSubtask] = useState(false);
 
   const isSubtask = issueType?.toUpperCase() === 'SUB_TASK' || issueType === 'Sub-task';
 
@@ -113,17 +116,9 @@ export default function SubtaskSection({
               {canDeleteSubtask && (
                 <button
                   type="button"
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.stopPropagation();
-                    if (confirm(`Bạn có chắc muốn xóa subtask ${st.key}?`)) {
-                      try {
-                        await issueService.deleteIssue(st.key);
-                        toast.success(`Đã xóa subtask ${st.key}`);
-                        onSubtaskCreated?.();
-                      } catch (err: any) {
-                        toast.error(err?.response?.data?.message || err?.message || 'Xóa subtask thất bại');
-                      }
-                    }
+                    setPendingDeleteSubtask(st);
                   }}
                   className="opacity-0 group-hover:opacity-100 p-1 text-[#9B9B9F] hover:text-[#E53E3E] rounded transition-opacity"
                   title="Xóa subtask"
@@ -205,6 +200,36 @@ export default function SubtaskSection({
           <span>Thêm công việc con đầu tiên</span>
         </button>
       )}
+
+      <ConfirmModal
+        isOpen={Boolean(pendingDeleteSubtask)}
+        title="Xác nhận xóa subtask"
+        message={
+          pendingDeleteSubtask
+            ? `Bạn có chắc chắn muốn xóa subtask "${pendingDeleteSubtask.summary}" (${pendingDeleteSubtask.key})?`
+            : ''
+        }
+        confirmLabel={deletingSubtask ? 'Đang xóa…' : 'Xác nhận xóa'}
+        cancelLabel="Hủy"
+        isDanger
+        onConfirm={async () => {
+          if (!pendingDeleteSubtask || deletingSubtask) return;
+          setDeletingSubtask(true);
+          try {
+            await issueService.deleteIssue(pendingDeleteSubtask.key);
+            toast.success(`Đã xóa subtask ${pendingDeleteSubtask.key}`);
+            setPendingDeleteSubtask(null);
+            onSubtaskCreated?.();
+          } catch (err: any) {
+            toast.error(err?.response?.data?.message || err?.message || 'Xóa subtask thất bại');
+          } finally {
+            setDeletingSubtask(false);
+          }
+        }}
+        onCancel={() => {
+          if (!deletingSubtask) setPendingDeleteSubtask(null);
+        }}
+      />
     </div>
   );
 }
