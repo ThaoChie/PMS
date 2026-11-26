@@ -146,7 +146,7 @@ export default function StatusEditor({
             )}
 
             {/* Remove button */}
-            {onRemoveStatus && status.name !== 'To Do' && status.name !== 'Done' && !status.isInitial && (
+            {onRemoveStatus && !status.isInitial && !(status.category === 'DONE' && statuses.filter(s => s.category === 'DONE').length <= 1) && (
               <button
                 type="button"
                 onClick={() => onRemoveStatus(status.name)}
