@@ -6,7 +6,7 @@ interface TransitionModalProps {
   isOpen: boolean;
   transition: WorkflowTransition | any;
   onClose: () => void;
-  onExecute: (fields?: Record<string, any>, comment?: string) => void;
+  onExecute: (fields?: Record<string, any>, comment?: string, sendEmail?: boolean) => void;
 }
 
 const RESOLUTION_OPTIONS = [
@@ -26,6 +26,7 @@ export default function TransitionModal({
   onExecute,
 }: TransitionModalProps) {
   const [comment, setComment] = useState('');
+  const [sendEmail, setSendEmail] = useState(false);
   const [resolutionSelect, setResolutionSelect] = useState('Fixed');
   const [customResolution, setCustomResolution] = useState('');
   const [otherFieldValues, setOtherFieldValues] = useState<Record<string, string>>({});
@@ -65,7 +66,7 @@ export default function TransitionModal({
       }
     }
 
-    onExecute(Object.keys(fields).length > 0 ? fields : undefined, comment.trim() || undefined);
+    onExecute(Object.keys(fields).length > 0 ? fields : undefined, comment.trim() || undefined, sendEmail);
     onClose();
   }
 
@@ -170,6 +171,22 @@ export default function TransitionModal({
               rows={3}
               className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] resize-none transition-colors"
             />
+          </div>
+
+          <div className="flex items-center gap-2 pt-0.5">
+            <input
+              type="checkbox"
+              id="sendEmailToAssignee"
+              checked={sendEmail}
+              onChange={(e) => setSendEmail(e.target.checked)}
+              className="w-4 h-4 text-[#1A1A1A] border-[#E5E5E7] rounded focus:ring-0 cursor-pointer"
+            />
+            <label
+              htmlFor="sendEmailToAssignee"
+              className="text-xs text-[#1A1A1A] font-medium cursor-pointer select-none"
+            >
+              Gửi email thông báo cho người thực hiện task này
+            </label>
           </div>
 
           <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#F0F0F1]">

@@ -26,6 +26,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,6 +44,8 @@ public class WorkflowServiceTest {
     @Mock private ProjectSecurity projectSecurity;
     @Mock private INotificationService notificationService;
     @Mock private IAuditService auditService;
+    @Mock private IMailService mailService;
+    @Mock private com.pms.backend.config.AppProperties appProperties;
 
     @InjectMocks
     private WorkflowServiceImpl workflowService;
@@ -801,5 +804,96 @@ public class WorkflowServiceTest {
                 eq("TEST-13"),
                 eq(memberUser)
         );
+    }
+
+    @Test
+    public void testExecuteTransition_WithSendEmailTrue_SendsFeedbackEmailToAssignee() {
+        WorkflowStatus pendingApproval = new WorkflowStatus();
+        pendingApproval.setId(3L);
+        pendingApproval.setName("Pending Approval");
+        pendingApproval.setCategory(StatusCategory.IN_PROGRESS);
+
+        WorkflowStatus done = new WorkflowStatus();
+        done.setId(4L);
+        done.setName("Done");
+        done.setCategory(StatusCategory.DONE);
+
+        memberUser.setEmail("assignee@example.com");
+
+        Issue issue = new Issue();
+        issue.setId(1L);
+        issue.setIssueKey("TEST-14");
+        issue.setSummary("Implement feature X");
+        issue.setProject(project);
+        issue.setStatus(pendingApproval);
+        issue.setAssignee(memberUser);
+
+        WorkflowTransition approveTrans = new WorkflowTransition();
+        approveTrans.setId(104L);
+        approveTrans.setProject(project);
+        approveTrans.setFromStatus(pendingApproval);
+        approveTrans.setToStatus(done);
+        approveTrans.setType(TransitionType.APPROVE);
+
+        com.pms.backend.model.ProjectMember pmMember = new com.pms.backend.model.ProjectMember();
+        pmMember.setUser(pmUser);
+        pmMember.setRole(com.pms.backend.enu.ProjectRole.PM);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-14")).thenReturn(Optional.of(issue));
+        when(transitionRepository.findById(104L)).thenReturn(Optional.of(approveTrans));
+        when(projectSecurity.isPmOrAdmin(1L)).thenReturn(true);
+        when(issueRepository.save(any(Issue.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(memberRepository.findByProjectIdAndUserId(1L, pmUser.getId())).thenReturn(Optional.of(pmMember));
+
+        workflowService.executeTransition("TEST-14", 104L, Map.of("resolution", "Fixed"), "Looks good!", true, pmUser);
+
+        verify(mailService).sendMailAsync(
+                eq("assignee@example.com"),
+                eq("Phản hồi của PM về công việc của bạn"),
+                eq("notification"),
+                argThat(vars -> {
+                    String msg = (String) vars.get("message");
+                    return msg.contains("Done") && msg.contains("Fixed") && msg.contains("Looks good!");
+                })
+        );
+    }
+
+    @Test
+    public void testExecuteTransition_WithSendEmailFalse_DoesNotSendEmail() {
+        WorkflowStatus pendingApproval = new WorkflowStatus();
+        pendingApproval.setId(3L);
+        pendingApproval.setName("Pending Approval");
+        pendingApproval.setCategory(StatusCategory.IN_PROGRESS);
+
+        WorkflowStatus done = new WorkflowStatus();
+        done.setId(4L);
+        done.setName("Done");
+        done.setCategory(StatusCategory.DONE);
+
+        memberUser.setEmail("assignee@example.com");
+
+        Issue issue = new Issue();
+        issue.setId(1L);
+        issue.setIssueKey("TEST-15");
+        issue.setSummary("Implement feature Y");
+        issue.setProject(project);
+        issue.setStatus(pendingApproval);
+        issue.setAssignee(memberUser);
+
+        WorkflowTransition approveTrans = new WorkflowTransition();
+        approveTrans.setId(105L);
+        approveTrans.setProject(project);
+        approveTrans.setFromStatus(pendingApproval);
+        approveTrans.setToStatus(done);
+        approveTrans.setType(TransitionType.APPROVE);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-15")).thenReturn(Optional.of(issue));
+        when(transitionRepository.findById(105L)).thenReturn(Optional.of(approveTrans));
+        when(projectSecurity.isPmOrAdmin(1L)).thenReturn(true);
+        when(issueRepository.save(any(Issue.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        workflowService.executeTransition("TEST-15", 105L, null, "Approved silently", false, pmUser);
+
+        verify(mailService, never()).sendMailAsync(any(), any(), any(), any());
     }
 }

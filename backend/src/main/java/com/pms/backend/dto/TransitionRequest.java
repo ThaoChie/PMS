@@ -12,6 +12,8 @@ public class TransitionRequest {
 
     private String comment;
 
+    private Boolean sendEmail;
+
     public Long getTransitionId() { return transitionId; }
     public void setTransitionId(Long transitionId) { this.transitionId = transitionId; }
 
@@ -20,4 +22,7 @@ public class TransitionRequest {
 
     public String getComment() { return comment; }
     public void setComment(String comment) { this.comment = comment; }
+
+    public Boolean getSendEmail() { return sendEmail; }
+    public void setSendEmail(Boolean sendEmail) { this.sendEmail = sendEmail; }
 }

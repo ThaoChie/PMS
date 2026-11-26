@@ -112,8 +112,9 @@ public class NotificationServiceImpl implements INotificationService {
 
                 notificationRepository.save(notification);
 
-                // Dispatch email (Skip generic notification email for INVITE_RECEIVED as InvitationService sends dedicated invitation email template)
-                if (type != NotificationType.INVITE_RECEIVED && recipient.getEmail() != null && !recipient.getEmail().isBlank()) {
+                // Dispatch email (Skip generic notification email for INVITE_RECEIVED as InvitationService sends dedicated invitation email template,
+                // and skip APPROVAL_RESULT as it is explicitly controlled by the PM/QA sendEmail checkbox)
+                if (type != NotificationType.INVITE_RECEIVED && type != NotificationType.APPROVAL_RESULT && recipient.getEmail() != null && !recipient.getEmail().isBlank()) {
                     String frontendBase = appProperties != null && appProperties.getFrontendUrl() != null 
                             ? appProperties.getFrontendUrl().replaceAll("/+$", "") 
                             : "https://pms-chi-self.vercel.app";

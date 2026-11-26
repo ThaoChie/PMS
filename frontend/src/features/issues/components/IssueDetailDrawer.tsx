@@ -177,7 +177,7 @@ export default function IssueDetailDrawer({
 
   if (!issue) return null;
 
-  async function handleExecuteTransition(transition: any, fields?: Record<string, any>, comment?: string) {
+  async function handleExecuteTransition(transition: any, fields?: Record<string, any>, comment?: string, sendEmail?: boolean) {
     if (!issue) return;
     const reqField = (transition.requiredFields || transition.requiresField || '').trim();
     if (reqField && !fields) {
@@ -189,7 +189,7 @@ export default function IssueDetailDrawer({
     setActionLoading(true);
     setShowStatusMenu(false);
     try {
-      await workflowService.executeTransition(issue.key, String(transition.id), fields, comment);
+      await workflowService.executeTransition(issue.key, String(transition.id), fields, comment, sendEmail);
       await fetchDetail();
       onUpdated?.();
     } catch (err: any) {
@@ -954,10 +954,10 @@ export default function IssueDetailDrawer({
             to: pendingTransition.toStatusName || pendingTransition.to || pendingTransition.toStatus,
           }}
           onClose={() => setPendingTransition(null)}
-          onExecute={(fields, comment) => {
+          onExecute={(fields, comment, sendEmail) => {
             const trans = pendingTransition;
             setPendingTransition(null);
-            handleExecuteTransition(trans, fields, comment);
+            handleExecuteTransition(trans, fields, comment, sendEmail);
           }}
         />
       )}
