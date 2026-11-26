@@ -481,4 +481,36 @@ public class WorkflowServiceTest {
         assertFalse(ws2.isInitial());
         assertFalse(ws3.isInitial());
     }
+
+    @Test
+    public void testGetWorkflow_DuplicateStatusNamesInDb_ReturnsDeduplicatedList() {
+        WorkflowStatus s1 = new WorkflowStatus();
+        s1.setId(1L);
+        s1.setName("To Do");
+        s1.setCategory(StatusCategory.TODO);
+        s1.setPosition(0);
+
+        WorkflowStatus s2 = new WorkflowStatus();
+        s2.setId(5L);
+        s2.setName("To Do"); // Duplicate
+        s2.setCategory(StatusCategory.TODO);
+        s2.setPosition(0);
+
+        WorkflowStatus s3 = new WorkflowStatus();
+        s3.setId(2L);
+        s3.setName("Done");
+        s3.setCategory(StatusCategory.DONE);
+        s3.setPosition(1);
+
+        when(statusRepository.findByProjectIdOrderByPositionAsc(1L)).thenReturn(List.of(s1, s2, s3));
+        when(transitionRepository.findByProjectId(1L)).thenReturn(List.of());
+
+        var response = workflowService.getWorkflow(1L);
+        assertNotNull(response);
+        assertEquals(2, response.getStatuses().size());
+        assertEquals("To Do", response.getStatuses().get(0).getName());
+        assertEquals("Done", response.getStatuses().get(1).getName());
+        assertEquals(0, response.getStatuses().get(0).getPosition());
+        assertEquals(1, response.getStatuses().get(1).getPosition());
+    }
 }
