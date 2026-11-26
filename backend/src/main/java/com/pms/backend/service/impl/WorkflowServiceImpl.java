@@ -213,7 +213,11 @@ public class WorkflowServiceImpl implements IWorkflowService {
                     transition.setToStatus(to);
                     transition.setName(tDto.getName() != null && !tDto.getName().isBlank() ? tDto.getName().trim() : to.getName());
                     transition.setType(tDto.getType() != null ? tDto.getType() : (Boolean.TRUE.equals(tDto.getIsApprovalStep()) ? TransitionType.APPROVE : TransitionType.NORMAL));
-                    transition.setRequiredFields(tDto.getRequiredFields() != null ? tDto.getRequiredFields() : tDto.getRequiresField());
+                    String reqFields = tDto.getRequiresField() != null ? tDto.getRequiresField() : tDto.getRequiredFields();
+                    if (reqFields != null && reqFields.isBlank()) {
+                        reqFields = null;
+                    }
+                    transition.setRequiredFields(reqFields != null ? reqFields.trim() : null);
                     savedTransitions.add(transitionRepository.save(transition));
                 }
             }

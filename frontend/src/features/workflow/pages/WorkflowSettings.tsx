@@ -14,7 +14,7 @@ interface ArrowProps {
   startX: number;
   endX: number;
   isApproval: boolean;
-  requiresField?: string;
+  requiresField?: string | null;
   isSelected: boolean;
   onClick: () => void;
 }
@@ -86,12 +86,21 @@ export default function WorkflowSettings() {
 
   function handleSaveTransition(requiresField?: string, isApprovalStep?: boolean) {
     if (!selectedTransition) return;
+    const cleanField = requiresField && requiresField.trim() ? requiresField.trim() : undefined;
     setTransitions((ts) =>
-      ts.map((t) =>
-        t.id === selectedTransition.id
-          ? { ...t, requiresField, isApprovalStep: !!isApprovalStep }
-          : t,
-      ),
+      ts.map((t) => {
+        const matches =
+          (t.id && selectedTransition.id && String(t.id) === String(selectedTransition.id)) ||
+          (t.from.toLowerCase() === selectedTransition.from.toLowerCase() &&
+           t.to.toLowerCase() === selectedTransition.to.toLowerCase());
+        if (!matches) return t;
+        return {
+          ...t,
+          requiresField: cleanField,
+          requiredFields: cleanField,
+          isApprovalStep: !!isApprovalStep,
+        };
+      })
     );
     setSelectedTransition(null);
   }
@@ -198,9 +207,17 @@ export default function WorkflowSettings() {
         ...s,
         position: idx,
       }));
+      const payloadTransitions = transitions.map((t) => {
+        const cleanField = t.requiresField && t.requiresField.trim() ? t.requiresField.trim() : null;
+        return {
+          ...t,
+          requiresField: cleanField,
+          requiredFields: cleanField,
+        };
+      });
       const res = await workflowService.updateWorkflow(currentProject.id, {
         statuses: payloadStatuses,
-        transitions,
+        transitions: payloadTransitions,
       });
       setWarnings(res?.data?.warnings || []);
       setSaveSuccess(true);
@@ -552,7 +569,13 @@ export default function WorkflowSettings() {
                     <span className="text-xs font-medium text-[#1A1A1A]">{t.to}</span>
                   </td>
                   <td className="px-5 py-2.5">
-                    <span className="text-xs text-[#6B6B70]">{t.requiresField ?? '—'}</span>
+                    <span className="text-xs text-[#6B6B70]">
+                      {(t.requiresField && t.requiresField.trim())
+                        ? t.requiresField.trim()
+                        : ((t as any).requiredFields && (t as any).requiredFields.trim())
+                        ? (t as any).requiredFields.trim()
+                        : '—'}
+                    </span>
                   </td>
                   <td className="px-5 py-2.5">
                     {t.isApprovalStep ? (
