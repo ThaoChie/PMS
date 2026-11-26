@@ -26,6 +26,11 @@ public class DefaultWorkflowSeederImpl implements IDefaultWorkflowSeeder {
 
     @Transactional
     public void seedDefaultWorkflow(Project project) {
+        if (project == null || project.getId() == null) return;
+        if (!statusRepository.findByProjectIdOrderByPositionAsc(project.getId()).isEmpty()) {
+            return;
+        }
+
         // 1. Statuses
         WorkflowStatus todo = new WorkflowStatus();
         todo.setProject(project);

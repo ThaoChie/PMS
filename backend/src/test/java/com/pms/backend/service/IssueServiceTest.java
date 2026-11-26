@@ -240,4 +240,37 @@ public class IssueServiceTest {
         verify(linkRepository, times(1)).deleteBySourceIssueIdOrTargetIssueId(42L, 41L);
         verify(issueRepository, times(1)).save(story);
     }
+
+    @Test
+    public void testCreateIssue_UsesFirstInitialStatusAndSavesCustomFields_Success() {
+        ICustomFieldService mockCustomFieldService = mock(ICustomFieldService.class);
+        org.springframework.test.util.ReflectionTestUtils.setField(issueService, "customFieldService", mockCustomFieldService);
+
+        CreateIssueRequest req = new CreateIssueRequest();
+        req.setSummary("Bug with custom fields");
+        req.setType(IssueType.BUG);
+        req.setPriority(Priority.MEDIUM);
+        req.setDueDate(LocalDate.now().plusDays(1));
+        req.setCustomFields(java.util.Map.of("env", "Prod"));
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(statusRepository.findFirstByProjectIdAndIsInitialTrueOrderByPositionAscIdAsc(1L))
+                .thenReturn(Optional.of(todoStatus));
+        when(keyGenerator.generateNextKey(1L, "TEST")).thenReturn("TEST-101");
+        when(issueRepository.save(any(Issue.class))).thenAnswer(inv -> {
+            Issue i = inv.getArgument(0);
+            i.setId(99L);
+            return i;
+        });
+
+        var res = issueService.createIssue(1L, req, user);
+
+        assertNotNull(res);
+        assertEquals("TEST-101", res.getIssueKey());
+        assertEquals("To Do", res.getStatus());
+        verify(statusRepository).findFirstByProjectIdAndIsInitialTrueOrderByPositionAscIdAsc(1L);
+        verify(statusRepository, never()).findByProjectIdAndIsInitialTrue(anyLong());
+        verify(mockCustomFieldService).validateAndSaveIssueCustomFields(any(Issue.class), eq(req.getCustomFields()));
+        verify(mockCustomFieldService).getIssueCustomFields(99L, 1L);
+    }
 }

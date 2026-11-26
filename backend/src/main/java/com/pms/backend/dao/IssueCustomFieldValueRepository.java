@@ -14,5 +14,7 @@ public interface IssueCustomFieldValueRepository extends JpaRepository<IssueCust
 
     Optional<IssueCustomFieldValue> findByIssueIdAndFieldId(Long issueId, Long fieldId);
 
+    List<IssueCustomFieldValue> findAllByIssueIdAndFieldIdOrderByIdAsc(Long issueId, Long fieldId);
+
     void deleteByIssueId(Long issueId);
 }

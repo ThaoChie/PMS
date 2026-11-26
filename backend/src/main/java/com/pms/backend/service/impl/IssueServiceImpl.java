@@ -151,7 +151,7 @@ public class IssueServiceImpl implements IIssueService {
         }
 
         // Initial Workflow Status
-        WorkflowStatus initialStatus = statusRepository.findByProjectIdAndIsInitialTrue(projectId)
+        WorkflowStatus initialStatus = statusRepository.findFirstByProjectIdAndIsInitialTrueOrderByPositionAscIdAsc(projectId)
                 .orElseGet(() -> {
                     List<WorkflowStatus> list = statusRepository.findByProjectIdOrderByPositionAsc(projectId);
                     return list.isEmpty() ? null : list.get(0);
