@@ -14,6 +14,7 @@ import ConvertIssueModal from './ConvertIssueModal';
 import ShareIssueModal from './ShareIssueModal';
 import CommentSection from '../../comments/components/CommentSection';
 import WorklogSection from '../../worklog/components/WorklogSection';
+import TransitionModal from '../../workflow/components/TransitionModal';
 
 const STATUS_BADGE: Record<string, string> = {
   'To Do': 'text-gray-700 bg-gray-100 border-gray-300',
@@ -43,6 +44,7 @@ export default function IssueDetailDrawer({
   const [loading, setLoading] = useState(true);
   const [transitions, setTransitions] = useState<any[]>([]);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [pendingTransition, setPendingTransition] = useState<any | null>(null);
 
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -175,13 +177,21 @@ export default function IssueDetailDrawer({
 
   if (!issue) return null;
 
-  async function handleExecuteTransition(transition: any) {
+  async function handleExecuteTransition(transition: any, fields?: Record<string, any>, comment?: string) {
     if (!issue) return;
+    const reqField = (transition.requiredFields || transition.requiresField || '').trim();
+    if (reqField && !fields) {
+      setPendingTransition(transition);
+      setShowStatusMenu(false);
+      return;
+    }
+
     setActionLoading(true);
     setShowStatusMenu(false);
     try {
-      await workflowService.executeTransition(issue.key, String(transition.id));
+      await workflowService.executeTransition(issue.key, String(transition.id), fields, comment);
       await fetchDetail();
+      onUpdated?.();
     } catch (err: any) {
       if (err?.status === 409 || err?.response?.status === 409) {
         setConcurrentConflict(true);
@@ -946,6 +956,23 @@ export default function IssueDetailDrawer({
             </div>
           </div>
         </div>
+      )}
+      {/* Transition Modal for Required Fields (e.g. resolution) */}
+      {pendingTransition && (
+        <TransitionModal
+          isOpen={Boolean(pendingTransition)}
+          transition={{
+            ...pendingTransition,
+            from: issue.status,
+            to: pendingTransition.toStatusName || pendingTransition.to || pendingTransition.toStatus,
+          }}
+          onClose={() => setPendingTransition(null)}
+          onExecute={(fields, comment) => {
+            const trans = pendingTransition;
+            setPendingTransition(null);
+            handleExecuteTransition(trans, fields, comment);
+          }}
+        />
       )}
     </>
   );
