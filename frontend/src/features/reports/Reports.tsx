@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Role } from '../../types';
 import { useProjectStore } from '../../store/projectStore';
+import { useProductivityStore } from '../../store/productivityStore';
 import { ProgressTab } from './ProgressTab';
 import { ProductivityTab } from './ProductivityTab';
 import { BugReportTab } from './BugReportTab';
@@ -13,7 +14,10 @@ interface ReportsProps {
 
 export default function Reports({ role }: ReportsProps) {
   const currentProject = useProjectStore((s) => s.currentProject);
+  const productivityFilter = useProductivityStore((s) => s.filter);
+  const productivityScope = useProductivityStore((s) => s.report?.scope);
   const [activeTab, setActiveTab] = useState<'progress' | 'productivity' | 'bugs'>('progress');
+  const canExportProductivity = role !== 'member' && productivityScope !== 'PROJECT_SUMMARY';
 
   // Date range state (default 30 days)
   const [rangeDays, setRangeDays] = useState<number>(30);
@@ -41,13 +45,19 @@ export default function Reports({ role }: ReportsProps) {
                 : 'Tiến độ và hiệu suất công việc trong dự án'}
             </p>
           </div>
-          {currentProject && activeTab !== 'productivity' && (
+          {currentProject && (activeTab !== 'productivity' || canExportProductivity) && (
             <div className="shrink-0 relative z-30">
               {activeTab === 'bugs' ? (
                 // Tab Báo cáo lỗi: xuất đúng nội dung báo cáo lỗi, không dùng chung với tab Tiến độ
                 <ExportButton
                   key="export-bugs"
                   onExport={(format) => reportService.exportBugReport(currentProject.id, from, to, format)}
+                />
+              ) : activeTab === 'productivity' ? (
+                <ExportButton
+                  key="export-productivity"
+                  formats={['xlsx']}
+                  onExport={() => reportService.exportProductivityReport(Number(currentProject.id), productivityFilter)}
                 />
               ) : (
                 <ExportButton key="export-progress" projectId={currentProject.id} criteria={{ fromDate: from, toDate: to }} />
