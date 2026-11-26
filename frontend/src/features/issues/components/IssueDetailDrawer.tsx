@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, ChevronDown, AlertTriangle, Share2, Trash2, RefreshCw, Pencil, Copy, Check, ExternalLink, GitFork, Shield } from 'lucide-react';
+import { X, ChevronDown, AlertTriangle, Share2, Trash2, RefreshCw, Pencil, Copy, Check, ExternalLink, GitFork } from 'lucide-react';
 import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
 import { memberService } from '../../../services/memberService';
@@ -590,16 +590,10 @@ export default function IssueDetailDrawer({
                       <button
                         key={t.id}
                         type="button"
-                        className="w-full text-left px-3 py-2 text-xs hover:bg-[#F7F7F8] text-[#1A1A1A] flex items-center justify-between gap-2 transition-colors"
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-[#F7F7F8] text-[#1A1A1A] transition-colors"
                         onClick={() => handleExecuteTransition(t)}
                       >
-                        <span className="font-medium truncate">{label}</span>
-                        {isApproval && (
-                          <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[#FDECEC] text-[#E53E3E] font-medium border border-[#E53E3E]/20 flex items-center gap-1">
-                            <Shield className="w-2.5 h-2.5" />
-                            Duyệt PM/QA
-                          </span>
-                        )}
+                        <span className="font-medium">{label}</span>
                       </button>
                     );
                   })
