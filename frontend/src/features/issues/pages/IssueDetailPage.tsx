@@ -28,6 +28,8 @@ import ShareIssueModal from '../components/ShareIssueModal';
 import CommentSection from '../../comments/components/CommentSection';
 import WorklogSection from '../../worklog/components/WorklogSection';
 import TransitionModal from '../../workflow/components/TransitionModal';
+import ConfirmModal from '../../../components/common/ConfirmModal';
+import { toast } from '../../../store/toastStore';
 
 interface IssueDetailPageProps {
   issueKey: string;
@@ -55,6 +57,7 @@ export default function IssueDetailPage({
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [pendingTransition, setPendingTransition] = useState<any | null>(null);
   const [showTypeMenu, setShowTypeMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   const isSubtask = issue?.type?.toUpperCase() === 'SUB_TASK' || issue?.type === 'Sub-task' || !!issue?.parentId;
@@ -67,14 +70,18 @@ export default function IssueDetailPage({
   const canConvert = isPmOrAdmin || Boolean(currentProject?.allowMemberConvertSubtask);
 
   async function handleDelete() {
-    if (!issue) return;
-    if (confirm(`Bạn có chắc chắn muốn xóa ${isSubtask ? 'subtask' : 'công việc'} "${issue.summary}"?`)) {
-      try {
-        await issueService.deleteIssue(issue.key);
-        onBack?.();
-      } catch (err: any) {
-        setErrorMessage(err?.response?.data?.message || err?.message || 'Xóa công việc thất bại');
-      }
+    if (!issue || actionLoading) return;
+    setActionLoading(true);
+    try {
+      await issueService.deleteIssue(issue.key);
+      setShowDeleteConfirm(false);
+      toast.success(`Đã xóa ${isSubtask ? 'subtask' : 'công việc'} ${issue.key}`);
+      onBack?.();
+    } catch (err: any) {
+      setShowDeleteConfirm(false);
+      setErrorMessage(err?.response?.data?.message || err?.message || 'Xóa công việc thất bại');
+    } finally {
+      setActionLoading(false);
     }
   }
 
@@ -348,7 +355,7 @@ export default function IssueDetailPage({
             {canDelete && (
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteConfirm(true)}
                 className="p-1.5 border border-[#E5E5E7] text-[#9B9B9F] hover:text-[#E53E3E] hover:bg-red-50 rounded-lg transition-colors"
                 title={isSubtask ? "Xóa subtask" : "Xóa công việc"}
               >
@@ -423,15 +430,8 @@ export default function IssueDetailPage({
                   {showStatusMenu && transitions.length > 0 && (
                     <div className="absolute top-8 right-0 bg-white border border-[#E5E5E7] rounded-lg shadow-lg z-30 py-1 min-w-[180px]">
                       {transitions.map((t: any) => {
-                        const isApproval = t.type === 'APPROVE' || t.type === 'REJECT' || Boolean(t.isApprovalStep);
                         const targetStatus = t.toStatusName || t.to || t.toStatus;
-                        const label = !isApproval
-                          ? targetStatus || t.name
-                          : t.name && !/^\d+$/.test(t.name.trim())
-                          ? t.name
-                          : t.type === 'REJECT'
-                          ? (targetStatus ? `Từ chối về ${targetStatus}` : 'Từ chối')
-                          : (targetStatus ? `Duyệt sang ${targetStatus}` : 'Phê duyệt');
+                        const label = targetStatus || t.name;
 
                         return (
                           <button
@@ -662,6 +662,20 @@ export default function IssueDetailPage({
           }}
         />
       )}
+
+      {/* Delete Confirmation Popup */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title={isSubtask ? 'Xác nhận xóa subtask' : 'Xác nhận xóa công việc'}
+        message={`Bạn có chắc chắn muốn xóa ${isSubtask ? 'subtask' : 'công việc'} "${issue.summary}" (${issue.key})?`}
+        confirmLabel={actionLoading ? 'Đang xóa…' : 'Xác nhận xóa'}
+        cancelLabel="Hủy"
+        isDanger
+        onConfirm={handleDelete}
+        onCancel={() => {
+          if (!actionLoading) setShowDeleteConfirm(false);
+        }}
+      />
     </div>
   );
 }
