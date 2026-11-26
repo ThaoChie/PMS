@@ -30,6 +30,8 @@ public class WorkflowServiceImpl implements IWorkflowService {
     private final IAuditService auditService;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private IWatcherService watcherService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private IDefaultWorkflowSeeder defaultWorkflowSeeder;
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager entityManager;
 
@@ -53,10 +55,20 @@ public class WorkflowServiceImpl implements IWorkflowService {
         this.auditService = auditService;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public WorkflowResponse getWorkflow(Long projectId) {
         List<WorkflowStatus> statuses = statusRepository.findByProjectIdOrderByPositionAsc(projectId);
         List<WorkflowTransition> transitions = transitionRepository.findByProjectId(projectId);
+
+        // Auto-seed default workflow if project has no statuses yet
+        if (statuses.isEmpty() && defaultWorkflowSeeder != null) {
+            Project project = projectRepository.findById(projectId).orElse(null);
+            if (project != null) {
+                defaultWorkflowSeeder.seedDefaultWorkflow(project);
+                statuses = statusRepository.findByProjectIdOrderByPositionAsc(projectId);
+                transitions = transitionRepository.findByProjectId(projectId);
+            }
+        }
 
         // Deduplicate statuses by normalized name
         Map<String, WorkflowStatus> uniqueStatusMap = new LinkedHashMap<>();
