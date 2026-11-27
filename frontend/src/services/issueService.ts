@@ -110,7 +110,7 @@ export const issueService = {
 
   async createSubtask(
     issueKey: string,
-    data: { summary: string; assigneeId?: string },
+    data: { summary: string; assigneeId?: string; dueDate?: string },
   ): Promise<ApiResponse<SubTask>> {
     const res = await axiosClient.post<any, ApiResponse<SubTask>>(`/issues/${issueKey}/subtasks`, data);
     notifyIssueChanged({ issueKey, action: 'update' });

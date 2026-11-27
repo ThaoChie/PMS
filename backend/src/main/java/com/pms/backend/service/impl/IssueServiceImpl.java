@@ -518,6 +518,11 @@ public class IssueServiceImpl implements IIssueService {
 
     @Transactional
     public SubtaskResponse createSubtask(String issueKey, String summary, Long assigneeId, User currentUser) {
+        return createSubtask(issueKey, summary, assigneeId, null, currentUser);
+    }
+
+    @Transactional
+    public SubtaskResponse createSubtask(String issueKey, String summary, Long assigneeId, LocalDate dueDate, User currentUser) {
         Issue parent = findIssue(issueKey);
 
         projectSecurity.assertProjectWritable(parent.getProject());
@@ -526,11 +531,22 @@ public class IssueServiceImpl implements IIssueService {
             throw new BusinessException(ErrorCode.SUBTASK_NESTING_NOT_ALLOWED, "Sub-tasks cannot have sub-tasks");
         }
 
+        if (summary == null || summary.isBlank()) {
+            throw new ValidationException("Vui lòng nhập tiêu đề công việc con.");
+        }
+        if (assigneeId == null) {
+            throw new ValidationException("Vui lòng chọn người thực hiện.");
+        }
+        if (dueDate == null) {
+            throw new ValidationException("Vui lòng chọn hạn chót.");
+        }
+
         CreateIssueRequest req = new CreateIssueRequest();
         req.setSummary(summary);
         req.setType(IssueType.SUB_TASK);
         req.setParentId(parent.getId());
         req.setAssigneeId(assigneeId);
+        req.setDueDate(dueDate);
 
         IssueResponse res = createIssue(parent.getProject().getId(), req, currentUser);
         SubtaskResponse stRes = new SubtaskResponse();
@@ -539,6 +555,7 @@ public class IssueServiceImpl implements IIssueService {
         stRes.setSummary(res.getSummary());
         stRes.setStatus(res.getStatus());
         stRes.setAssignee(res.getAssignee());
+        stRes.setDueDate(res.getDueDate());
         return stRes;
     }
 

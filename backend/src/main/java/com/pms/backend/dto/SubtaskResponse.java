@@ -2,12 +2,15 @@ package com.pms.backend.dto;
 
 import com.pms.backend.model.Issue;
 
+import java.time.LocalDate;
+
 public class SubtaskResponse {
     private Long id;
     private String key;
     private String summary;
     private String status;
     private UserResponse assignee;
+    private LocalDate dueDate;
 
     public static SubtaskResponse from(Issue subtask) {
         if (subtask == null) return null;
@@ -17,6 +20,7 @@ public class SubtaskResponse {
         res.setSummary(subtask.getSummary());
         res.setStatus(subtask.getStatus() != null ? subtask.getStatus().getName() : "");
         res.setAssignee(UserResponse.from(subtask.getAssignee()));
+        res.setDueDate(subtask.getDueDate());
         return res;
     }
 
@@ -34,4 +38,7 @@ public class SubtaskResponse {
 
     public UserResponse getAssignee() { return assignee; }
     public void setAssignee(UserResponse assignee) { this.assignee = assignee; }
+
+    public LocalDate getDueDate() { return dueDate; }
+    public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
 }

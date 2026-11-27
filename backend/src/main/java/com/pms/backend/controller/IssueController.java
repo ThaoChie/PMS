@@ -169,7 +169,13 @@ public class IssueController {
             @PathVariable String issueKey,
             @RequestBody CreateIssueRequest request
     ) {
-        return ApiResponse.success(issueService.createSubtask(issueKey, request.getSummary(), request.getAssigneeId(), getCurrentUser()));
+        return ApiResponse.success(issueService.createSubtask(
+                issueKey,
+                request.getSummary(),
+                request.getAssigneeId(),
+                request.getDueDate(),
+                getCurrentUser()
+        ));
     }
 
     @PostMapping({"/api/issues/{issueKey}/attachments", "/issues/{issueKey}/attachments"})
