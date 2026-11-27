@@ -61,9 +61,14 @@ function EmptyProjectBoardState({ onNavigate }: { onNavigate?: (screen: Screen) 
   );
 }
 
-export default function Board({ role: _role, onSelectIssue, onNavigate }: BoardProps) {
+export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
   const { currentProject } = useProjectStore();
   const currentUser = useAuthStore((s) => s.user);
+  const effectiveRole = (currentProject?.myRole || role || '').toLowerCase();
+  const isPmOrAdmin =
+    effectiveRole === 'pm' ||
+    effectiveRole === 'admin' ||
+    currentUser?.role === 'admin';
 
   const [statuses, setStatuses] = useState<WorkflowStatus[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -424,6 +429,7 @@ export default function Board({ role: _role, onSelectIssue, onNavigate }: BoardP
             from: pendingBoardTransition.fromStatus,
             to: pendingBoardTransition.toStatus,
           }}
+          canSendFeedbackEmail={isPmOrAdmin}
           onClose={() => setPendingBoardTransition(null)}
           onExecute={async (fields, comment, sendEmail) => {
             const { issueKey, targetTrans, toStatus } = pendingBoardTransition;

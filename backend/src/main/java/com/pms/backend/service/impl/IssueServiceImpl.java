@@ -750,7 +750,9 @@ public class IssueServiceImpl implements IIssueService {
                                 "recipientName", recipientDisplayName,
                                 "title", currentUser.getFullName() + " đã chia sẻ công việc: " + issue.getIssueKey(),
                                 "message", (note.isBlank() ? "Nội dung công việc: " : (note + "\n\n")) + issue.getSummary(),
-                                "link", fullLink
+                                "link", fullLink,
+                                "buttonText", "Xem chi tiết công việc",
+                                "footerNote", "* Lưu ý: Bạn cần đăng nhập (hoặc đăng ký tài khoản mới nếu chưa có) để truy cập và xem chi tiết công việc được chia sẻ."
                         )
                 );
             }

@@ -432,12 +432,26 @@ public class WorkflowServiceImpl implements IWorkflowService {
             String[] reqFields = transition.getRequiredFields().split(",");
             for (String f : reqFields) {
                 String fieldName = f.trim();
-                if ("resolution".equalsIgnoreCase(fieldName)) {
-                    Object resVal = fields != null ? fields.get("resolution") : null;
-                    if (resVal == null || resVal.toString().isBlank()) {
-                        throw new BusinessException(ErrorCode.REQUIRED_FIELD_MISSING, "Resolution is required for this transition");
+                if (fieldName.isEmpty()) continue;
+
+                // Case-insensitive lookup in fields map
+                Object val = null;
+                if (fields != null) {
+                    for (Map.Entry<String, Object> entry : fields.entrySet()) {
+                        if (entry.getKey() != null && entry.getKey().trim().equalsIgnoreCase(fieldName)) {
+                            val = entry.getValue();
+                            break;
+                        }
                     }
-                    issue.setResolution(resVal.toString().trim());
+                }
+
+                if (val == null || val.toString().trim().isEmpty()) {
+                    throw new BusinessException(ErrorCode.REQUIRED_FIELD_MISSING, "Required field is missing: " + fieldName);
+                }
+
+                // If field is resolution, update issue resolution
+                if (fieldName.equalsIgnoreCase("resolution")) {
+                    issue.setResolution(val.toString().trim());
                 }
             }
         }
@@ -447,8 +461,29 @@ public class WorkflowServiceImpl implements IWorkflowService {
         issue.setStatus(toStatus);
         Issue savedIssue = issueRepository.save(issue);
 
-        // Record history
-        IssueStatusHistory history = new IssueStatusHistory(savedIssue, fromStatus, toStatus, currentUser, comment);
+        // Record history with all required fields & optional comment
+        StringBuilder historyCommentBuilder = new StringBuilder();
+        if (fields != null && !fields.isEmpty()) {
+            for (Map.Entry<String, Object> entry : fields.entrySet()) {
+                if (entry.getValue() != null && !entry.getValue().toString().trim().isEmpty()) {
+                    String key = entry.getKey().trim();
+                    if ("resolution".equalsIgnoreCase(key)) {
+                        key = "Kết quả xử lý (Resolution)";
+                    }
+                    historyCommentBuilder.append(key).append(": ").append(entry.getValue().toString().trim()).append("\n");
+                }
+            }
+        }
+        if (comment != null && !comment.trim().isEmpty()) {
+            if (historyCommentBuilder.length() > 0) {
+                historyCommentBuilder.append("Ghi chú: ").append(comment.trim());
+            } else {
+                historyCommentBuilder.append(comment.trim());
+            }
+        }
+        String finalHistoryComment = historyCommentBuilder.length() > 0 ? historyCommentBuilder.toString().trim() : null;
+
+        IssueStatusHistory history = new IssueStatusHistory(savedIssue, fromStatus, toStatus, currentUser, finalHistoryComment);
         historyRepository.save(history);
 
         // Audit log
@@ -540,8 +575,12 @@ public class WorkflowServiceImpl implements IWorkflowService {
             }
         }
 
-        // Dedicated email to assignee when requested by PM/QA
-        if (Boolean.TRUE.equals(sendEmail)) {
+        // Dedicated approval feedback email to assignee only when PM/Admin executes an APPROVE or REJECT transition
+        boolean isApprovalOrReject = transition.getType() == TransitionType.APPROVE
+                || transition.getType() == TransitionType.REJECT;
+        if (Boolean.TRUE.equals(sendEmail)
+                && isApprovalOrReject
+                && projectSecurity.isPmOrAdmin(savedIssue.getProject().getId())) {
             sendApprovalFeedbackEmail(savedIssue, toStatus, fields, comment, currentUser);
         }
 
@@ -710,15 +749,7 @@ public class WorkflowServiceImpl implements IWorkflowService {
             return;
         }
 
-        // Determine sender's role in the project (PM or QA)
         String roleLabel = "PM";
-        if (memberRepository != null && issue.getProject() != null && currentUser != null) {
-            ProjectMember member = memberRepository.findByProjectIdAndUserId(issue.getProject().getId(), currentUser.getId()).orElse(null);
-            if (member != null && member.getRole() == ProjectRole.QA) {
-                roleLabel = "QA";
-            }
-        }
-
         String emailSubject = "Phản hồi của " + roleLabel + " về công việc của bạn";
 
         StringBuilder msgBuilder = new StringBuilder();
@@ -756,7 +787,9 @@ public class WorkflowServiceImpl implements IWorkflowService {
                         "recipientName", issue.getAssignee().getFullName() != null ? issue.getAssignee().getFullName() : issue.getAssignee().getEmail(),
                         "title", emailSubject,
                         "message", msgBuilder.toString(),
-                        "link", link
+                        "link", link,
+                        "buttonText", "Xem chi tiết công việc",
+                        "footerNote", "* Lưu ý: Vui lòng đăng nhập hệ thống EPMS để xem chi tiết phản hồi và tiếp tục xử lý công việc."
                 )
         );
     }
