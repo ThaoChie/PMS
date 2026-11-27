@@ -476,7 +476,7 @@ public class WorkflowServiceImpl implements IWorkflowService {
         }
         if (comment != null && !comment.trim().isEmpty()) {
             if (historyCommentBuilder.length() > 0) {
-                historyCommentBuilder.append("Ghi chú: ").append(comment.trim());
+                historyCommentBuilder.append("Ghi chú chuyển đổi trạng thái: ").append(comment.trim());
             } else {
                 historyCommentBuilder.append(comment.trim());
             }
@@ -758,13 +758,12 @@ public class WorkflowServiceImpl implements IWorkflowService {
         msgBuilder.append("Người duyệt: ").append(currentUser != null && currentUser.getFullName() != null ? currentUser.getFullName() : (currentUser != null ? currentUser.getEmail() : "")).append(" (").append(roleLabel).append(")\n\n");
 
         if (fields != null && !fields.isEmpty()) {
-            msgBuilder.append("Thông tin trường bắt buộc:\n");
             for (Map.Entry<String, Object> entry : fields.entrySet()) {
                 String fieldLabel = entry.getKey();
                 if ("resolution".equalsIgnoreCase(fieldLabel)) {
                     fieldLabel = "Kết quả xử lý (Resolution)";
                 }
-                msgBuilder.append("- ").append(fieldLabel).append(": ").append(entry.getValue() != null ? entry.getValue() : "").append("\n");
+                msgBuilder.append(fieldLabel).append(": ").append(entry.getValue() != null ? entry.getValue() : "").append("\n");
             }
             msgBuilder.append("\n");
         }
