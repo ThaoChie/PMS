@@ -310,6 +310,30 @@ public class ReportServiceTest {
     }
 
     @Test
+    public void testExportProductivityReport_Csv() {
+        when(projectSecurity.isPmOrAdmin(1L)).thenReturn(true);
+        ProductivityFilterRequest filter = new ProductivityFilterRequest();
+        User currentUser = new User();
+        currentUser.setId(10L);
+
+        Project project = new Project();
+        project.setId(1L);
+        project.setName("Test Project");
+        project.setProjectKey("TEST");
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(productivityReportHibernateDao.generateProductivityReport(1L, filter, true)).thenReturn(new ProductivityReportResponse());
+        when(productivityReportHibernateDao.fetchIssuesForExport(1L, filter)).thenReturn(Collections.emptyList());
+        when(productivityReportHibernateDao.fetchWorklogsForExport(1L, filter)).thenReturn(Collections.emptyList());
+        when(exportService.generateProductivityCsv(eq(project), any(), any(), any(), eq(filter), eq(currentUser))).thenReturn(new byte[]{4, 5, 6});
+
+        byte[] result = reportService.exportProductivityReport(1L, filter, currentUser, "csv");
+        assertNotNull(result);
+        assertEquals(3, result.length);
+        assertEquals(4, result[0]);
+    }
+
+    @Test
     public void testExportProductivityReport_AsMember_Throws403() {
         when(projectSecurity.isPmOrAdmin(1L)).thenReturn(false);
         ProductivityFilterRequest filter = new ProductivityFilterRequest();

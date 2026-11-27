@@ -103,6 +103,11 @@ public class ReportServiceImpl implements IReportService {
 
     @Override
     public byte[] exportProductivityReport(Long projectId, ProductivityFilterRequest filter, User currentUser) {
+        return exportProductivityReport(projectId, filter, currentUser, "xlsx");
+    }
+
+    @Override
+    public byte[] exportProductivityReport(Long projectId, ProductivityFilterRequest filter, User currentUser, String format) {
         if (!projectSecurity.isPmOrAdmin(projectId)) {
             throw new ForbiddenException(ErrorCode.FORBIDDEN, "Chỉ Quản lý dự án hoặc Quản trị viên mới có quyền xuất báo cáo năng suất");
         }
@@ -120,6 +125,9 @@ public class ReportServiceImpl implements IReportService {
             project.setProjectKey("PRJ-" + projectId);
         }
 
+        if ("csv".equalsIgnoreCase(format)) {
+            return exportService.generateProductivityCsv(project, report, issues, worklogs, filter, currentUser);
+        }
         return exportService.generateProductivityExcel(project, report, issues, worklogs, filter, currentUser);
     }
 

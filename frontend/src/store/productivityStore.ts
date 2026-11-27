@@ -26,7 +26,7 @@ interface ProductivityState {
   resetFilter: (defaultFrom?: string, defaultTo?: string) => void;
   fetchReport: (projectId: number) => Promise<void>;
   selectMember: (projectId: number, userId: number | null) => Promise<void>;
-  exportReport: (projectId: number) => Promise<void>;
+  exportReport: (projectId: number, format?: 'xlsx' | 'csv') => Promise<void>;
 }
 
 const getDefaultDates = () => {
@@ -114,11 +114,11 @@ export const useProductivityStore = create<ProductivityState>((set, get) => ({
     }
   },
 
-  exportReport: async (projectId: number) => {
+  exportReport: async (projectId: number, format: 'xlsx' | 'csv' = 'xlsx') => {
     if (!projectId) return;
     set({ exporting: true });
     try {
-      await reportService.exportProductivityReport(projectId, get().filter);
+      await reportService.exportProductivityReport(projectId, get().filter, format);
       toast.success(MESSAGES.REPORTS.EXPORT_SUCCESS);
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || MESSAGES.COMMON.ACTION_FAILED;

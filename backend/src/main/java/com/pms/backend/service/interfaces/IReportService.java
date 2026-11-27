@@ -11,6 +11,7 @@ public interface IReportService {
     ProductivityReportResponse getProductivityReport(Long projectId, ProductivityFilterRequest filter);
     MemberDetailProductivityResponse getMemberProductivityDetail(Long projectId, Long userId, ProductivityFilterRequest filter);
     byte[] exportProductivityReport(Long projectId, ProductivityFilterRequest filter, User currentUser);
+    byte[] exportProductivityReport(Long projectId, ProductivityFilterRequest filter, User currentUser, String format);
     BugReportResponse getBugReport(Long projectId, LocalDate from, LocalDate to);
     ReportResponse generateProjectReport(Long projectId);
 }

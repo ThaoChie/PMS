@@ -64,11 +64,13 @@ export const reportService = {
 
   async exportProductivityReport(
     projectId: string | number,
-    filter?: ProductivityFilter
+    filter?: ProductivityFilter,
+    format: 'xlsx' | 'csv' = 'xlsx'
   ): Promise<void> {
     const f = filter || {};
     const params = {
       ...f,
+      format,
       memberIds: f.memberIds && f.memberIds.length > 0 ? f.memberIds.join(',') : undefined,
       roles: f.roles && f.roles.length > 0 ? f.roles.join(',') : undefined,
       issueTypes: f.issueTypes && f.issueTypes.length > 0 ? f.issueTypes.join(',') : undefined,
@@ -80,10 +82,11 @@ export const reportService = {
       responseType: 'blob',
     });
 
+    const isCsv = format === 'csv';
     const blob = new Blob([response as any], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      type: isCsv ? 'text/csv;charset=utf-8;' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
-    const filename = `productivity-report-${projectId}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const filename = `productivity-report-${projectId}-${new Date().toISOString().slice(0, 10)}.${format}`;
     downloadBlob(blob, filename);
   },
 

@@ -311,4 +311,87 @@ public class ExportServiceTest {
         });
         assertEquals(ErrorCode.EXPORT_LIMIT_EXCEEDED, ex.getErrorCode());
     }
+
+    @Test
+    public void testGenerateProductivityCsv_Success() {
+        Project project = new Project();
+        project.setId(1L);
+        project.setName("Alpha");
+        project.setProjectKey("ALP");
+
+        ProductivityReportResponse report = new ProductivityReportResponse();
+        report.setFrom(LocalDate.of(2026, 1, 1));
+        report.setTo(LocalDate.of(2026, 1, 31));
+        report.setTotalAssigned(10);
+        report.setTotalCompleted(8);
+
+        MemberProductivityDto m = new MemberProductivityDto();
+        m.setFullName("Nguyen Van A");
+        m.setEmail("a@example.com");
+        m.setProjectRole("DEVELOPER");
+        m.setAssignedIssues(10);
+        m.setCompletedIssues(8);
+        m.setOnTimeRate(80.0);
+        report.setMembers(List.of(m));
+
+        Issue issue = new Issue();
+        issue.setIssueKey("ALP-1");
+        issue.setSummary("Fix bug");
+
+        Worklog worklog = new Worklog();
+        worklog.setIssue(issue);
+        worklog.setTimeSpentMin(120);
+
+        byte[] csvBytes = exportService.generateProductivityCsv(
+                project, report, List.of(issue), List.of(worklog), new ProductivityFilterRequest(), null
+        );
+
+        assertNotNull(csvBytes);
+        String csv = new String(csvBytes, StandardCharsets.UTF_8);
+        assertTrue(csv.startsWith("\uFEFF"));
+        assertTrue(csv.contains("BÁO CÁO NĂNG SUẤT DỰ ÁN"));
+        assertTrue(csv.contains("Alpha (ALP)"));
+        assertTrue(csv.contains("CHỈ SỐ TỔNG HỢP"));
+        assertTrue(csv.contains("NĂNG SUẤT THEO THÀNH VIÊN"));
+        assertTrue(csv.contains("Nguyen Van A"));
+        assertTrue(csv.contains("CHI TIẾT CÔNG VIỆC"));
+        assertTrue(csv.contains("ALP-1"));
+        assertTrue(csv.contains("LOG THỜI GIAN"));
+    }
+
+    @Test
+    public void testGenerateProductivityCsv_SanitizesFormulaInjection() {
+        Project project = new Project();
+        project.setName("=cmd|' /C calc'!A0");
+        project.setProjectKey("MAL");
+
+        Issue issue = new Issue();
+        issue.setIssueKey("MAL-1");
+        issue.setSummary("+12345");
+
+        byte[] csvBytes = exportService.generateProductivityCsv(
+                project, new ProductivityReportResponse(), List.of(issue), Collections.emptyList(), new ProductivityFilterRequest(), null
+        );
+
+        String csv = new String(csvBytes, StandardCharsets.UTF_8);
+        assertTrue(csv.contains("''=cmd|' /C calc'!A0") || csv.contains("=\"'=cmd") || csv.contains("'=cmd"));
+        assertTrue(csv.contains("'+12345"));
+    }
+
+    @Test
+    public void testGenerateProductivityCsv_ExceedsLimit_ThrowsException() {
+        ReflectionTestUtils.setField(exportService, "maxExportRows", 5);
+
+        List<Issue> issues = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            issues.add(new Issue());
+        }
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> {
+            exportService.generateProductivityCsv(
+                    new Project(), new ProductivityReportResponse(), issues, Collections.emptyList(), new ProductivityFilterRequest(), null
+            );
+        });
+        assertEquals(ErrorCode.EXPORT_LIMIT_EXCEEDED, ex.getErrorCode());
+    }
 }

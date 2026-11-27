@@ -197,12 +197,21 @@ describe('ProductivityStore (Zustand)', () => {
     expect(useProductivityStore.getState().memberDetail).toBeNull();
   });
 
-  it('exportReport: calls exportProductivityReport service', async () => {
+  it('exportReport: calls exportProductivityReport service with default xlsx format', async () => {
     vi.mocked(reportService.exportProductivityReport).mockResolvedValueOnce(undefined);
 
     await useProductivityStore.getState().exportReport(1);
 
-    expect(reportService.exportProductivityReport).toHaveBeenCalledWith(1, expect.any(Object));
+    expect(reportService.exportProductivityReport).toHaveBeenCalledWith(1, expect.any(Object), 'xlsx');
+    expect(useProductivityStore.getState().exporting).toBe(false);
+  });
+
+  it('exportReport: calls exportProductivityReport service with csv format', async () => {
+    vi.mocked(reportService.exportProductivityReport).mockResolvedValueOnce(undefined);
+
+    await useProductivityStore.getState().exportReport(1, 'csv');
+
+    expect(reportService.exportProductivityReport).toHaveBeenCalledWith(1, expect.any(Object), 'csv');
     expect(useProductivityStore.getState().exporting).toBe(false);
   });
 });

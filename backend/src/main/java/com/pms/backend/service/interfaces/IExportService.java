@@ -16,4 +16,5 @@ public interface IExportService {
     byte[] generateExcel(List<Issue> issues);
     byte[] exportToCsv(List<Issue> issues);
     byte[] generateProductivityExcel(Project project, ProductivityReportResponse report, List<Issue> issues, List<Worklog> worklogs, ProductivityFilterRequest filter, User currentUser);
+    byte[] generateProductivityCsv(Project project, ProductivityReportResponse report, List<Issue> issues, List<Worklog> worklogs, ProductivityFilterRequest filter, User currentUser);
 }
