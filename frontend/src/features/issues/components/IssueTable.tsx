@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronUp, ChevronDown, Plus, CornerDownRight, X, Loader2 } from 'lucide-react';
 import type { Issue, IssueType } from '../../../types';
 import UserAvatar from '../../../components/common/UserAvatar';
+import SoftTooltip from '../../../components/common/SoftTooltip';
 import { issueService } from '../../../services/issueService';
 
 const PRIORITY_BADGE: Record<string, string> = {
@@ -38,6 +39,13 @@ const TYPE_BADGE: Record<string, string> = {
 
 export type SortField = 'key' | 'summary' | 'status' | 'priority' | 'dueDate';
 export type SortDir = 'asc' | 'desc';
+
+export function getSubtaskToggleTooltip(childCount: number, isExpanded: boolean): string {
+  if (childCount > 0) {
+    return isExpanded ? 'Thu gọn sub-task' : 'Xem sub-task';
+  }
+  return isExpanded ? 'Thu gọn' : 'Xem sub-task (0)';
+}
 
 interface IssueTableProps {
   issues: Issue[];
@@ -353,51 +361,52 @@ export default function IssueTable({
                       >
                         {/* Button 1: Quick add "+" button */}
                         {canHaveSubtasks && (
-                          <button
-                            type="button"
-                            onClick={() => startAddingSubtask(issue)}
-                            className="p-1.5 text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#EBEBEC] rounded-md transition-colors"
-                            title="Tạo nhanh subtask / bug"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
+                          <SoftTooltip label="Tạo nhanh subtask / bug">
+                            <button
+                              type="button"
+                              onClick={() => startAddingSubtask(issue)}
+                              className="p-1.5 text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#EBEBEC] rounded-md transition-colors"
+                              aria-label="Tạo nhanh subtask / bug"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </SoftTooltip>
                         )}
 
                         {/* Button 2: Expand/Collapse Toggle Button ("^ ngược" / Chevron) */}
                         {canExpand ? (
-                          <button
-                            type="button"
-                            onClick={() => toggleExpand(issueKey)}
-                            className={`px-2 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
-                              isExpanded
-                                ? 'bg-[#E5E5E7] text-[#1A1A1A]'
-                                : 'text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F0F0F1]'
-                            }`}
-                            title={
-                              children.length > 0
-                                ? isExpanded
-                                  ? 'Thu gọn subtask'
-                                  : 'Xổ ra xem subtask'
-                                : isExpanded
-                                ? 'Thu gọn'
-                                : 'Xổ ra xem subtask (0)'
-                            }
-                          >
-                            <span
-                              className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full border ${
-                                children.length > 0
-                                  ? 'bg-white text-[#4A4A4F] border-[#D1D1D3]'
-                                  : 'bg-[#F7F7F8] text-[#9B9B9F] border-[#E5E5E7]'
-                              }`}
-                            >
-                              {children.length}
-                            </span>
-                            {isExpanded ? (
-                              <ChevronUp className="w-3.5 h-3.5" />
-                            ) : (
-                              <ChevronDown className="w-3.5 h-3.5" />
-                            )}
-                          </button>
+                          (() => {
+                            const toggleLabel = getSubtaskToggleTooltip(children.length, isExpanded);
+                            return (
+                              <SoftTooltip label={toggleLabel}>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleExpand(issueKey)}
+                                  className={`px-2 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
+                                    isExpanded
+                                      ? 'bg-[#E5E5E7] text-[#1A1A1A]'
+                                      : 'text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F0F0F1]'
+                                  }`}
+                                  aria-label={toggleLabel}
+                                >
+                                  <span
+                                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full border ${
+                                      children.length > 0
+                                        ? 'bg-white text-[#4A4A4F] border-[#D1D1D3]'
+                                        : 'bg-[#F7F7F8] text-[#9B9B9F] border-[#E5E5E7]'
+                                    }`}
+                                  >
+                                    {children.length}
+                                  </span>
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <ChevronDown className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              </SoftTooltip>
+                            );
+                          })()
                         ) : (
                           <span className="w-6 shrink-0" />
                         )}
