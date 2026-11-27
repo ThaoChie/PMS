@@ -16,6 +16,7 @@ import { ISSUE_CHANGED_EVENT, type IssueEventDetail } from '../../../utils/issue
 import type { Issue, IssueStatus, Role, Screen, WorkflowStatus } from '../../../types';
 import KanbanColumn from '../components/KanbanColumn';
 import { findTransitionForTargetStatus } from '../utils/boardTransition';
+import TransitionModal from '../../workflow/components/TransitionModal';
 
 interface BoardProps {
   role: Role;
@@ -70,6 +71,12 @@ export default function Board({ role: _role, onSelectIssue, onNavigate }: BoardP
   const [draggedIssue, setDraggedIssue] = useState<Issue | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pendingBoardTransition, setPendingBoardTransition] = useState<{
+    issueKey: string;
+    targetTrans: any;
+    fromStatus: string;
+    toStatus: string;
+  } | null>(null);
 
   // Quick Filters
   const [onlyMyIssues, setOnlyMyIssues] = useState(false);
@@ -224,6 +231,21 @@ export default function Board({ role: _role, onSelectIssue, onNavigate }: BoardP
         }
 
         throw new Error(`Không có luồng chuyển hợp lệ từ "${prevStatus}" sang "${targetStatusName}"`);
+      }
+
+      const reqField = (targetTrans.requiredFields || targetTrans.requiresField || '').trim();
+      if (reqField) {
+        // Hoàn lại trạng thái trên giao diện trước khi mở popup nhập trường bắt buộc
+        setIssues((prev) =>
+          prev.map((i) => (i.key === issueKey ? { ...i, status: prevStatus } : i))
+        );
+        setPendingBoardTransition({
+          issueKey,
+          targetTrans,
+          fromStatus: prevStatus,
+          toStatus: targetStatusName,
+        });
+        return;
       }
 
       await workflowService.executeTransition(issueKey, String(targetTrans.id));
@@ -393,6 +415,30 @@ export default function Board({ role: _role, onSelectIssue, onNavigate }: BoardP
           })}
         </div>
       </div>
+
+      {pendingBoardTransition && (
+        <TransitionModal
+          isOpen={Boolean(pendingBoardTransition)}
+          transition={{
+            ...pendingBoardTransition.targetTrans,
+            from: pendingBoardTransition.fromStatus,
+            to: pendingBoardTransition.toStatus,
+          }}
+          onClose={() => setPendingBoardTransition(null)}
+          onExecute={async (fields, comment, sendEmail) => {
+            const { issueKey, targetTrans, toStatus } = pendingBoardTransition;
+            setPendingBoardTransition(null);
+            try {
+              await workflowService.executeTransition(issueKey, String(targetTrans.id), fields, comment, sendEmail);
+              toast.success(`Đã chuyển trạng thái ${issueKey} sang "${toStatus}"`);
+              loadData();
+            } catch (err: any) {
+              const msg = err?.response?.data?.message || err?.message || 'Chuyển trạng thái không thành công';
+              toast.error(msg);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
