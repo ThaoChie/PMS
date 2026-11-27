@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, ChevronDown, AlertTriangle, Share2, Trash2, RefreshCw, Pencil, Copy, Check, ExternalLink, GitFork, History, MessageSquare } from 'lucide-react';
 import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
@@ -18,6 +18,11 @@ import WorklogSection from '../../worklog/components/WorklogSection';
 import TransitionModal from '../../workflow/components/TransitionModal';
 import IssueHistoryTimeline from './IssueHistoryTimeline';
 import { buildIssueDetailPath } from '../../../constants/routes';
+import { ISSUE_CHANGED_EVENT, type IssueEventDetail } from '../../../utils/issueEvents';
+import {
+  executeInlineIssueUpdate,
+  isConcurrentModificationError,
+} from '../utils/inlineUpdate';
 
 const STATUS_BADGE: Record<string, string> = {
   'To Do': 'text-gray-700 bg-gray-100 border-gray-300',
@@ -87,6 +92,7 @@ export default function IssueDetailDrawer({
   const [editingDescription, setEditingDescription] = useState(false);
   const [descriptionValue, setDescriptionValue] = useState('');
   const [showTypeMenu, setShowTypeMenu] = useState(false);
+  const isSelfUpdatingRef = useRef(false);
 
   const fetchDetail = useCallback(async () => {
     if (!issueId) return;
@@ -139,6 +145,16 @@ export default function IssueDetailDrawer({
       setIssue(loaded);
       setSummaryValue(loaded.summary);
       setDescriptionValue(loaded.description || '');
+      setEditForm({
+        summary: loaded.summary || '',
+        description: loaded.description || '',
+        type: loaded.type || 'TASK',
+        priority: loaded.priority || 'MEDIUM',
+        assigneeId: loaded.assignee?.id || '',
+        dueDate: loaded.dueDate || '',
+        estimates: loaded.estimates || '',
+        environment: loaded.environment || '',
+      });
 
       // Load available transitions
       const transRes = await workflowService.getTransitions(loaded.key);
@@ -153,6 +169,23 @@ export default function IssueDetailDrawer({
   useEffect(() => {
     fetchDetail();
   }, [fetchDetail]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleExternalIssueChange = (e: Event) => {
+      if (isSelfUpdatingRef.current) return;
+      const detail = (e as CustomEvent<IssueEventDetail>).detail;
+      if (
+        detail?.issueKey &&
+        issue?.key &&
+        detail.issueKey.toUpperCase() === issue.key.toUpperCase()
+      ) {
+        fetchDetail();
+      }
+    };
+    window.addEventListener(ISSUE_CHANGED_EVENT, handleExternalIssueChange);
+    return () => window.removeEventListener(ISSUE_CHANGED_EVENT, handleExternalIssueChange);
+  }, [issue?.key, fetchDetail]);
 
   useEffect(() => {
     if (issue?.projectId) {
@@ -194,17 +227,19 @@ export default function IssueDetailDrawer({
 
     setActionLoading(true);
     setShowStatusMenu(false);
+    isSelfUpdatingRef.current = true;
     try {
       await workflowService.executeTransition(issue.key, String(transition.id), fields, comment, sendEmail);
       await fetchDetail();
       onUpdated?.();
     } catch (err: any) {
-      if (err?.status === 409 || err?.response?.status === 409) {
+      if (isConcurrentModificationError(err)) {
         setConcurrentConflict(true);
       } else {
         setErrorMessage(err?.response?.data?.message || err?.message || 'Chuyển trạng thái thất bại');
       }
     } finally {
+      isSelfUpdatingRef.current = false;
       setActionLoading(false);
     }
   }
@@ -227,44 +262,28 @@ export default function IssueDetailDrawer({
     if (!issue) return;
     setActionLoading(true);
     setErrorMessage(null);
+    isSelfUpdatingRef.current = true;
     try {
-      const payload: any = {
-        summary: updates.summary !== undefined ? updates.summary : issue.summary,
-        description: updates.description !== undefined ? updates.description : (issue.description || ''),
-        type: updates.type !== undefined ? updates.type : issue.type,
-        priority: updates.priority !== undefined ? updates.priority : issue.priority,
-        assigneeId:
-          updates.assigneeId !== undefined
-            ? updates.assigneeId
-            : issue.assignee?.id
-            ? Number(issue.assignee.id)
-            : null,
-        dueDate: updates.dueDate !== undefined ? updates.dueDate : (issue.dueDate || null),
-        environment: updates.environment !== undefined ? updates.environment : (issue.environment || null),
-        estimates: updates.estimates !== undefined ? updates.estimates : (issue.estimates || null),
-        version: issue.version,
-      };
-
-      if (updates.assigneeId === null) {
-        payload.clearAssignee = true;
-      }
-      if (updates.dueDate === null) {
-        payload.clearDueDate = true;
-      }
-      if (updates.customFields !== undefined) {
-        payload.customFields = updates.customFields;
-      }
-
-      await issueService.updateIssue(issue.key, payload, issue.version);
+      await executeInlineIssueUpdate({
+        issueKey: issue.key,
+        currentVersion: issue.version,
+        updates,
+        updateFn: (key, payload, version) => issueService.updateIssue(key, payload, version),
+        fetchLatestFn: async (key) => {
+          const latestRes = await issueService.getIssue(key);
+          return latestRes?.data as Issue | undefined;
+        },
+      });
       await fetchDetail();
       onUpdated?.();
     } catch (err: any) {
-      if (err?.status === 409 || err?.response?.status === 409) {
+      if (isConcurrentModificationError(err)) {
         setConcurrentConflict(true);
       } else {
         setErrorMessage(err?.response?.data?.message || err?.message || 'Cập nhật công việc thất bại');
       }
     } finally {
+      isSelfUpdatingRef.current = false;
       setActionLoading(false);
     }
   }
@@ -330,17 +349,19 @@ export default function IssueDetailDrawer({
         version: issue.version,
       };
 
+      isSelfUpdatingRef.current = true;
       await issueService.updateIssue(issue.key, payload, issue.version);
       setIsEditing(false);
       await fetchDetail();
       onUpdated?.();
     } catch (err: any) {
-      if (err?.status === 409 || err?.response?.status === 409) {
+      if (isConcurrentModificationError(err)) {
         setConcurrentConflict(true);
       } else {
         setErrorMessage(err?.response?.data?.message || err?.message || 'Cập nhật công việc thất bại');
       }
     } finally {
+      isSelfUpdatingRef.current = false;
       setActionLoading(false);
     }
   }
@@ -379,6 +400,7 @@ export default function IssueDetailDrawer({
               <div className="relative inline-block">
                 <button
                   type="button"
+                  disabled={actionLoading}
                   onClick={() => setShowTypeMenu((s) => !s)}
                   className={`text-[10px] font-medium px-2 py-1 rounded border flex items-center gap-1 transition-colors cursor-pointer hover:border-[#1A1A1A] ${
                     issue.type === 'Bug' || issue.type === 'BUG'

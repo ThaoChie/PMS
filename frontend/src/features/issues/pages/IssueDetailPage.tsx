@@ -34,6 +34,7 @@ import IssueHistoryTimeline from '../components/IssueHistoryTimeline';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { toast } from '../../../store/toastStore';
 import { buildIssueDetailPath, resolveIssueProject } from '../../../constants/routes';
+import { executeInlineIssueUpdate } from '../utils/inlineUpdate';
 
 interface IssueDetailPageProps {
   issueKey: string;
@@ -208,34 +209,16 @@ export default function IssueDetailPage({
     setActionLoading(true);
     setErrorMessage(null);
     try {
-      const payload: any = {
-        summary: updates.summary !== undefined ? updates.summary : issue.summary,
-        description: updates.description !== undefined ? updates.description : (issue.description || ''),
-        type: updates.type !== undefined ? updates.type : issue.type,
-        priority: updates.priority !== undefined ? updates.priority : issue.priority,
-        assigneeId:
-          updates.assigneeId !== undefined
-            ? updates.assigneeId
-            : issue.assignee?.id
-            ? Number(issue.assignee.id)
-            : null,
-        dueDate: updates.dueDate !== undefined ? updates.dueDate : (issue.dueDate || null),
-        environment: updates.environment !== undefined ? updates.environment : (issue.environment || null),
-        estimates: updates.estimates !== undefined ? updates.estimates : (issue.estimates || null),
-        version: issue.version,
-      };
-
-      if (updates.assigneeId === null) {
-        payload.clearAssignee = true;
-      }
-      if (updates.dueDate === null) {
-        payload.clearDueDate = true;
-      }
-      if (updates.customFields !== undefined) {
-        payload.customFields = updates.customFields;
-      }
-
-      await issueService.updateIssue(issue.key, payload, issue.version);
+      await executeInlineIssueUpdate({
+        issueKey: issue.key,
+        currentVersion: issue.version,
+        updates,
+        updateFn: (key, payload, version) => issueService.updateIssue(key, payload, version),
+        fetchLatestFn: async (key) => {
+          const latestRes = await issueService.getIssue(key);
+          return latestRes?.data as Issue | undefined;
+        },
+      });
       await fetchDetail();
     } catch (err: any) {
       setErrorMessage(err?.response?.data?.message || err?.message || 'Cập nhật công việc thất bại');
@@ -415,6 +398,7 @@ export default function IssueDetailPage({
                 <div className="relative inline-block">
                   <button
                     type="button"
+                    disabled={actionLoading}
                     onClick={() => setShowTypeMenu((s) => !s)}
                     className="text-xs font-medium px-2 py-0.5 rounded border border-[#E5E5E7] flex items-center gap-1.5 hover:border-[#1A1A1A] bg-[#F7F7F8]"
                   >
