@@ -31,7 +31,7 @@ export function getMissingCreateIssueFieldError(
     return 'Vui lòng chọn loại công việc.';
   }
   if (!form.summary || !form.summary.trim()) {
-    return 'Vui lòng nhập tóm tắt công việc.';
+    return 'Vui lòng nhập tên công việc.';
   }
   if (!String(form.assigneeId ?? '').trim()) {
     return 'Vui lòng chọn người thực hiện.';

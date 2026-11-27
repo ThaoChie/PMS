@@ -265,7 +265,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
             </div>
 
             <div className="mb-4">
-              <Field label="Tóm tắt công việc" required>
+              <Field label="Tên công việc" required>
                 <input
                   id="create-issue-summary"
                   value={form.summary}
