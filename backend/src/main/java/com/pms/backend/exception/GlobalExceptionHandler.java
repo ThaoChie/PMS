@@ -172,6 +172,9 @@ public class GlobalExceptionHandler {
         if (lower.contains("null value") || lower.contains("not-null")) {
             return "Thiếu thông tin bắt buộc. Vui lòng kiểm tra lại dữ liệu nhập.";
         }
+        if (lower.contains("check constraint") || constraint.contains("_check")) {
+            return "Giá trị không hợp lệ theo ràng buộc dữ liệu.";
+        }
         if (lower.contains("foreign key") || lower.contains("violates foreign key")) {
             return "Dữ liệu liên quan không tồn tại hoặc đang được sử dụng ở nơi khác.";
         }
