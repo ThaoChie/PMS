@@ -211,13 +211,8 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
     const prevStatus = draggedIssue.status;
     const issueKey = draggedIssue.key;
 
-    // Optimistic UI update
-    setIssues((prev) =>
-      prev.map((i) => (i.key === issueKey ? { ...i, status: targetStatusName as IssueStatus } : i))
-    );
-
     try {
-      // Find available transitions for this issue
+      // Find available transitions for this issue first
       const transRes = await workflowService.getTransitions(issueKey);
       const availableTrans: any[] = transRes?.data || [];
 
@@ -240,10 +235,7 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
 
       const reqField = (targetTrans.requiredFields || targetTrans.requiresField || '').trim();
       if (reqField) {
-        // Hoàn lại trạng thái trên giao diện trước khi mở popup nhập trường bắt buộc
-        setIssues((prev) =>
-          prev.map((i) => (i.key === issueKey ? { ...i, status: prevStatus } : i))
-        );
+        // Không đổi trạng thái trước khi người dùng xác nhận nhập trường bắt buộc
         setPendingBoardTransition({
           issueKey,
           targetTrans,
@@ -252,6 +244,11 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
         });
         return;
       }
+
+      // Optimistic UI update khi không có trường bắt buộc
+      setIssues((prev) =>
+        prev.map((i) => (i.key === issueKey ? { ...i, status: targetStatusName as IssueStatus } : i))
+      );
 
       await workflowService.executeTransition(issueKey, String(targetTrans.id));
       toast.success(`Đã chuyển trạng thái ${issueKey} sang "${targetStatusName}"`);
@@ -430,7 +427,17 @@ export default function Board({ role, onSelectIssue, onNavigate }: BoardProps) {
             to: pendingBoardTransition.toStatus,
           }}
           canSendFeedbackEmail={isPmOrAdmin}
-          onClose={() => setPendingBoardTransition(null)}
+          onClose={() => {
+            const revertKey = pendingBoardTransition?.issueKey;
+            const revertStatus = pendingBoardTransition?.fromStatus;
+            setPendingBoardTransition(null);
+            if (revertKey && revertStatus) {
+              setIssues((prev) =>
+                prev.map((i) => (i.key === revertKey ? { ...i, status: revertStatus as IssueStatus } : i))
+              );
+            }
+            loadData();
+          }}
           onExecute={async (fields, comment, sendEmail) => {
             const { issueKey, targetTrans, toStatus } = pendingBoardTransition;
             setPendingBoardTransition(null);
