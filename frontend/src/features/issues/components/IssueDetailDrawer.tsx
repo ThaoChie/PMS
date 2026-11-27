@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, ChevronDown, AlertTriangle, Share2, Trash2, RefreshCw, Pencil, Copy, Check, ExternalLink, GitFork } from 'lucide-react';
+import { X, ChevronDown, AlertTriangle, Share2, Trash2, RefreshCw, Pencil, Copy, Check, ExternalLink, GitFork, History, MessageSquare } from 'lucide-react';
 import { issueService } from '../../../services/issueService';
 import { workflowService } from '../../../services/workflowService';
 import { memberService } from '../../../services/memberService';
@@ -15,6 +15,7 @@ import ShareIssueModal from './ShareIssueModal';
 import CommentSection from '../../comments/components/CommentSection';
 import WorklogSection from '../../worklog/components/WorklogSection';
 import TransitionModal from '../../workflow/components/TransitionModal';
+import IssueHistoryTimeline from './IssueHistoryTimeline';
 
 const STATUS_BADGE: Record<string, string> = {
   'To Do': 'text-gray-700 bg-gray-100 border-gray-300',
@@ -53,6 +54,7 @@ export default function IssueDetailDrawer({
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [activityTab, setActivityTab] = useState<'comments' | 'history'>('comments');
 
   const isSubtask = issue?.type?.toUpperCase() === 'SUB_TASK' || issue?.type === 'Sub-task' || !!issue?.parentId;
   const isPmOrAdmin = role === 'pm' || role === 'admin';
@@ -876,13 +878,46 @@ export default function IssueDetailDrawer({
               }}
             />
 
-            {/* Bình luận & @mention (UC007) */}
-            <CommentSection
-              issueKey={issue.key}
-              projectId={issue.projectId}
-              role={role}
-              onChanged={() => onUpdated?.()}
-            />
+            {/* Tab switch for Activity & Comments */}
+            <div>
+              <div className="flex items-center gap-4 border-b border-[#E5E5E7] mb-3">
+                <button
+                  type="button"
+                  onClick={() => setActivityTab('comments')}
+                  className={`pb-2 text-xs font-semibold flex items-center gap-1.5 transition-colors border-b-2 -mb-px ${
+                    activityTab === 'comments'
+                      ? 'border-[#1A1A1A] text-[#1A1A1A]'
+                      : 'border-transparent text-[#9B9B9F] hover:text-[#1A1A1A]'
+                  }`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Bình luận {issue.comments ? `(${issue.comments.length})` : ''}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivityTab('history')}
+                  className={`pb-2 text-xs font-semibold flex items-center gap-1.5 transition-colors border-b-2 -mb-px ${
+                    activityTab === 'history'
+                      ? 'border-[#1A1A1A] text-[#1A1A1A]'
+                      : 'border-transparent text-[#9B9B9F] hover:text-[#1A1A1A]'
+                  }`}
+                >
+                  <History className="w-3.5 h-3.5" />
+                  Lịch sử / Hoạt động
+                </button>
+              </div>
+
+              {activityTab === 'comments' ? (
+                <CommentSection
+                  issueKey={issue.key}
+                  projectId={issue.projectId}
+                  role={role}
+                  onChanged={() => onUpdated?.()}
+                />
+              ) : (
+                <IssueHistoryTimeline issueKey={issue.key} refreshTrigger={issue.version} />
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -12,6 +12,8 @@ import {
   AlertCircle,
   FileText,
   GitFork,
+  History,
+  MessageSquare,
 } from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
 import { issueService } from '../../../services/issueService';
@@ -28,6 +30,7 @@ import ShareIssueModal from '../components/ShareIssueModal';
 import CommentSection from '../../comments/components/CommentSection';
 import WorklogSection from '../../worklog/components/WorklogSection';
 import TransitionModal from '../../workflow/components/TransitionModal';
+import IssueHistoryTimeline from '../components/IssueHistoryTimeline';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { toast } from '../../../store/toastStore';
 
@@ -59,6 +62,7 @@ export default function IssueDetailPage({
   const [showTypeMenu, setShowTypeMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [activityTab, setActivityTab] = useState<'comments' | 'history'>('comments');
 
   const isSubtask = issue?.type?.toUpperCase() === 'SUB_TASK' || issue?.type === 'Sub-task' || !!issue?.parentId;
   const isPmOrAdmin = role === 'pm' || role === 'admin';
@@ -601,13 +605,44 @@ export default function IssueDetailPage({
               />
             </div>
 
-            {/* Bình luận & @mention (UC007) */}
+            {/* Hoạt động & Bình luận (UC007) */}
             <div className="bg-white border border-[#E5E5E7] rounded-xl p-6 shadow-sm">
-              <CommentSection
-                issueKey={issue.key}
-                projectId={issue.projectId}
-                role={role}
-              />
+              <div className="flex items-center gap-4 border-b border-[#E5E5E7] mb-4">
+                <button
+                  type="button"
+                  onClick={() => setActivityTab('comments')}
+                  className={`pb-2.5 text-sm font-semibold flex items-center gap-2 transition-colors border-b-2 -mb-px ${
+                    activityTab === 'comments'
+                      ? 'border-[#1A1A1A] text-[#1A1A1A]'
+                      : 'border-transparent text-[#9B9B9F] hover:text-[#1A1A1A]'
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Bình luận {issue.comments ? `(${issue.comments.length})` : ''}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivityTab('history')}
+                  className={`pb-2.5 text-sm font-semibold flex items-center gap-2 transition-colors border-b-2 -mb-px ${
+                    activityTab === 'history'
+                      ? 'border-[#1A1A1A] text-[#1A1A1A]'
+                      : 'border-transparent text-[#9B9B9F] hover:text-[#1A1A1A]'
+                  }`}
+                >
+                  <History className="w-4 h-4" />
+                  Lịch sử / Hoạt động
+                </button>
+              </div>
+
+              {activityTab === 'comments' ? (
+                <CommentSection
+                  issueKey={issue.key}
+                  projectId={issue.projectId}
+                  role={role}
+                />
+              ) : (
+                <IssueHistoryTimeline issueKey={issue.key} refreshTrigger={issue.version} />
+              )}
             </div>
           </div>
 

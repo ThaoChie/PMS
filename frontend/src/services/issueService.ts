@@ -162,4 +162,8 @@ export const issueService = {
   ): Promise<ApiResponse<void>> {
     return axiosClient.post(`/issues/${issueKey}/share`, { recipients, note });
   },
+
+  async getIssueHistory(issueKey: string): Promise<ApiResponse<any[]>> {
+    return axiosClient.get(`/issues/${issueKey}/history`);
+  },
 };

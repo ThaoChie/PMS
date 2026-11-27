@@ -305,6 +305,15 @@ export default function AttributesPanel({
         )}
       </AttrRow>
 
+      {/* Resolution */}
+      {issue.resolution && (
+        <AttrRow label="Kết quả xử lý">
+          <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
+            {issue.resolution}
+          </span>
+        </AttrRow>
+      )}
+
       {/* Custom Fields */}
       {issue.customFields && issue.customFields.map((cf) => {
         const fieldName = cf.name || cf.fieldName || cf.fieldKey;
