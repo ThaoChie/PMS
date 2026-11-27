@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   Bell,
@@ -45,7 +45,20 @@ export default function Topbar({
 }: TopbarProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
   const { markAsRead, markAllAsRead } = useNotificationStore();
+
+  useEffect(() => {
+    if (!notifOpen && !userDropdownOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setNotifOpen(false);
+        setUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [notifOpen, userDropdownOpen]);
   // Nhịp đồng hồ 30 giây: nhãn "x phút trước" trong chuông thông báo tự chạy
   const now = useNow(30000);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
@@ -63,7 +76,10 @@ export default function Topbar({
 
   return (
     <header
-      className="h-14 border-b border-[#E5E5E7] flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-5 bg-white shrink-0 w-full relative z-20"
+      ref={headerRef}
+      className={`h-14 border-b border-[#E5E5E7] flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-5 bg-white shrink-0 w-full relative ${
+        notifOpen || userDropdownOpen ? 'z-[60]' : 'z-30'
+      }`}
       onClick={(e) => {
         e.stopPropagation();
         setNotifOpen(false);
