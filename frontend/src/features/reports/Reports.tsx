@@ -56,8 +56,8 @@ export default function Reports({ role }: ReportsProps) {
               ) : activeTab === 'productivity' ? (
                 <ExportButton
                   key="export-productivity"
-                  formats={['xlsx']}
-                  onExport={() => reportService.exportProductivityReport(Number(currentProject.id), productivityFilter)}
+                  formats={['xlsx', 'csv']}
+                  onExport={(format) => reportService.exportProductivityReport(Number(currentProject.id), productivityFilter, format)}
                 />
               ) : (
                 <ExportButton key="export-progress" projectId={currentProject.id} criteria={{ fromDate: from, toDate: to }} />

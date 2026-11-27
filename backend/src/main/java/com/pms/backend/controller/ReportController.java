@@ -86,14 +86,19 @@ public class ReportController {
     @PreAuthorize("@projectSecurity.isPmOrAdmin(#projectId)")
     public ResponseEntity<byte[]> exportProductivityReport(
             @PathVariable Long projectId,
-            @ModelAttribute ProductivityFilterRequest filter) {
+            @ModelAttribute ProductivityFilterRequest filter,
+            @RequestParam(defaultValue = "xlsx") String format) {
         User currentUser = getCurrentUser();
-        byte[] data = reportService.exportProductivityReport(projectId, filter, currentUser);
-        String filename = "productivity-report-" + projectId + "-" + LocalDate.now() + ".xlsx";
+        String f = "csv".equalsIgnoreCase(format) ? "csv" : "xlsx";
+        byte[] data = reportService.exportProductivityReport(projectId, filter, currentUser, f);
+        String filename = "productivity-report-" + projectId + "-" + LocalDate.now() + "." + f;
+        MediaType type = MediaType.parseMediaType("csv".equals(f)
+                ? "text/csv;charset=utf-8"
+                : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(type)
                 .body(data);
     }
 
