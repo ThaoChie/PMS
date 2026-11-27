@@ -6,7 +6,8 @@ import { mapUserResponseToUser } from '../../../store/authStore';
 import type { Issue, Project } from '../../../types';
 
 const TYPE_BADGE: Record<string, string> = {
-  Story: 'text-[#6B6B70] bg-[#F7F7F8]',
+  Story: 'text-[#059669] bg-[#ECFDF5]',
+  STORY: 'text-[#059669] bg-[#ECFDF5]',
   Bug: 'text-[#E53E3E] bg-[#FDECEC]',
   BUG: 'text-[#E53E3E] bg-[#FDECEC]',
   Task: 'text-[#6B6B70] bg-[#F7F7F8]',

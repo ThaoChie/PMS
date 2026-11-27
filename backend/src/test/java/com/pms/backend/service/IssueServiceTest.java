@@ -326,4 +326,22 @@ public class IssueServiceTest {
         assertNotNull(res.getAssignee());
         assertEquals(10L, res.getAssignee().getId());
     }
+
+    @Test
+    public void testConvertToIssue_SubtaskToValidStandaloneTypes_Success() {
+        Issue subtask = new Issue();
+        subtask.setId(50L);
+        subtask.setIssueKey("TEST-50");
+        subtask.setType(IssueType.SUB_TASK);
+        subtask.setProject(project);
+        subtask.setParent(new Issue());
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-50")).thenReturn(Optional.of(subtask));
+
+        issueService.convertToIssue("TEST-50", IssueType.STORY, user);
+
+        assertEquals(IssueType.STORY, subtask.getType());
+        assertNull(subtask.getParent());
+        verify(issueRepository, times(1)).save(subtask);
+    }
 }

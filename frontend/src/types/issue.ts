@@ -1,6 +1,6 @@
 import type { User } from './auth';
 
-export type IssueType = 'Story' | 'Bug' | 'Task' | 'Epic' | 'Sub-task' | 'EPIC' | 'TASK' | 'BUG' | 'SUB_TASK';
+export type IssueType = 'Story' | 'Bug' | 'Task' | 'Epic' | 'Sub-task' | 'EPIC' | 'TASK' | 'BUG' | 'STORY' | 'SUB_TASK';
 export type IssueStatus = 'To Do' | 'In Progress' | 'Pending Approval' | 'Done';
 export type Priority = 'Critical' | 'High' | 'Medium' | 'Low' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'HIGHEST' | 'LOWEST';
 

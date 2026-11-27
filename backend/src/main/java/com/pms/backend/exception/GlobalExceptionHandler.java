@@ -12,10 +12,13 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -173,6 +176,23 @@ public class GlobalExceptionHandler {
             return "Dữ liệu liên quan không tồn tại hoặc đang được sử dụng ở nơi khác.";
         }
         return "Thao tác xung đột với dữ liệu hiện có. Vui lòng tải lại trang và thử lại.";
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        Class<?> requiredType = ex.getRequiredType();
+        if (requiredType != null && requiredType.isEnum()) {
+            String allowed = Arrays.stream(requiredType.getEnumConstants())
+                    .map(Object::toString)
+                    .collect(Collectors.joining(", "));
+            String message = String.format(
+                    "Giá trị '%s' không hợp lệ cho tham số '%s'. Các giá trị hợp lệ: %s.",
+                    ex.getValue(), ex.getName(), allowed);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(message));
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(String.format("Tham số '%s' không đúng định dạng.", ex.getName())));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -255,6 +255,7 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   required
                 >
                   <option value="TASK">Task (Tác vụ)</option>
+                  <option value="STORY">Story (Yêu cầu tính năng)</option>
                   <option value="BUG">Bug (Lỗi phần mềm)</option>
                   <option value="EPIC">Epic (Tính năng lớn)</option>
                   <option value="SUB_TASK">Sub-task (Tác vụ con)</option>

@@ -63,8 +63,17 @@ export enum ExportFormat {
 export const ISSUE_TYPE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
   { value: 'EPIC', label: 'Epic (Tính năng lớn)' },
   { value: 'TASK', label: 'Task (Tác vụ)' },
+  { value: 'STORY', label: 'Story (Yêu cầu tính năng)' },
   { value: 'BUG', label: 'Bug (Lỗi)' },
   { value: 'SUB_TASK', label: 'Sub-task (Tác vụ con)' },
+];
+
+/** Các loại công việc độc lập hợp lệ theo enum backend (EPIC, TASK, STORY, BUG) */
+export const STANDALONE_ISSUE_TYPE_OPTIONS: ReadonlyArray<{ value: 'TASK' | 'STORY' | 'BUG' | 'EPIC'; label: string }> = [
+  { value: 'TASK', label: 'Task (Công việc tiêu chuẩn)' },
+  { value: 'STORY', label: 'Story (Yêu cầu tính năng)' },
+  { value: 'BUG', label: 'Bug (Lỗi phần mềm)' },
+  { value: 'EPIC', label: 'Epic (Tính năng lớn)' },
 ];
 
 export const PRIORITY_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [

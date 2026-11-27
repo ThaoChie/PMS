@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, GitFork, AlertCircle, Loader2 } from 'lucide-react';
 import { issueService } from '../../../services/issueService';
 import { toast } from '../../../store/toastStore';
+import { STANDALONE_ISSUE_TYPE_OPTIONS } from '../../../constants/enums';
 
 interface ConvertIssueModalProps {
   issueKey: string;
@@ -17,7 +18,7 @@ export default function ConvertIssueModal({
   onSuccess,
 }: ConvertIssueModalProps) {
   const [parentKey, setParentKey] = useState('');
-  const [targetType, setTargetType] = useState('Task');
+  const [targetType, setTargetType] = useState('TASK');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,9 +101,11 @@ export default function ConvertIssueModal({
                 onChange={(e) => setTargetType(e.target.value)}
                 className="w-full px-3 py-2 bg-white border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
               >
-                <option value="Task">Task (Công việc tiêu chuẩn)</option>
-                <option value="Story">Story (Yêu cầu tính năng)</option>
-                <option value="Bug">Bug (Lỗi phần mềm)</option>
+                {STANDALONE_ISSUE_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
               <p className="text-[11px] text-[#6B6B70] mt-2">
                 Công việc này sẽ không còn trực thuộc công việc cha hiện tại và xuất hiện trực tiếp trên bảng Kanban.
