@@ -32,4 +32,22 @@ describe('boardTransition', () => {
     expect(findTransitionForTargetStatus(transitions, 'Done')).toBeUndefined();
     expect(findTransitionForTargetStatus(transitions, 'In Progress')?.id).toBe(30);
   });
+
+  it('identifies transition with requiredFields', () => {
+    const transitions: (TransitionOptionLike & { requiredFields?: string })[] = [
+      { id: 40, name: 'Submit for Review', toStatusName: 'Pending Approval', requiredFields: 'Link bằng chứng' },
+    ];
+
+    const matched = findTransitionForTargetStatus(transitions, 'Pending Approval');
+    expect(matched?.requiredFields).toBe('Link bằng chứng');
+  });
+
+  it('identifies transition without requiredFields for direct execution', () => {
+    const transitions: (TransitionOptionLike & { requiredFields?: string })[] = [
+      { id: 41, name: 'Start Work', toStatusName: 'In Progress' },
+    ];
+
+    const matched = findTransitionForTargetStatus(transitions, 'In Progress');
+    expect((matched as any)?.requiredFields).toBeUndefined();
+  });
 });
