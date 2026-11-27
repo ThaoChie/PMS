@@ -281,7 +281,7 @@ export default function IssueDetailPage({
   return (
     <div className="h-full overflow-y-auto bg-[#F7F7F8]">
       {/* Top Bar / Breadcrumb */}
-      <div className="bg-white border-b border-[#E5E5E7] px-8 py-3.5 sticky top-0 z-20">
+      <div className="bg-white border-b border-[#E5E5E7] px-8 py-3.5 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             {onBack && (
@@ -654,6 +654,7 @@ export default function IssueDetailPage({
             from: issue.status,
             to: pendingTransition.toStatusName || pendingTransition.to || pendingTransition.toStatus,
           }}
+          canSendFeedbackEmail={isPmOrAdmin}
           onClose={() => setPendingTransition(null)}
           onExecute={(fields, comment, sendEmail) => {
             const trans = pendingTransition;
