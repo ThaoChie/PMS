@@ -953,6 +953,7 @@ export default function IssueDetailDrawer({
             from: issue.status,
             to: pendingTransition.toStatusName || pendingTransition.to || pendingTransition.toStatus,
           }}
+          canSendFeedbackEmail={isPmOrAdmin}
           onClose={() => setPendingTransition(null)}
           onExecute={(fields, comment, sendEmail) => {
             const trans = pendingTransition;

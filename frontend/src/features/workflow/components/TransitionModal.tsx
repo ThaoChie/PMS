@@ -5,8 +5,18 @@ import type { WorkflowTransition } from '../../../types';
 interface TransitionModalProps {
   isOpen: boolean;
   transition: WorkflowTransition | any;
+  canSendFeedbackEmail?: boolean;
   onClose: () => void;
   onExecute: (fields?: Record<string, any>, comment?: string, sendEmail?: boolean) => void;
+}
+
+export function canShowApprovalFeedbackEmail(
+  transition: any,
+  canSendFeedbackEmail?: boolean,
+): boolean {
+  if (!canSendFeedbackEmail || !transition) return false;
+  const transType = String(transition.type || '').toUpperCase();
+  return transType === 'APPROVE' || transType === 'REJECT';
 }
 
 const RESOLUTION_OPTIONS = [
@@ -22,6 +32,7 @@ const RESOLUTION_OPTIONS = [
 export default function TransitionModal({
   isOpen,
   transition,
+  canSendFeedbackEmail = false,
   onClose,
   onExecute,
 }: TransitionModalProps) {
@@ -41,6 +52,7 @@ export default function TransitionModal({
 
   const fromName = transition.from || 'Hiện tại';
   const toName = transition.to || transition.toStatusName || 'Mới';
+  const showSendEmailOption = canShowApprovalFeedbackEmail(transition, canSendFeedbackEmail);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -66,7 +78,11 @@ export default function TransitionModal({
       }
     }
 
-    onExecute(Object.keys(fields).length > 0 ? fields : undefined, comment.trim() || undefined, sendEmail);
+    onExecute(
+      Object.keys(fields).length > 0 ? fields : undefined,
+      comment.trim() || undefined,
+      showSendEmailOption ? sendEmail : false,
+    );
     onClose();
   }
 
@@ -173,21 +189,23 @@ export default function TransitionModal({
             />
           </div>
 
-          <div className="flex items-center gap-2 pt-0.5">
-            <input
-              type="checkbox"
-              id="sendEmailToAssignee"
-              checked={sendEmail}
-              onChange={(e) => setSendEmail(e.target.checked)}
-              className="w-4 h-4 text-[#1A1A1A] border-[#E5E5E7] rounded focus:ring-0 cursor-pointer"
-            />
-            <label
-              htmlFor="sendEmailToAssignee"
-              className="text-xs text-[#1A1A1A] font-medium cursor-pointer select-none"
-            >
-              Gửi email thông báo cho người thực hiện task này
-            </label>
-          </div>
+          {showSendEmailOption && (
+            <div className="flex items-center gap-2 pt-0.5">
+              <input
+                type="checkbox"
+                id="sendEmailToAssignee"
+                checked={sendEmail}
+                onChange={(e) => setSendEmail(e.target.checked)}
+                className="w-4 h-4 text-[#1A1A1A] border-[#E5E5E7] rounded focus:ring-0 cursor-pointer"
+              />
+              <label
+                htmlFor="sendEmailToAssignee"
+                className="text-xs text-[#1A1A1A] font-medium cursor-pointer select-none"
+              >
+                Gửi email thông báo cho người thực hiện task này
+              </label>
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#F0F0F1]">
             <button

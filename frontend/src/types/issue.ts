@@ -76,6 +76,7 @@ export interface Issue {
   estimates?: string;
   dueDate?: string;
   environment?: string;
+  resolution?: string;
   attachments: Array<IssueAttachment | string>;
   subtasks: SubTask[];
   linkedIssues: LinkedIssue[];
@@ -119,4 +120,20 @@ export interface CustomFieldValue {
 }
 
 export type QuickFilter = 'my-issues' | 'recently-updated' | 'reported-by-me' | 'critical' | string;
+
+export interface IssueStatusHistoryItem {
+  id: number | string;
+  fromStatus: string | null;
+  toStatus: string;
+  changedBy?: {
+    id: string;
+    fullName?: string;
+    name?: string;
+    email?: string;
+    avatarUrl?: string;
+    initials?: string;
+  };
+  comment?: string | null;
+  changedAt: string;
+}
 
