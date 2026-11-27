@@ -17,6 +17,7 @@ import CommentSection from '../../comments/components/CommentSection';
 import WorklogSection from '../../worklog/components/WorklogSection';
 import TransitionModal from '../../workflow/components/TransitionModal';
 import IssueHistoryTimeline from './IssueHistoryTimeline';
+import { buildIssueDetailPath } from '../../../constants/routes';
 
 const STATUS_BADGE: Record<string, string> = {
   'To Do': 'text-gray-700 bg-gray-100 border-gray-300',
@@ -117,6 +118,8 @@ export default function IssueDetailDrawer({
         linkedIssues: raw.linkedIssues || [],
         comments: raw.comments || [],
         projectId: String(raw.projectId || ''),
+        projectKey: raw.projectKey,
+        projectName: raw.projectName,
         createdAt: raw.createdAt || '',
         updatedAt: raw.updatedAt || '',
         version: raw.version,
@@ -465,7 +468,8 @@ export default function IssueDetailDrawer({
             <button
               type="button"
               onClick={() => {
-                const url = `${window.location.origin}/issues/${issue.key}`;
+                const path = buildIssueDetailPath(issue.key, issue.projectId || currentProject?.id);
+                const url = `${window.location.origin}${path}`;
                 navigator.clipboard.writeText(url);
                 setCopiedLink(true);
                 setTimeout(() => setCopiedLink(false), 2000);
@@ -482,7 +486,7 @@ export default function IssueDetailDrawer({
             <button
               type="button"
               onClick={() => {
-                window.open(`/issues/${issue.key}`, '_blank');
+                window.open(buildIssueDetailPath(issue.key, issue.projectId || currentProject?.id), '_blank');
               }}
               className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#6B6B70] hover:text-[#1A1A1A] rounded-lg hover:bg-[#F7F7F8] transition-colors"
               title="Mở trong trang riêng"

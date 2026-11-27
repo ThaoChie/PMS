@@ -27,6 +27,7 @@ public class IssueResponse {
     private UserResponse reporter;
     private Long projectId;
     private String projectKey;
+    private String projectName;
     private List<String> labels = new ArrayList<>();
     private String estimates;
     private Integer originalEstimateMin;
@@ -72,6 +73,7 @@ public class IssueResponse {
         if (issue.getProject() != null) {
             res.setProjectId(issue.getProject().getId());
             res.setProjectKey(issue.getProject().getProjectKey());
+            res.setProjectName(issue.getProject().getName());
         }
 
         if (issue.getLabels() != null) {
@@ -160,6 +162,9 @@ public class IssueResponse {
 
     public String getProjectKey() { return projectKey; }
     public void setProjectKey(String projectKey) { this.projectKey = projectKey; }
+
+    public String getProjectName() { return projectName; }
+    public void setProjectName(String projectName) { this.projectName = projectName; }
 
     public List<String> getLabels() { return labels; }
     public void setLabels(List<String> labels) { this.labels = labels; }

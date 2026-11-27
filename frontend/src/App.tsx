@@ -30,6 +30,7 @@ import ToastContainer from './components/common/ToastContainer';
 import { useAuthStore } from './store/authStore';
 import { useProjectStore } from './store/projectStore';
 import { notifyIssueChanged } from './utils/issueEvents';
+import { buildIssueDetailPath } from './constants/routes';
 
 type AuthView = 'login' | 'register' | 'forgot-password' | 'reset-password';
 
@@ -340,13 +341,17 @@ export default function App() {
   }
 
   function handleSelectIssue(id: string) {
+    const pid = currentProject?.id || (projects.length > 0 ? projects[0].id : null);
     setSelectedIssueId(id);
-    window.history.pushState({}, '', `/issues/${id}`);
+    window.history.pushState({}, '', buildIssueDetailPath(id, pid));
   }
 
   function handleCloseIssue() {
     setSelectedIssueId(null);
-    if (window.location.pathname.startsWith('/issues/')) {
+    if (
+      window.location.pathname.startsWith('/issues/') ||
+      /^\/projects\/[^/]+\/issues\/[^/]+/.test(window.location.pathname)
+    ) {
       const pid = currentProject?.id || (projects.length > 0 ? projects[0].id : null);
       if (currentScreen === 'board') {
         window.history.pushState({}, '', pid ? `/projects/${pid}/board` : '/board');
@@ -606,7 +611,8 @@ export default function App() {
               setActiveIssueKey(null);
             }}
             onSelectSubtask={(key) => {
-              window.history.pushState({}, '', `/issues/${key}`);
+              const pid = currentProject?.id || (projects.length > 0 ? projects[0].id : null);
+              window.history.pushState({}, '', buildIssueDetailPath(key, pid));
               setActiveIssueKey(key);
             }}
           />

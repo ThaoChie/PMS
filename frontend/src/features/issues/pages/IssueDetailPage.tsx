@@ -33,6 +33,7 @@ import TransitionModal from '../../workflow/components/TransitionModal';
 import IssueHistoryTimeline from '../components/IssueHistoryTimeline';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { toast } from '../../../store/toastStore';
+import { buildIssueDetailPath, resolveIssueProject } from '../../../constants/routes';
 
 interface IssueDetailPageProps {
   issueKey: string;
@@ -47,7 +48,7 @@ export default function IssueDetailPage({
   onBack,
   onSelectSubtask,
 }: IssueDetailPageProps) {
-  const { currentProject } = useProjectStore();
+  const { projects, currentProject, setCurrentProject } = useProjectStore();
 
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,6 +125,8 @@ export default function IssueDetailPage({
         linkedIssues: raw.linkedIssues || [],
         comments: raw.comments || [],
         projectId: String(raw.projectId || ''),
+        projectKey: raw.projectKey,
+        projectName: raw.projectName,
         createdAt: raw.createdAt || '',
         updatedAt: raw.updatedAt || '',
         version: raw.version,
@@ -175,8 +178,26 @@ export default function IssueDetailPage({
     }
   }, [issue?.projectId]);
 
+  useEffect(() => {
+    const matched = resolveIssueProject(issue, projects);
+    if (!matched) return;
+    if (!currentProject || String(currentProject.id) !== String(matched.id)) {
+      setCurrentProject(matched);
+    }
+    if (typeof window !== 'undefined' && issue?.key) {
+      const expectedPath = buildIssueDetailPath(issue.key, matched.id);
+      const isIssuePath =
+        window.location.pathname.startsWith('/issues/') ||
+        /^\/projects\/[^/]+\/issues\/[^/]+/.test(window.location.pathname);
+      if (isIssuePath && window.location.pathname !== expectedPath) {
+        window.history.replaceState({}, '', expectedPath);
+      }
+    }
+  }, [issue, projects, currentProject, setCurrentProject]);
+
   function handleCopyLink() {
-    const url = `${window.location.origin}/issues/${issueKey}`;
+    const path = buildIssueDetailPath(issue?.key || issueKey, issue?.projectId || currentProject?.id);
+    const url = `${window.location.origin}${path}`;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
@@ -302,7 +323,11 @@ export default function IssueDetailPage({
               <span>Dự án</span>
               <span>/</span>
               <span className="font-medium text-[#1A1A1A]">
-                {currentProject?.name || issue.projectId}
+                {resolveIssueProject(issue, projects)?.name ||
+                  issue.projectName ||
+                  issue.projectKey ||
+                  currentProject?.name ||
+                  issue.projectId}
               </span>
               <span>/</span>
               <span className="font-mono font-semibold text-[#1A1A1A] bg-[#F0F0F1] px-1.5 py-0.5 rounded">

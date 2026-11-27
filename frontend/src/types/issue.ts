@@ -83,6 +83,8 @@ export interface Issue {
   linkedIssues: LinkedIssue[];
   comments: Comment[];
   projectId: string;
+  projectKey?: string;
+  projectName?: string;
   epicLink?: string;
   epicId?: number | string;
   parentId?: number | string;
