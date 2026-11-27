@@ -418,7 +418,7 @@ export default function WorkflowSettings() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-4 h-0.5 bg-[#E53E3E]" />
-                  <span>Cổng duyệt PM/QA</span>
+                  <span>Cổng duyệt (PM)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-4 border-t border-dashed border-[#C5C5C8]" />
@@ -544,7 +544,7 @@ export default function WorkflowSettings() {
                   Yêu cầu trường dữ liệu
                 </th>
                 <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-[#9B9B9F] uppercase tracking-wider">
-                  Cần phê duyệt PM/QA
+                  Cần phê duyệt (PM)
                 </th>
               </tr>
             </thead>
@@ -574,7 +574,7 @@ export default function WorkflowSettings() {
                     {t.isApprovalStep ? (
                       <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#FDECEC] text-[#E53E3E] border border-[#E53E3E]/20 inline-flex items-center gap-1">
                         <Shield className="w-3 h-3 text-[#E53E3E]" />
-                        Bắt buộc duyệt
+                        Duyệt PM
                       </span>
                     ) : (
                       <span className="text-xs text-[#9B9B9F]">Không</span>
@@ -603,7 +603,7 @@ export default function WorkflowSettings() {
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#1A1A1A] inline-block" /> Cho phép chuyển
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-2.5 h-2.5 rounded-sm bg-[#E53E3E] inline-block" /> Duyệt PM/QA
+                <span className="w-2.5 h-2.5 rounded-sm bg-[#E53E3E] inline-block" /> Duyệt PM
               </span>
             </div>
           </div>
@@ -682,7 +682,7 @@ export default function WorkflowSettings() {
                               {isAllowed && (
                                 <button
                                   type="button"
-                                  title={trans?.isApprovalStep ? "Bước duyệt bắt buộc: Cần phê duyệt PM/QA" : "Click để đặt làm bước duyệt bắt buộc PM/QA"}
+                                  title={trans?.isApprovalStep ? "Bước duyệt bắt buộc: Cần phê duyệt (PM)" : "Click để đặt làm bước duyệt bắt buộc (PM)"}
                                   onClick={() => handleToggleApprovalMatrix(fromName, toName)}
                                   className={`text-[9px] px-1.5 py-0.5 rounded font-medium transition-all flex items-center gap-0.5 ${
                                     trans?.isApprovalStep
@@ -691,7 +691,7 @@ export default function WorkflowSettings() {
                                   }`}
                                 >
                                   {trans?.isApprovalStep && <Shield className="w-2.5 h-2.5 text-[#E53E3E]" />}
-                                  {trans?.isApprovalStep ? 'Duyệt PM/QA' : 'Thường'}
+                                  {trans?.isApprovalStep ? 'Duyệt PM' : 'Thường'}
                                 </button>
                               )}
                             </div>

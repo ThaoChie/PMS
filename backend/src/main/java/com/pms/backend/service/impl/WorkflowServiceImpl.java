@@ -552,7 +552,7 @@ public class WorkflowServiceImpl implements IWorkflowService {
             if (isApprovalStatus) {
                 List<ProjectMember> approverMembers = memberRepository.findByProjectId(savedIssue.getProject().getId())
                         .stream()
-                        .filter(m -> m.getRole() == ProjectRole.PM || m.getRole() == ProjectRole.QA)
+                        .filter(m -> m.getRole() == ProjectRole.PM)
                         .collect(Collectors.toList());
 
                 List<User> approverUsers = new ArrayList<>(approverMembers.stream().map(ProjectMember::getUser).distinct().toList());

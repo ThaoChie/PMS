@@ -788,16 +788,24 @@ public class WorkflowServiceTest {
         pmMember.setUser(pmUser);
         pmMember.setRole(com.pms.backend.enu.ProjectRole.PM);
 
+        User qaUser = new User();
+        qaUser.setId(999L);
+        qaUser.setEmail("qa@example.com");
+        qaUser.setFullName("QA User");
+        com.pms.backend.model.ProjectMember qaMember = new com.pms.backend.model.ProjectMember();
+        qaMember.setUser(qaUser);
+        qaMember.setRole(com.pms.backend.enu.ProjectRole.QA);
+
         when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-13")).thenReturn(Optional.of(issue));
         when(transitionRepository.findById(103L)).thenReturn(Optional.of(submitTrans));
         when(issueRepository.save(any(Issue.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(memberRepository.findByProjectId(1L)).thenReturn(List.of(pmMember));
+        when(memberRepository.findByProjectId(1L)).thenReturn(List.of(pmMember, qaMember));
 
         workflowService.executeTransition("TEST-13", 103L, null, null, memberUser);
 
         verify(notificationService).notify(
                 eq(com.pms.backend.enu.NotificationType.APPROVAL_REQUESTED),
-                argThat(approvers -> approvers.contains(pmUser)),
+                argThat(approvers -> approvers.contains(pmUser) && !approvers.contains(qaUser)),
                 eq("Yêu cầu phê duyệt: TEST-13"),
                 contains("Pending Approval"),
                 any(),
