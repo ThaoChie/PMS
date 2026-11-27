@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Camera, Sparkles, X, Check } from 'lucide-react';
 import type { User } from '../../../types';
 import { PRESET_AVATARS } from '../constants/presetAvatars';
+import { resolveMediaUrl } from '../../../utils/mediaUrl';
 
 interface AvatarUploadProps {
   user: User;
@@ -12,10 +13,17 @@ interface AvatarUploadProps {
 export default function AvatarUpload({ user, onUpload, onSelectPreset }: AvatarUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPresetModal, setShowPresetModal] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const resolvedAvatarUrl = resolveMediaUrl(user.avatarUrl);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [resolvedAvatarUrl]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files[0] && onUpload) {
       onUpload(e.target.files[0]);
+      e.target.value = '';
     }
   }
 
@@ -37,10 +45,11 @@ export default function AvatarUpload({ user, onUpload, onSelectPreset }: AvatarU
           className="hidden"
         />
         <div className="relative">
-          {user.avatarUrl ? (
+          {resolvedAvatarUrl && !imgError ? (
             <img
-              src={user.avatarUrl}
+              src={resolvedAvatarUrl}
               alt={user.name}
+              onError={() => setImgError(true)}
               className="w-[72px] h-[72px] rounded-full object-cover border border-[#E5E5E7] shadow-xs"
             />
           ) : (

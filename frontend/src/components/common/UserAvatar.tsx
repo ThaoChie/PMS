@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { resolveMediaUrl } from '../../utils/mediaUrl';
 
 interface UserAvatarProps {
   initials: string;
@@ -23,12 +24,19 @@ export default function UserAvatar({
   className = '',
 }: UserAvatarProps) {
   const safeInitials = (initials || (name ? name.slice(0, 2) : 'U')).toUpperCase();
+  const resolvedUrl = resolveMediaUrl(avatarUrl);
+  const [imgError, setImgError] = useState(false);
 
-  if (avatarUrl) {
+  useEffect(() => {
+    setImgError(false);
+  }, [resolvedUrl]);
+
+  if (resolvedUrl && !imgError) {
     return (
       <img
-        src={avatarUrl}
+        src={resolvedUrl}
         alt={name || safeInitials}
+        onError={() => setImgError(true)}
         className={`${SIZES[size]} rounded-full object-cover shrink-0 select-none border border-[#E5E5E7] ${className}`}
       />
     );

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Paperclip, Upload, Trash2, Download, Eye, X, FileText, Image as ImageIcon, FileArchive, Loader2 } from 'lucide-react';
 import { issueService } from '../../../services/issueService';
 import { toast } from '../../../store/toastStore';
-import { API_BASE_URL } from '../../../api/axiosClient';
+import { resolveMediaUrl } from '../../../utils/mediaUrl';
 
 export interface AttachmentItem {
   id: string | number;
@@ -46,12 +46,7 @@ function getFileIcon(filename: string, contentType?: string) {
 }
 
 export function resolveAttachmentUrl(url?: string): string {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const base = API_BASE_URL.replace(/\/api\/?$/, '');
-  if (url.startsWith('/api/')) return `${base}${url}`;
-  if (url.startsWith('/')) return `${base}/api${url}`;
-  return `${base}/api/attachments/files/${url}`;
+  return resolveMediaUrl(url);
 }
 
 export default function AttachmentSection({

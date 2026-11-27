@@ -48,6 +48,7 @@ export default function Profile() {
   }
 
   async function handleAvatarUpload(file: File) {
+    setError(null);
     try {
       const res = await userService.updateAvatar(file);
       if (res?.data?.avatarUrl) {
@@ -59,6 +60,7 @@ export default function Profile() {
   }
 
   async function handleSelectPreset(presetUrl: string) {
+    setError(null);
     try {
       const res = await userService.updateMe({ avatarUrl: presetUrl });
       if (res?.data) {

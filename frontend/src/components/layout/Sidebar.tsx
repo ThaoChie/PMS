@@ -16,6 +16,7 @@ import type { Role, Screen, Project, User } from '../../types';
 import ProjectSwitcher from './ProjectSwitcher';
 import ProjectBadge from '../../features/projects/components/ProjectBadge';
 import UserMenu from './UserMenu';
+import UserAvatar from '../common/UserAvatar';
 import { useUIStore } from '../../store/uiStore';
 import ApprovalNavItem from '../../features/approvals/components/ApprovalNavItem';
 
@@ -216,17 +217,13 @@ export default function Sidebar({
             className="cursor-pointer hidden md:flex items-center justify-center min-w-[44px] min-h-[44px]"
             onClick={() => handleNavClick('profile')}
           >
-            {user.avatarUrl ? (
-              <img
-                src={user.avatarUrl}
-                alt={user.name}
-                className="w-8 h-8 rounded-full object-cover border border-[#E5E5E7]"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-xs font-semibold">
-                {user.initials || 'U'}
-              </div>
-            )}
+            <UserAvatar
+              initials={user.initials || 'U'}
+              name={user.name}
+              avatarUrl={user.avatarUrl}
+              size="md"
+              className="text-xs font-semibold"
+            />
           </div>
         )}
       </div>
