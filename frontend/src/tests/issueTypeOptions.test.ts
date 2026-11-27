@@ -2,9 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   ISSUE_TYPE_OPTIONS,
   STANDALONE_ISSUE_TYPE_OPTIONS,
+  PRIORITY_OPTIONS,
+  ISSUE_PRIORITY_OPTIONS,
 } from '../constants/enums';
 
 const BACKEND_ISSUE_TYPES = ['EPIC', 'TASK', 'BUG', 'STORY', 'SUB_TASK'];
+const BACKEND_PRIORITIES = ['HIGHEST', 'HIGH', 'MEDIUM', 'LOW', 'LOWEST'];
 
 describe('issueTypeOptions', () => {
   it('ISSUE_TYPE_OPTIONS only contains values matching backend IssueType enum including STORY', () => {
@@ -19,5 +22,11 @@ describe('issueTypeOptions', () => {
     expect(values).toEqual(['TASK', 'STORY', 'BUG', 'EPIC']);
     expect(values).toContain('STORY');
     expect(values).not.toContain('SUB_TASK');
+  });
+
+  it('ISSUE_PRIORITY_OPTIONS and PRIORITY_OPTIONS match backend Priority enum in exact order', () => {
+    expect(ISSUE_PRIORITY_OPTIONS.map((o) => o.value)).toEqual(BACKEND_PRIORITIES);
+    expect(PRIORITY_OPTIONS.map((o) => o.value)).toEqual(BACKEND_PRIORITIES);
+    expect(ISSUE_PRIORITY_OPTIONS.map((o) => o.value)).not.toContain('CRITICAL');
   });
 });

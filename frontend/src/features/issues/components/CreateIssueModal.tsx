@@ -6,6 +6,7 @@ import { issueService } from '../../../services/issueService';
 import { customFieldService } from '../../../services/customFieldService';
 import { toast } from '../../../store/toastStore';
 import type { IssueType, Priority, CustomField } from '../../../types';
+import { ISSUE_PRIORITY_OPTIONS } from '../../../constants/enums';
 import {
   getMissingCreateIssueFieldError,
   isCreateIssueFormValid,
@@ -295,11 +296,11 @@ export default function CreateIssueModal({ onClose, onSubmitSuccess }: CreateIss
                   onChange={(e) => set('priority', e.target.value)}
                   className={selectCls}
                 >
-                  <option value="HIGHEST">Khẩn cấp nhất (Highest)</option>
-                  <option value="HIGH">Cao (High)</option>
-                  <option value="MEDIUM">Trung bình (Medium)</option>
-                  <option value="LOW">Thấp (Low)</option>
-                  <option value="LOWEST">Rất thấp (Lowest)</option>
+                  {ISSUE_PRIORITY_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="Người thực hiện" required>

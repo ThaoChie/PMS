@@ -84,6 +84,18 @@ export const PRIORITY_OPTIONS: ReadonlyArray<{ value: string; label: string }> =
   { value: 'LOWEST', label: 'Rất thấp' },
 ];
 
+/** Danh sách mức độ ưu tiên đồng bộ giữa modal Tạo công việc và Chi tiết công việc */
+export const ISSUE_PRIORITY_OPTIONS: ReadonlyArray<{
+  value: 'HIGHEST' | 'HIGH' | 'MEDIUM' | 'LOW' | 'LOWEST';
+  label: string;
+}> = [
+  { value: 'HIGHEST', label: 'Khẩn cấp nhất (Highest)' },
+  { value: 'HIGH', label: 'Cao (High)' },
+  { value: 'MEDIUM', label: 'Trung bình (Medium)' },
+  { value: 'LOW', label: 'Thấp (Low)' },
+  { value: 'LOWEST', label: 'Rất thấp (Lowest)' },
+];
+
 /** Bộ lọc nhanh — giá trị khớp `quick` mà IssueSearchDao của backend hiểu được */
 export const QUICK_FILTER_OPTIONS: ReadonlyArray<{ id: string; label: string }> = [
   { id: 'MY_OPEN', label: 'Việc của tôi đang mở' },

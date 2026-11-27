@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Issue } from '../../../types';
+import { ISSUE_PRIORITY_OPTIONS } from '../../../constants/enums';
 import UserAvatar from '../../../components/common/UserAvatar';
 import PriorityTag from '../../../components/common/PriorityTag';
 import { Paperclip, Pencil, UserMinus, Calendar, Clock, Monitor } from 'lucide-react';
@@ -106,7 +107,7 @@ export default function AttributesPanel({
         {editingField === 'priority' && canEdit && onUpdateField ? (
           <select
             autoFocus
-            defaultValue={issue.priority}
+            defaultValue={String(issue.priority || 'MEDIUM').toUpperCase()}
             onChange={async (e) => {
               const val = e.target.value;
               setEditingField(null);
@@ -115,10 +116,11 @@ export default function AttributesPanel({
             onBlur={() => setEditingField(null)}
             className="w-full text-xs text-[#1A1A1A] bg-white border border-[#1A1A1A] rounded px-2 py-1 focus:outline-none"
           >
-            <option value="LOW">Thấp (Low)</option>
-            <option value="MEDIUM">Trung bình (Medium)</option>
-            <option value="HIGH">Cao (High)</option>
-            <option value="CRITICAL">Khẩn cấp (Critical)</option>
+            {ISSUE_PRIORITY_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         ) : (
           <button
