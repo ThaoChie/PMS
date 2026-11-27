@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { AlertCircle, AlertTriangle, CheckCircle2, Save, GitBranch, Shield, ArrowRight, Sliders } from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
 import { workflowService } from '../../../services/workflowService';
 import type { IssueStatus, StatusCategory, WorkflowStatus, WorkflowTransition } from '../../../types';
 import TransitionEditor from '../components/TransitionEditor';
 import StatusEditor from '../components/StatusEditor';
+import { computeWorkflowWarnings } from '../utils/workflowWarnings';
 
 const NODE_Y = 100;
 const NODE_W = 125;
@@ -68,12 +69,16 @@ export default function WorkflowSettings() {
 
   const [statuses, setStatuses] = useState<WorkflowStatus[]>([]);
   const [transitions, setTransitions] = useState<WorkflowTransition[]>([]);
-  const [warnings, setWarnings] = useState<string[]>([]);
   const [selectedTransition, setSelectedTransition] = useState<WorkflowTransition | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const warnings = useMemo(
+    () => computeWorkflowWarnings(statuses, transitions),
+    [statuses, transitions],
+  );
 
   const loadWorkflow = useCallback(async () => {
     if (!currentProject) return;
@@ -123,7 +128,6 @@ export default function WorkflowSettings() {
         }
       }
       setTransitions(dedupedTrans);
-      setWarnings(data?.warnings || []);
     } catch (err: any) {
       setErrorMessage(err?.response?.data?.message || err?.message || 'Không thể tải quy trình');
       // If error or network problem, still provide default workflow so the screen is not empty
@@ -312,11 +316,10 @@ export default function WorkflowSettings() {
         });
       }
 
-      const res = await workflowService.updateWorkflow(currentProject.id, {
+      await workflowService.updateWorkflow(currentProject.id, {
         statuses: payloadStatuses,
         transitions: payloadTransitions,
       });
-      setWarnings(res?.data?.warnings || []);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 4000);
       await loadWorkflow();
