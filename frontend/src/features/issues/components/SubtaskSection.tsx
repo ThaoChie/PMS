@@ -5,6 +5,10 @@ import UserAvatar from '../../../components/common/UserAvatar';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { issueService } from '../../../services/issueService';
 import { toast } from '../../../store/toastStore';
+import {
+  getMissingQuickSubtaskFieldError,
+  isQuickSubtaskFormValid,
+} from '../utils/createIssueValidation';
 
 interface SubtaskSectionProps {
   subtasks?: SubTask[];
@@ -30,10 +34,17 @@ export default function SubtaskSection({
   const [isAdding, setIsAdding] = useState(false);
   const [summary, setSummary] = useState('');
   const [assigneeId, setAssigneeId] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingDeleteSubtask, setPendingDeleteSubtask] = useState<SubTask | null>(null);
   const [deletingSubtask, setDeletingSubtask] = useState(false);
+
+  const isQuickSubtaskValid = isQuickSubtaskFormValid({
+    summary,
+    assigneeId,
+    dueDate,
+  });
 
   const isSubtask = issueType?.toUpperCase() === 'SUB_TASK' || issueType === 'Sub-task';
 
@@ -44,18 +55,27 @@ export default function SubtaskSection({
 
   async function handleCreate(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    const trimmed = summary.trim();
-    if (!trimmed) return;
+    const validationError = getMissingQuickSubtaskFieldError({
+      summary,
+      assigneeId,
+      dueDate,
+    });
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
     setLoading(true);
     setError(null);
     try {
       await issueService.createSubtask(issueKey, {
-        summary: trimmed,
-        assigneeId: assigneeId ? assigneeId : undefined,
+        summary: summary.trim(),
+        assigneeId,
+        dueDate,
       });
       setSummary('');
       setAssigneeId('');
+      setDueDate('');
       setIsAdding(false);
       onSubtaskCreated?.();
     } catch (err: any) {
@@ -145,24 +165,45 @@ export default function SubtaskSection({
           <input
             type="text"
             autoFocus
+            required
             value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            placeholder="Nhập tiêu đề công việc con..."
+            onChange={(e) => {
+              setSummary(e.target.value);
+              if (error) setError(null);
+            }}
+            placeholder="Nhập tiêu đề công việc con *..."
             className="w-full px-2.5 py-1.5 bg-white border border-[#E5E5E7] rounded-md text-xs text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none focus:border-[#1A1A1A]"
           />
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <select
               value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
+              required
+              aria-label="Người thực hiện"
+              onChange={(e) => {
+                setAssigneeId(e.target.value);
+                if (error) setError(null);
+              }}
               className="text-xs bg-white border border-[#E5E5E7] rounded-md px-2 py-1 text-[#1A1A1A] focus:outline-none"
             >
-              <option value="">-- Chưa phân công --</option>
+              <option value="">-- Người thực hiện * --</option>
               {projectMembers.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
                 </option>
               ))}
             </select>
+
+            <input
+              type="date"
+              required
+              aria-label="Hạn chót"
+              value={dueDate}
+              onChange={(e) => {
+                setDueDate(e.target.value);
+                if (error) setError(null);
+              }}
+              className="text-xs bg-white border border-[#E5E5E7] rounded-md px-2 py-1 text-[#1A1A1A] focus:outline-none"
+            />
 
             <div className="flex-1" />
 
@@ -171,6 +212,8 @@ export default function SubtaskSection({
               onClick={() => {
                 setIsAdding(false);
                 setSummary('');
+                setAssigneeId('');
+                setDueDate('');
                 setError(null);
               }}
               className="px-2.5 py-1 text-xs text-[#6B6B70] hover:text-[#1A1A1A] rounded-md hover:bg-[#F0F0F1] transition-colors"
@@ -179,8 +222,8 @@ export default function SubtaskSection({
             </button>
             <button
               type="submit"
-              disabled={loading || !summary.trim()}
-              className="flex items-center gap-1 px-3 py-1 bg-[#1A1A1A] hover:bg-[#333333] disabled:opacity-50 text-white text-xs font-medium rounded-md transition-colors shadow-sm"
+              disabled={loading || !isQuickSubtaskValid}
+              className="flex items-center gap-1 px-3 py-1 bg-[#1A1A1A] hover:bg-[#333333] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors shadow-sm"
             >
               {loading && <Loader2 className="w-3 h-3 animate-spin" />}
               <span>Tạo</span>

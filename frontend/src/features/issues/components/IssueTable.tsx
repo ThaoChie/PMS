@@ -4,6 +4,10 @@ import type { Issue, IssueType } from '../../../types';
 import UserAvatar from '../../../components/common/UserAvatar';
 import SoftTooltip from '../../../components/common/SoftTooltip';
 import { issueService } from '../../../services/issueService';
+import {
+  getMissingQuickSubtaskFieldError,
+  isQuickSubtaskFormValid,
+} from '../utils/createIssueValidation';
 
 const PRIORITY_BADGE: Record<string, string> = {
   Critical: 'text-[#E53E3E] bg-[#FDECEC]',
@@ -77,7 +81,15 @@ export default function IssueTable({
   const [subtaskSummary, setSubtaskSummary] = useState('');
   const [subtaskType, setSubtaskType] = useState<'Sub-task' | 'Bug' | 'Task'>('Sub-task');
   const [subtaskAssignee, setSubtaskAssignee] = useState('');
+  const [subtaskDueDate, setSubtaskDueDate] = useState('');
+  const [subtaskError, setSubtaskError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+
+  const isQuickSubtaskValid = isQuickSubtaskFormValid({
+    summary: subtaskSummary,
+    assigneeId: subtaskAssignee,
+    dueDate: subtaskDueDate,
+  });
 
   function SortIcon({ field }: { field: SortField }) {
     if (sortField !== field) return <ChevronUp className="w-3 h-3 text-[#D1D1D3]" />;
@@ -107,17 +119,31 @@ export default function IssueTable({
     setSubtaskSummary('');
     setSubtaskType('Sub-task');
     setSubtaskAssignee('');
+    setSubtaskDueDate('');
+    setSubtaskError(null);
   }
 
   async function handleCreateSubtask(parentIssue: Issue) {
-    if (!subtaskSummary.trim() || !projectId) return;
+    if (!projectId) return;
+    const validationError = getMissingQuickSubtaskFieldError({
+      summary: subtaskSummary,
+      assigneeId: subtaskAssignee,
+      dueDate: subtaskDueDate,
+    });
+    if (validationError) {
+      setSubtaskError(validationError);
+      return;
+    }
+
     setCreating(true);
+    setSubtaskError(null);
     try {
       const isEpic = parentIssue.type?.toUpperCase() === 'EPIC';
       if (subtaskType === 'Sub-task') {
         await issueService.createSubtask(parentIssue.key || parentIssue.id, {
           summary: subtaskSummary.trim(),
-          assigneeId: subtaskAssignee || undefined,
+          assigneeId: subtaskAssignee,
+          dueDate: subtaskDueDate,
         });
       } else {
         const typeToSend: IssueType = subtaskType === 'Bug' ? 'BUG' : 'TASK';
@@ -125,20 +151,25 @@ export default function IssueTable({
           summary: subtaskSummary.trim(),
           type: typeToSend,
           priority: 'MEDIUM',
-          assigneeId: subtaskAssignee || undefined,
+          assigneeId: subtaskAssignee,
+          dueDate: subtaskDueDate,
           epicId: isEpic ? Number(parentIssue.id) : undefined,
           parentId: !isEpic ? Number(parentIssue.id) : undefined,
         });
       }
 
       setSubtaskSummary('');
+      setSubtaskAssignee('');
+      setSubtaskDueDate('');
+      setSubtaskError(null);
       setAddingSubtaskFor(null);
       setExpandedKeys((prev) => new Set(prev).add(parentIssue.key || parentIssue.id));
       if (onRefresh) {
         onRefresh();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to create subtask', err);
+      setSubtaskError(err?.response?.data?.message || err?.message || 'Không thể tạo công việc con');
     } finally {
       setCreating(false);
     }
@@ -163,7 +194,7 @@ export default function IssueTable({
             }
           : undefined,
         priority: 'Medium',
-        dueDate: undefined,
+        dueDate: st.dueDate,
       });
     });
 
@@ -452,82 +483,133 @@ export default function IssueTable({
                           </div>
 
                           {/* Form Controls */}
-                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                            {/* Type selector */}
-                            <div className="sm:w-44 shrink-0">
-                              <select
-                                value={subtaskType}
-                                onChange={(e) => setSubtaskType(e.target.value as any)}
-                                className="w-full h-9 px-3 bg-white border border-[#E5E5E7] hover:border-[#C5C5C8] rounded-lg text-xs font-medium text-[#1A1A1A] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] transition-colors"
-                              >
-                                <option value="Sub-task">Sub-task (Tác vụ con)</option>
-                                <option value="Bug">Bug (Lỗi phát sinh)</option>
-                                {isEpic && <option value="Task">Task (Công việc)</option>}
-                              </select>
+                          {subtaskError && (
+                            <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+                              {subtaskError}
+                            </div>
+                          )}
+
+                          <div className="space-y-2.5">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5">
+                              {/* Type selector */}
+                              <div className="sm:w-44 shrink-0">
+                                <label className="block text-[11px] font-medium text-[#6B6B70] mb-1">
+                                  Loại công việc
+                                </label>
+                                <select
+                                  value={subtaskType}
+                                  onChange={(e) => setSubtaskType(e.target.value as any)}
+                                  className="w-full h-9 px-3 bg-white border border-[#E5E5E7] hover:border-[#C5C5C8] rounded-lg text-xs font-medium text-[#1A1A1A] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] transition-colors"
+                                >
+                                  <option value="Sub-task">Sub-task (Tác vụ con)</option>
+                                  <option value="Bug">Bug (Lỗi phát sinh)</option>
+                                  {isEpic && <option value="Task">Task (Công việc)</option>}
+                                </select>
+                              </div>
+
+                              {/* Summary Input */}
+                              <div className="flex-1 min-w-[240px]">
+                                <label className="block text-[11px] font-medium text-[#6B6B70] mb-1">
+                                  Tiêu đề công việc con <span className="text-[#E53E3E]">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  required
+                                  value={subtaskSummary}
+                                  onChange={(e) => {
+                                    setSubtaskSummary(e.target.value);
+                                    if (subtaskError) setSubtaskError(null);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleCreateSubtask(issue);
+                                    }
+                                    if (e.key === 'Escape') {
+                                      setAddingSubtaskFor(null);
+                                    }
+                                  }}
+                                  placeholder="Nhập tiêu đề công việc con..."
+                                  className="w-full h-9 px-3.5 bg-white border border-[#E5E5E7] hover:border-[#C5C5C8] rounded-lg text-xs text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] transition-colors"
+                                />
+                              </div>
                             </div>
 
-                            {/* Summary Input */}
-                            <div className="flex-1 min-w-[240px]">
-                              <input
-                                type="text"
-                                autoFocus
-                                value={subtaskSummary}
-                                onChange={(e) => setSubtaskSummary(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    handleCreateSubtask(issue);
-                                  }
-                                  if (e.key === 'Escape') {
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5">
+                              {/* Assignee selector */}
+                              <div className="sm:w-52 shrink-0">
+                                <label className="block text-[11px] font-medium text-[#6B6B70] mb-1">
+                                  Người thực hiện <span className="text-[#E53E3E]">*</span>
+                                </label>
+                                <select
+                                  value={subtaskAssignee}
+                                  required
+                                  aria-label="Người thực hiện"
+                                  onChange={(e) => {
+                                    setSubtaskAssignee(e.target.value);
+                                    if (subtaskError) setSubtaskError(null);
+                                  }}
+                                  className="w-full h-9 px-3 bg-white border border-[#E5E5E7] hover:border-[#C5C5C8] rounded-lg text-xs text-[#4A4A4F] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] transition-colors"
+                                >
+                                  <option value="">-- Chọn người thực hiện --</option>
+                                  {members.map((m) => (
+                                    <option key={m.id} value={m.id}>
+                                      {m.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Due date input */}
+                              <div className="sm:w-44 shrink-0">
+                                <label className="block text-[11px] font-medium text-[#6B6B70] mb-1">
+                                  Hạn chót <span className="text-[#E53E3E]">*</span>
+                                </label>
+                                <input
+                                  type="date"
+                                  required
+                                  aria-label="Hạn chót"
+                                  value={subtaskDueDate}
+                                  onChange={(e) => {
+                                    setSubtaskDueDate(e.target.value);
+                                    if (subtaskError) setSubtaskError(null);
+                                  }}
+                                  className="w-full h-9 px-3 bg-white border border-[#E5E5E7] hover:border-[#C5C5C8] rounded-lg text-xs text-[#4A4A4F] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] transition-colors"
+                                />
+                              </div>
+
+                              <div className="flex-1" />
+
+                              {/* Action Buttons */}
+                              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                                <button
+                                  type="button"
+                                  disabled={!isQuickSubtaskValid || creating}
+                                  onClick={() => handleCreateSubtask(issue)}
+                                  className="h-9 px-4 bg-[#E53E3E] hover:bg-[#C53030] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors shadow-xs flex items-center gap-1.5 whitespace-nowrap"
+                                >
+                                  {creating ? (
+                                    <>
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      <span>Đang tạo…</span>
+                                    </>
+                                  ) : (
+                                    <span>Tạo</span>
+                                  )}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
                                     setAddingSubtaskFor(null);
-                                  }
-                                }}
-                                placeholder="Nhập tiêu đề công việc con..."
-                                className="w-full h-9 px-3.5 bg-white border border-[#E5E5E7] hover:border-[#C5C5C8] rounded-lg text-xs text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] transition-colors"
-                              />
-                            </div>
-
-                            {/* Assignee selector */}
-                            <div className="sm:w-44 shrink-0">
-                              <select
-                                value={subtaskAssignee}
-                                onChange={(e) => setSubtaskAssignee(e.target.value)}
-                                className="w-full h-9 px-3 bg-white border border-[#E5E5E7] hover:border-[#C5C5C8] rounded-lg text-xs text-[#4A4A4F] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] transition-colors"
-                              >
-                                <option value="">Chưa phân công</option>
-                                {members.map((m) => (
-                                  <option key={m.id} value={m.id}>
-                                    {m.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                              <button
-                                type="button"
-                                disabled={!subtaskSummary.trim() || creating}
-                                onClick={() => handleCreateSubtask(issue)}
-                                className="h-9 px-4 bg-[#E53E3E] hover:bg-[#C53030] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors shadow-xs flex items-center gap-1.5 whitespace-nowrap"
-                              >
-                                {creating ? (
-                                  <>
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                    <span>Đang tạo…</span>
-                                  </>
-                                ) : (
-                                  <span>Tạo</span>
-                                )}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => setAddingSubtaskFor(null)}
-                                className="h-9 px-3 text-xs font-medium text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F0F0F1] rounded-lg transition-colors"
-                              >
-                                Hủy
-                              </button>
+                                    setSubtaskError(null);
+                                  }}
+                                  className="h-9 px-3 text-xs font-medium text-[#6B6B70] hover:text-[#1A1A1A] hover:bg-[#F0F0F1] rounded-lg transition-colors"
+                                >
+                                  Hủy
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>

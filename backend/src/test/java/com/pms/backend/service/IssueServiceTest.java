@@ -12,6 +12,7 @@ import com.pms.backend.enu.IssueType;
 import com.pms.backend.enu.Priority;
 import com.pms.backend.enu.ProjectStatus;
 import com.pms.backend.exception.BusinessException;
+import com.pms.backend.exception.ValidationException;
 import com.pms.backend.model.Issue;
 import com.pms.backend.model.Project;
 import com.pms.backend.model.User;
@@ -272,5 +273,57 @@ public class IssueServiceTest {
         verify(statusRepository, never()).findByProjectIdAndIsInitialTrue(anyLong());
         verify(mockCustomFieldService).validateAndSaveIssueCustomFields(any(Issue.class), eq(req.getCustomFields()));
         verify(mockCustomFieldService).getIssueCustomFields(99L, 1L);
+    }
+
+    @Test
+    public void testCreateSubtask_MissingAssigneeOrDueDate_ThrowsValidationException() {
+        Issue parent = new Issue();
+        parent.setId(21L);
+        parent.setIssueKey("TEST-21");
+        parent.setType(IssueType.TASK);
+        parent.setProject(project);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-21")).thenReturn(Optional.of(parent));
+
+        assertThrows(ValidationException.class, () ->
+                issueService.createSubtask("TEST-21", "Child subtask", null, LocalDate.now().plusDays(1), user));
+
+        assertThrows(ValidationException.class, () ->
+                issueService.createSubtask("TEST-21", "Child subtask", 10L, null, user));
+
+        verify(issueRepository, never()).save(any(Issue.class));
+    }
+
+    @Test
+    public void testCreateSubtask_WithRequiredFields_PersistsAssigneeAndDueDate() {
+        Issue parent = new Issue();
+        parent.setId(22L);
+        parent.setIssueKey("TEST-22");
+        parent.setType(IssueType.TASK);
+        parent.setProject(project);
+
+        LocalDate dueDate = LocalDate.now().plusDays(3);
+
+        when(issueRepository.findByIssueKeyAndDeletedAtIsNull("TEST-22")).thenReturn(Optional.of(parent));
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(user));
+        when(memberRepository.existsByProjectIdAndUserId(1L, 10L)).thenReturn(true);
+        when(statusRepository.findFirstByProjectIdAndIsInitialTrueOrderByPositionAscIdAsc(1L))
+                .thenReturn(Optional.of(todoStatus));
+        when(issueRepository.findById(22L)).thenReturn(Optional.of(parent));
+        when(keyGenerator.generateNextKey(1L, "TEST")).thenReturn("TEST-23");
+        when(issueRepository.save(any(Issue.class))).thenAnswer(inv -> {
+            Issue i = inv.getArgument(0);
+            i.setId(23L);
+            return i;
+        });
+
+        var res = issueService.createSubtask("TEST-22", "Child subtask", 10L, dueDate, user);
+
+        assertNotNull(res);
+        assertEquals("TEST-23", res.getKey());
+        assertEquals(dueDate, res.getDueDate());
+        assertNotNull(res.getAssignee());
+        assertEquals(10L, res.getAssignee().getId());
     }
 }

@@ -10,6 +10,7 @@ export interface SubTask {
   summary: string;
   status: IssueStatus;
   assignee?: User;
+  dueDate?: string;
 }
 
 /**

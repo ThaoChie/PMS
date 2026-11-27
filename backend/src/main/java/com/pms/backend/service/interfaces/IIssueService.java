@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface IIssueService {
@@ -21,6 +22,7 @@ public interface IIssueService {
     void removeLink(String issueKey, Long linkId, User currentUser);
     void setEpic(String issueKey, String epicKey, User currentUser);
     SubtaskResponse createSubtask(String issueKey, String summary, Long assigneeId, User currentUser);
+    SubtaskResponse createSubtask(String issueKey, String summary, Long assigneeId, LocalDate dueDate, User currentUser);
     AttachmentResponse uploadAttachment(String issueKey, MultipartFile file, User currentUser);
     void deleteAttachment(String issueKey, Long attachmentId, User currentUser);
     List<IssueStatusHistoryResponse> getIssueHistory(String issueKey);

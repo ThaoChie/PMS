@@ -3,7 +3,10 @@ import type { CustomField } from '../types';
 import {
   getMissingCreateIssueFieldError,
   isCreateIssueFormValid,
+  getMissingQuickSubtaskFieldError,
+  isQuickSubtaskFormValid,
   type CreateIssueFormFields,
+  type QuickSubtaskFormFields,
 } from '../features/issues/utils/createIssueValidation';
 
 const validBaseForm: CreateIssueFormFields = {
@@ -83,5 +86,39 @@ describe('createIssueValidation', () => {
     expect(isCreateIssueFormValid(validBaseForm, fields, { module: 'Auth', qa_confirm: 'false' })).toBe(false);
     expect(isCreateIssueFormValid(validBaseForm, fields, { module: '   ', qa_confirm: 'true' })).toBe(false);
     expect(isCreateIssueFormValid(validBaseForm, fields, { module: 'Auth', qa_confirm: 'true' })).toBe(true);
+  });
+
+  it('blocks quick sub-task creation when assigneeId or dueDate is missing', () => {
+    const onlySummary: QuickSubtaskFormFields = {
+      summary: 'Sub-task mới',
+      assigneeId: '',
+      dueDate: '',
+    };
+    expect(isQuickSubtaskFormValid(onlySummary)).toBe(false);
+    expect(getMissingQuickSubtaskFieldError(onlySummary)).toBe('Vui lòng chọn người thực hiện.');
+
+    const missingDueDate: QuickSubtaskFormFields = {
+      summary: 'Sub-task mới',
+      assigneeId: '12',
+      dueDate: '',
+    };
+    expect(isQuickSubtaskFormValid(missingDueDate)).toBe(false);
+    expect(getMissingQuickSubtaskFieldError(missingDueDate)).toBe('Vui lòng chọn hạn chót.');
+
+    const missingSummary: QuickSubtaskFormFields = {
+      summary: '   ',
+      assigneeId: '12',
+      dueDate: '2026-12-01',
+    };
+    expect(isQuickSubtaskFormValid(missingSummary)).toBe(false);
+    expect(getMissingQuickSubtaskFieldError(missingSummary)).toBe('Vui lòng nhập tiêu đề công việc con.');
+
+    const complete: QuickSubtaskFormFields = {
+      summary: 'Sub-task mới',
+      assigneeId: '12',
+      dueDate: '2026-12-01',
+    };
+    expect(isQuickSubtaskFormValid(complete)).toBe(true);
+    expect(getMissingQuickSubtaskFieldError(complete)).toBeNull();
   });
 });
