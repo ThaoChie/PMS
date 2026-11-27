@@ -74,7 +74,17 @@ export default function IssueHistoryTimeline({ issueKey, refreshTrigger }: Issue
         const toStatus = item.toStatus;
 
         // Parse comments/fields lines
-        const commentLines = item.comment ? item.comment.split('\n').filter(Boolean) : [];
+        const rawLines = item.comment ? item.comment.split('\n').filter(Boolean) : [];
+        const commentLines = rawLines.filter((l) => {
+          const trimmed = l.trim().toLowerCase();
+          return (
+            trimmed !== 'thông tin trường bắt buộc:' &&
+            trimmed !== 'trường thông tin bắt buộc:' &&
+            trimmed !== 'trường bắt buộc:' &&
+            trimmed !== 'thông tin trường bắt buộc' &&
+            trimmed !== 'trường thông tin bắt buộc'
+          );
+        });
 
         return (
           <div
@@ -108,8 +118,22 @@ export default function IssueHistoryTimeline({ issueKey, refreshTrigger }: Issue
                 {commentLines.map((line, idx) => {
                   const colonIndex = line.indexOf(':');
                   if (colonIndex > 0) {
-                    const label = line.slice(0, colonIndex).trim();
+                    let label = line.slice(0, colonIndex).trim();
                     const val = line.slice(colonIndex + 1).trim();
+
+                    if (label.startsWith('- ')) {
+                      label = label.slice(2).trim();
+                    }
+                    label = label
+                      .replace(/^trường\s+thông\s+tin\s+bắt\s+buộc\s*:\s*/i, '')
+                      .replace(/^trường\s+bắt\s+buộc\s*:\s*/i, '')
+                      .replace(/^trường\s+yêu\s+cầu\s*:\s*/i, '')
+                      .trim();
+
+                    if (label === 'Ghi chú') {
+                      label = 'Ghi chú chuyển đổi trạng thái';
+                    }
+
                     const isReject = label.toLowerCase().includes('từ chối') || label.toLowerCase().includes('reject');
 
                     return (

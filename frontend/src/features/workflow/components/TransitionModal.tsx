@@ -71,7 +71,7 @@ export default function TransitionModal({
       } else {
         const val = (otherFieldValues[f] || '').trim();
         if (!val) {
-          setErrorMsg(`Vui lòng nhập trường bắt buộc "${f}"!`);
+          setErrorMsg(`Vui lòng nhập "${f}"!`);
           return;
         }
         fields[f] = val;
@@ -160,7 +160,7 @@ export default function TransitionModal({
             return (
               <div key={fieldName} className="space-y-1.5">
                 <label className="block text-xs font-semibold text-[#1A1A1A]">
-                  Trường yêu cầu: {fieldName} <span className="text-[#E53E3E]">*</span>
+                  {fieldName} <span className="text-[#E53E3E]">*</span>
                 </label>
                 <input
                   type="text"
@@ -168,7 +168,7 @@ export default function TransitionModal({
                   onChange={(e) =>
                     setOtherFieldValues((prev) => ({ ...prev, [fieldName]: e.target.value }))
                   }
-                  placeholder={`Nhập thông tin cho ${fieldName}...`}
+                  placeholder={`Nhập ${fieldName}...`}
                   className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] transition-colors"
                   required
                 />
@@ -178,12 +178,12 @@ export default function TransitionModal({
 
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-[#1A1A1A]">
-              Ghi chú chuyển trạng thái <span className="text-[11px] font-normal text-[#9B9B9F]">(tùy chọn)</span>
+              Ghi chú chuyển đổi trạng thái <span className="text-[11px] font-normal text-[#9B9B9F]">(tùy chọn)</span>
             </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Nhập ghi chú hoặc lý do chuyển trạng thái..."
+              placeholder="Nhập ghi chú chuyển đổi trạng thái công việc..."
               rows={3}
               className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] resize-none transition-colors"
             />
