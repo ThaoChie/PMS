@@ -200,7 +200,7 @@ public class WorkflowServiceImpl implements IWorkflowService {
                 long activeCount = issueRepository.countByStatusIdAndDeletedAtIsNull(curr.getId());
                 if (activeCount > 0) {
                     throw new BusinessException(ErrorCode.CONFLICT,
-                            "Cannot delete status '" + curr.getName() + "' because it has " + activeCount + " active issue(s)");
+                            "Không thể xóa trạng thái '" + curr.getName() + "' vì đang có " + activeCount + " công việc đang ở trạng thái này");
                 }
                 if (entityManager != null && curr.getId() != null) {
                     Long historyRefs = entityManager.createQuery(
@@ -210,7 +210,7 @@ public class WorkflowServiceImpl implements IWorkflowService {
                             .getSingleResult();
                     if (historyRefs != null && historyRefs > 0) {
                         throw new BusinessException(ErrorCode.CONFLICT,
-                                "Cannot delete status '" + curr.getName() + "' because it is referenced in issue history");
+                                "Không thể xóa trạng thái '" + curr.getName() + "' vì trạng thái này đã được ghi nhận trong lịch sử công việc");
                     }
                 }
                 statusesToDelete.add(curr);

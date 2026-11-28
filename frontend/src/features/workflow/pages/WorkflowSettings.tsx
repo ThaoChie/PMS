@@ -6,6 +6,7 @@ import type { IssueStatus, StatusCategory, WorkflowStatus, WorkflowTransition } 
 import TransitionEditor from '../components/TransitionEditor';
 import StatusEditor from '../components/StatusEditor';
 import { computeWorkflowWarnings } from '../utils/workflowWarnings';
+import { formatWorkflowErrorMessage } from '../utils/workflowErrors';
 
 const NODE_Y = 100;
 const NODE_W = 125;
@@ -80,10 +81,12 @@ export default function WorkflowSettings() {
     [statuses, transitions],
   );
 
-  const loadWorkflow = useCallback(async () => {
+  const loadWorkflow = useCallback(async (preserveErrorMessage = false) => {
     if (!currentProject) return;
     setLoading(true);
-    setErrorMessage(null);
+    if (!preserveErrorMessage) {
+      setErrorMessage(null);
+    }
     try {
       const res = await workflowService.getWorkflow(currentProject.id);
       const data = (res as any)?.data?.statuses !== undefined
@@ -129,7 +132,9 @@ export default function WorkflowSettings() {
       }
       setTransitions(dedupedTrans);
     } catch (err: any) {
-      setErrorMessage(err?.response?.data?.message || err?.message || 'Không thể tải quy trình');
+      if (!preserveErrorMessage) {
+        setErrorMessage(err?.response?.data?.message || err?.message || 'Không thể tải quy trình');
+      }
       // If error or network problem, still provide default workflow so the screen is not empty
       setStatuses(DEFAULT_WORKFLOW_STATUSES);
       setTransitions(DEFAULT_WORKFLOW_TRANSITIONS);
@@ -324,7 +329,14 @@ export default function WorkflowSettings() {
       setTimeout(() => setSaveSuccess(false), 4000);
       await loadWorkflow();
     } catch (err: any) {
-      setErrorMessage(err?.response?.data?.message || err?.message || 'Lỗi khi lưu quy trình');
+      const rawMsg = err?.response?.data?.message || err?.message || 'Lỗi khi lưu quy trình';
+      const friendlyMsg = formatWorkflowErrorMessage(rawMsg);
+
+      setErrorMessage(friendlyMsg);
+      setSelectedTransition(null);
+      // Tự động khôi phục lại dữ liệu hiện tại từ máy chủ để UI không bị lệch
+      await loadWorkflow(true);
+      setErrorMessage(friendlyMsg);
     } finally {
       setSaving(false);
     }
