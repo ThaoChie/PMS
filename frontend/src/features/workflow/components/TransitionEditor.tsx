@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Check, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle, Lock } from 'lucide-react';
 import type { WorkflowTransition } from '../../../types';
 
 interface TransitionEditorProps {
   transition: WorkflowTransition | null;
+  readOnly?: boolean;
   onSave: (requiresField?: string, isApprovalStep?: boolean) => void;
   onCancel: () => void;
 }
 
 export default function TransitionEditor({
   transition,
+  readOnly = false,
   onSave,
   onCancel,
 }: TransitionEditorProps) {
@@ -18,10 +20,15 @@ export default function TransitionEditor({
 
   useEffect(() => {
     if (transition) {
-      setEditRequiresField(transition.requiresField ?? (transition as any).requiredFields ?? '');
-      setEditIsApproval(transition.isApprovalStep);
+      setEditIsApproval(Boolean(transition.isApprovalStep));
     }
-  }, [transition]);
+  }, [transition?.isApprovalStep]);
+
+  useEffect(() => {
+    if (transition) {
+      setEditRequiresField(transition.requiresField ?? (transition as any).requiredFields ?? '');
+    }
+  }, [transition?.id, transition?.from, transition?.to, transition?.requiresField, (transition as any)?.requiredFields]);
 
   if (!transition) {
     return (
@@ -40,14 +47,21 @@ export default function TransitionEditor({
 
   return (
     <div className="p-4 flex-1">
-      <div className="flex items-center gap-1.5 mb-4 text-xs text-[#1A1A1A]">
-        <span className="font-medium px-2 py-0.5 bg-[#F7F7F8] border border-[#E5E5E7] rounded">
-          {transition.from}
-        </span>
-        <span className="text-[#9B9B9F]">→</span>
-        <span className="font-medium px-2 py-0.5 bg-[#F7F7F8] border border-[#E5E5E7] rounded">
-          {transition.to}
-        </span>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-1.5 text-xs text-[#1A1A1A]">
+          <span className="font-medium px-2 py-0.5 bg-[#F7F7F8] border border-[#E5E5E7] rounded">
+            {transition.from}
+          </span>
+          <span className="text-[#9B9B9F]">→</span>
+          <span className="font-medium px-2 py-0.5 bg-[#F7F7F8] border border-[#E5E5E7] rounded">
+            {transition.to}
+          </span>
+        </div>
+        {readOnly && (
+          <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium flex items-center gap-1 border border-gray-200">
+            <Lock className="w-2.5 h-2.5 text-gray-500" /> Chỉ xem
+          </span>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -55,8 +69,11 @@ export default function TransitionEditor({
         <div className="flex items-start gap-3">
           <button
             type="button"
-            onClick={() => setEditIsApproval((v) => !v)}
+            disabled={readOnly}
+            onClick={() => !readOnly && setEditIsApproval((v) => !v)}
             className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+              readOnly ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+            } ${
               editIsApproval ? 'bg-[#E53E3E] border-[#E53E3E]' : 'border-[#E5E5E7]'
             }`}
           >
@@ -77,12 +94,16 @@ export default function TransitionEditor({
           </label>
           <input
             value={editRequiresField}
-            onChange={(e) => setEditRequiresField(e.target.value)}
-            placeholder="Ví dụ: Người thực hiện, Lý do từ chối"
-            className="w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none focus:border-[#1A1A1A] transition-colors"
+            disabled={readOnly}
+            readOnly={readOnly}
+            onChange={(e) => !readOnly && setEditRequiresField(e.target.value)}
+            placeholder={readOnly ? 'Không có trường bắt buộc' : 'Ví dụ: Người thực hiện, Lý do từ chối'}
+            className={`w-full px-3 py-2 border border-[#E5E5E7] rounded-lg text-xs text-[#1A1A1A] placeholder:text-[#9B9B9F] focus:outline-none transition-colors ${
+              readOnly ? 'bg-[#F2F2F3] text-[#6B6B70] cursor-not-allowed' : 'bg-white focus:border-[#1A1A1A]'
+            }`}
           />
           <p className="text-[10px] text-[#9B9B9F] mt-1">
-            Để trống nếu không yêu cầu trường bắt buộc cụ thể
+            {readOnly ? 'Quy trình ở chế độ chỉ xem' : 'Để trống nếu không yêu cầu trường bắt buộc cụ thể'}
           </p>
         </div>
 
@@ -96,22 +117,37 @@ export default function TransitionEditor({
         )}
       </div>
 
-      <div className="flex gap-2 mt-5">
-        <button
-          type="button"
-          onClick={() => onSave(editRequiresField.trim(), editIsApproval)}
-          className="flex-1 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
-        >
-          Lưu
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-3 py-2 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
-        >
-          Hủy
-        </button>
-      </div>
+      {readOnly ? (
+        <div className="mt-5 space-y-2">
+          <div className="text-[11px] text-[#8E8E93] italic flex items-center justify-center gap-1 py-1">
+            <Lock className="w-3 h-3 text-[#8E8E93]" /> Chế độ chỉ xem - không thể chỉnh sửa bước chuyển
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-full py-2 border border-[#E5E5E7] text-xs font-medium text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
+          >
+            Đóng
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2 mt-5">
+          <button
+            type="button"
+            onClick={() => onSave(editRequiresField.trim(), editIsApproval)}
+            className="flex-1 py-2 bg-[#E53E3E] text-white text-xs font-medium rounded-lg hover:bg-[#C53030] transition-colors"
+          >
+            Lưu
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-3 py-2 border border-[#E5E5E7] text-xs text-[#6B6B70] rounded-lg hover:bg-[#F7F7F8] transition-colors"
+          >
+            Hủy
+          </button>
+        </div>
+      )}
     </div>
   );
 }

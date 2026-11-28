@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { AlertCircle, AlertTriangle, CheckCircle2, Save, GitBranch, Shield, ArrowRight, Sliders } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Save, GitBranch, Shield, ArrowRight, Sliders, Lock } from 'lucide-react';
 import { useProjectStore } from '../../../store/projectStore';
+import { useAuthStore } from '../../../store/authStore';
 import { workflowService } from '../../../services/workflowService';
 import type { IssueStatus, StatusCategory, WorkflowStatus, WorkflowTransition } from '../../../types';
 import TransitionEditor from '../components/TransitionEditor';
 import StatusEditor from '../components/StatusEditor';
 import { computeWorkflowWarnings } from '../utils/workflowWarnings';
 import { formatWorkflowErrorMessage } from '../utils/workflowErrors';
-
-const NODE_Y = 100;
-const NODE_W = 125;
-const NODE_H = 44;
+import { computeWorkflowPermissions } from '../utils/workflowPermission';
+import {
+  NODE_Y,
+  NODE_W,
+  NODE_H,
+  getDisplayStatusName,
+  computeWorkflowCanvasLayout,
+} from '../utils/workflowCanvas';
 
 const DEFAULT_WORKFLOW_STATUSES: WorkflowStatus[] = [
   { id: 'default-1', name: 'To Do', category: 'TODO', position: 0, isInitial: true },
@@ -66,7 +71,15 @@ function Arrow({ startX, endX, isApproval, requiresField, isSelected, onClick }:
 }
 
 export default function WorkflowSettings() {
-  const { currentProject } = useProjectStore();
+  const { currentProject, myProjectRole } = useProjectStore();
+  const { user, role: globalRole } = useAuthStore();
+
+  const { isReadOnly, isProjectClosed, isPmOrAdmin, effectiveRole } = computeWorkflowPermissions(
+    currentProject,
+    user,
+    globalRole,
+    myProjectRole
+  );
 
   const [statuses, setStatuses] = useState<WorkflowStatus[]>([]);
   const [transitions, setTransitions] = useState<WorkflowTransition[]>([]);
@@ -80,6 +93,22 @@ export default function WorkflowSettings() {
     () => computeWorkflowWarnings(statuses, transitions),
     [statuses, transitions],
   );
+
+  const currentSelectedTransition = useMemo(() => {
+    if (!selectedTransition) return null;
+    return (
+      transitions.find(
+        (t) =>
+          (t.id && selectedTransition.id && String(t.id) === String(selectedTransition.id)) ||
+          (t.from &&
+            t.to &&
+            selectedTransition.from &&
+            selectedTransition.to &&
+            t.from.trim().toLowerCase() === selectedTransition.from.trim().toLowerCase() &&
+            t.to.trim().toLowerCase() === selectedTransition.to.trim().toLowerCase())
+      ) || null
+    );
+  }, [selectedTransition, transitions]);
 
   const loadWorkflow = useCallback(async (preserveErrorMessage = false) => {
     if (!currentProject) return;
@@ -148,16 +177,18 @@ export default function WorkflowSettings() {
   }, [loadWorkflow]);
 
   function handleSaveTransition(requiresField?: string, isApprovalStep?: boolean) {
-    if (!selectedTransition) return;
+    if (isReadOnly) return;
+    const activeTrans = currentSelectedTransition || selectedTransition;
+    if (!activeTrans) return;
     const cleanField = requiresField && requiresField.trim() ? requiresField.trim() : undefined;
     const approval = !!isApprovalStep;
     setTransitions((ts) =>
       ts.map((t) => {
         const matches =
-          (t.id && selectedTransition.id && String(t.id) === String(selectedTransition.id)) ||
-          (t.from && t.to && selectedTransition.from && selectedTransition.to &&
-           t.from.trim().toLowerCase() === selectedTransition.from.trim().toLowerCase() &&
-           t.to.trim().toLowerCase() === selectedTransition.to.trim().toLowerCase());
+          (t.id && activeTrans.id && String(t.id) === String(activeTrans.id)) ||
+          (t.from && t.to && activeTrans.from && activeTrans.to &&
+           t.from.trim().toLowerCase() === activeTrans.from.trim().toLowerCase() &&
+           t.to.trim().toLowerCase() === activeTrans.to.trim().toLowerCase());
         if (!matches) return t;
         return {
           ...t,
@@ -172,6 +203,7 @@ export default function WorkflowSettings() {
   }
 
   function handleAddStatus(name: string, category: StatusCategory = 'IN_PROGRESS') {
+    if (isReadOnly) return;
     const trimmed = name.trim();
     if (!trimmed) return;
     if (statuses.some((s) => s.name.toLowerCase() === trimmed.toLowerCase())) {
@@ -189,6 +221,7 @@ export default function WorkflowSettings() {
   }
 
   function handleRemoveStatus(name: string) {
+    if (isReadOnly) return;
     setStatuses((prev) => {
       const filtered = prev.filter((s) => s.name.toLowerCase() !== name.toLowerCase());
       return filtered.map((s, idx) => ({ ...s, position: idx }));
@@ -200,6 +233,7 @@ export default function WorkflowSettings() {
   }
 
   function handleMoveStatus(index: number, direction: 'left' | 'right') {
+    if (isReadOnly) return;
     const targetIndex = direction === 'left' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= statuses.length) return;
     const copy = [...statuses];
@@ -210,11 +244,13 @@ export default function WorkflowSettings() {
   }
 
   function handleReorderStatuses(newStatuses: WorkflowStatus[]) {
+    if (isReadOnly) return;
     const reindexed = newStatuses.map((s, idx) => ({ ...s, position: idx }));
     setStatuses(reindexed);
   }
 
   function handleToggleMatrixTransition(from: string, to: string, allowed: boolean) {
+    if (isReadOnly) return;
     const fromClean = from.trim();
     const toClean = to.trim();
     if (allowed) {
@@ -246,6 +282,7 @@ export default function WorkflowSettings() {
   }
 
   function handleToggleApprovalMatrix(from: string, to: string) {
+    if (isReadOnly) return;
     const fromClean = from.trim().toLowerCase();
     const toClean = to.trim().toLowerCase();
     setTransitions((prev) =>
@@ -261,10 +298,27 @@ export default function WorkflowSettings() {
         return t;
       })
     );
+    setSelectedTransition((prev) => {
+      if (
+        prev &&
+        prev.from &&
+        prev.to &&
+        prev.from.trim().toLowerCase() === fromClean &&
+        prev.to.trim().toLowerCase() === toClean
+      ) {
+        const nextApproval = !prev.isApprovalStep;
+        return {
+          ...prev,
+          isApprovalStep: nextApproval,
+          type: nextApproval ? (prev.type === 'REJECT' ? 'REJECT' : 'APPROVE') : 'NORMAL',
+        };
+      }
+      return prev;
+    });
   }
 
   async function handleSaveWorkflow() {
-    if (!currentProject) return;
+    if (isReadOnly || !currentProject) return;
     setSaving(true);
     setErrorMessage(null);
     setSaveSuccess(false);
@@ -342,15 +396,7 @@ export default function WorkflowSettings() {
     }
   }
 
-  const svgH = 240;
-  const svgW = Math.max(760, statuses.length * 160);
-
-  const getNodeX = (index: number) => {
-    if (statuses.length <= 1) return 80;
-    const totalW = svgW - 160;
-    const step = totalW / (statuses.length - 1);
-    return 60 + index * step;
-  };
+  const { svgW, svgH, getNodeX } = computeWorkflowCanvasLayout(statuses.length);
 
   return (
     <div className="h-full overflow-y-auto bg-[#FAFAFA]">
@@ -358,9 +404,20 @@ export default function WorkflowSettings() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#1A1A1A] flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1A1A1A] flex flex-wrap items-center gap-2">
               <GitBranch className="w-5 h-5 text-[#1A1A1A] shrink-0" />
               <span>Cấu hình quy trình làm việc</span>
+              {isProjectClosed ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                  <Lock className="w-3 h-3 text-amber-700" />
+                  Dự án đã đóng (Chỉ xem)
+                </span>
+              ) : !isPmOrAdmin ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300">
+                  <Lock className="w-3 h-3 text-gray-600" />
+                  Chế độ chỉ xem
+                </span>
+              ) : null}
             </h1>
             <p className="text-xs sm:text-sm text-[#6B6B70] mt-1 leading-relaxed">
               Định nghĩa vòng đời trạng thái, ma trận chuyển tiếp hợp lệ và bước duyệt bắt buộc cho dự án{' '}
@@ -371,15 +428,52 @@ export default function WorkflowSettings() {
             <button
               id="btn-save-workflow"
               type="button"
-              disabled={saving}
+              disabled={isReadOnly || saving}
               onClick={handleSaveWorkflow}
-              className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] bg-[#1A1A1A] hover:bg-black text-white text-xs sm:text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors shadow-xs"
+              title={
+                isProjectClosed
+                  ? 'Dự án đã đóng (CLOSED), không thể lưu thay đổi'
+                  : !isPmOrAdmin
+                  ? 'Bạn không có quyền PM/Admin để chỉnh sửa quy trình'
+                  : undefined
+              }
+              className={`flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-xs sm:text-sm font-semibold rounded-lg transition-colors shadow-xs ${
+                isReadOnly
+                  ? 'bg-[#E5E5E7] text-[#8E8E93] cursor-not-allowed border border-[#D1D1D6]'
+                  : 'bg-[#1A1A1A] hover:bg-black text-white disabled:opacity-50'
+              }`}
             >
-              <Save className="w-4 h-4" />
-              <span>{saving ? 'Đang lưu…' : 'Lưu thay đổi'}</span>
+              {isReadOnly ? <Lock className="w-4 h-4 text-[#8E8E93]" /> : <Save className="w-4 h-4" />}
+              <span>{saving ? 'Đang lưu…' : isReadOnly ? 'Chế độ chỉ xem' : 'Lưu thay đổi'}</span>
             </button>
           </div>
         </div>
+
+        {/* Closed Project Alert */}
+        {isProjectClosed && (
+          <div id="workflow-closed-alert" className="mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 shadow-xs">
+            <Lock className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+            <div>
+              <div className="font-semibold text-amber-900">Dự án đã đóng (CLOSED) - Chế độ chỉ xem</div>
+              <p className="text-[11px] text-amber-800 mt-0.5">
+                Dự án này hiện đã ở trạng thái Đóng (CLOSED). Toàn bộ quy trình làm việc đang bị khóa ở chế độ chỉ xem; không thể tạo mới, xóa trạng thái, đổi thứ tự cột hoặc thay đổi ma trận bước chuyển.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Non-PM/Admin Read-only Alert */}
+        {!isProjectClosed && !isPmOrAdmin && (
+          <div id="workflow-readonly-alert" className="mb-4 p-3.5 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-xs text-blue-900 shadow-xs">
+            <Shield className="w-4 h-4 shrink-0 text-blue-600 mt-0.5" />
+            <div>
+              <div className="font-semibold text-blue-900">Chế độ chỉ xem (Không có quyền cấu hình)</div>
+              <p className="text-[11px] text-blue-800 mt-0.5">
+                Bạn đang xem quy trình với vai trò {effectiveRole ? effectiveRole.toUpperCase() : 'THÀNH VIÊN'}. Chỉ Quản lý dự án (PM) và Quản trị viên (Admin) mới có quyền chỉnh sửa cấu hình quy trình làm việc của dự án này.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Success Alert */}
         {saveSuccess && (
@@ -457,7 +551,15 @@ export default function WorkflowSettings() {
                       endX={endX}
                       isApproval={t.isApprovalStep}
                       requiresField={t.requiresField}
-                      isSelected={selectedTransition?.id === t.id}
+                      isSelected={
+                        Boolean(
+                          currentSelectedTransition &&
+                            ((t.id && currentSelectedTransition.id && String(t.id) === String(currentSelectedTransition.id)) ||
+                              (t.from && t.to && currentSelectedTransition.from && currentSelectedTransition.to &&
+                               t.from.trim().toLowerCase() === currentSelectedTransition.from.trim().toLowerCase() &&
+                               t.to.trim().toLowerCase() === currentSelectedTransition.to.trim().toLowerCase()))
+                        )
+                      }
                       onClick={() => setSelectedTransition(t)}
                     />
                   );
@@ -466,8 +568,12 @@ export default function WorkflowSettings() {
                 {/* Status nodes */}
                 {statuses.map((status, idx) => {
                   const x = getNodeX(idx);
+                  const displayName = getDisplayStatusName(status.name, 12);
+                  const textCenterX = x + 28 + (NODE_W - 36) / 2;
+
                   return (
-                    <g key={status.id || status.name}>
+                    <g key={status.id || status.name} className="cursor-default">
+                      <title>{status.name}</title>
                       <rect
                         x={x}
                         y={NODE_Y}
@@ -480,13 +586,13 @@ export default function WorkflowSettings() {
                       />
                       {/* Step index badge */}
                       <circle
-                        cx={x + 15}
+                        cx={x + 16}
                         cy={NODE_Y + NODE_H / 2}
-                        r={8}
+                        r={8.5}
                         fill="#F0F0F1"
                       />
                       <text
-                        x={x + 15}
+                        x={x + 16}
                         y={NODE_Y + NODE_H / 2 + 3}
                         textAnchor="middle"
                         fontSize={9}
@@ -497,15 +603,15 @@ export default function WorkflowSettings() {
                         {idx + 1}
                       </text>
                       <text
-                        x={x + (NODE_W + 15) / 2}
+                        x={textCenterX}
                         y={NODE_Y + NODE_H / 2 + 4}
                         textAnchor="middle"
-                        fontSize={11}
+                        fontSize={10.5}
                         fontFamily="Inter, sans-serif"
                         fontWeight={600}
                         fill="#1A1A1A"
                       >
-                        {status.name}
+                        {displayName}
                       </text>
                     </g>
                   );
@@ -516,6 +622,7 @@ export default function WorkflowSettings() {
               <div className="text-xs font-semibold text-[#1A1A1A] mb-2">Quản lý trạng thái dự án:</div>
               <StatusEditor
                 statuses={statuses}
+                readOnly={isReadOnly}
                 onAddStatus={handleAddStatus}
                 onRemoveStatus={handleRemoveStatus}
                 onMoveStatus={handleMoveStatus}
@@ -531,7 +638,8 @@ export default function WorkflowSettings() {
             </div>
 
             <TransitionEditor
-              transition={selectedTransition}
+              transition={currentSelectedTransition}
+              readOnly={isReadOnly}
               onSave={handleSaveTransition}
               onCancel={() => setSelectedTransition(null)}
             />
@@ -688,15 +796,27 @@ export default function WorkflowSettings() {
                                 data-to={toName}
                                 id={`matrix-check-${fromName.replace(/\s+/g, '-')}-to-${toName.replace(/\s+/g, '-')}`}
                                 checked={isAllowed}
+                                disabled={isReadOnly}
                                 onChange={(e) => handleToggleMatrixTransition(fromName, toName, e.target.checked)}
-                                className="w-4 h-4 rounded border-[#C5C5C8] text-[#1A1A1A] focus:ring-0 cursor-pointer"
+                                className={`w-4 h-4 rounded border-[#C5C5C8] text-[#1A1A1A] focus:ring-0 ${
+                                  isReadOnly ? 'cursor-not-allowed opacity-50 bg-[#F2F2F3]' : 'cursor-pointer'
+                                }`}
                               />
                               {isAllowed && (
                                 <button
                                   type="button"
-                                  title={trans?.isApprovalStep ? "Bước duyệt bắt buộc: Cần phê duyệt (PM)" : "Click để đặt làm bước duyệt bắt buộc (PM)"}
+                                  disabled={isReadOnly}
+                                  title={
+                                    isReadOnly
+                                      ? 'Chế độ chỉ xem: không thể thay đổi loại bước chuyển'
+                                      : trans?.isApprovalStep
+                                      ? 'Bước duyệt bắt buộc: Cần phê duyệt (PM)'
+                                      : 'Click để đặt làm bước duyệt bắt buộc (PM)'
+                                  }
                                   onClick={() => handleToggleApprovalMatrix(fromName, toName)}
                                   className={`text-[9px] px-1.5 py-0.5 rounded font-medium transition-all flex items-center gap-0.5 ${
+                                    isReadOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                                  } ${
                                     trans?.isApprovalStep
                                       ? 'bg-[#FDECEC] text-[#E53E3E] border border-[#E53E3E]/30 font-semibold'
                                       : 'bg-[#F0F0F1] text-[#9B9B9F] hover:text-[#1A1A1A]'

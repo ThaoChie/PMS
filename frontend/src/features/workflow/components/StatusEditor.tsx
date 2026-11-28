@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Plus, X, Tag, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
+import { Plus, X, Tag, ChevronLeft, ChevronRight, GripVertical, Lock } from 'lucide-react';
 import type { StatusCategory, WorkflowStatus } from '../../../types';
 
 interface StatusEditorProps {
   statuses: WorkflowStatus[];
+  readOnly?: boolean;
   onAddStatus?: (name: string, category: StatusCategory) => void;
   onRemoveStatus?: (name: string) => void;
   onMoveStatus?: (index: number, direction: 'left' | 'right') => void;
@@ -12,6 +13,7 @@ interface StatusEditorProps {
 
 export default function StatusEditor({
   statuses,
+  readOnly = false,
   onAddStatus,
   onRemoveStatus,
   onMoveStatus,
@@ -79,34 +81,43 @@ export default function StatusEditor({
     <div className="space-y-3">
       <div className="flex items-center justify-between text-[11px] text-[#6B6B70]">
         <span>Thứ tự các bước quy trình (từ trái qua phải):</span>
-        <span className="text-[10px] text-[#9B9B9F]">Dùng ◀ ▶ hoặc kéo thả thẻ để đổi thứ tự</span>
+        {readOnly ? (
+          <span className="text-[10px] text-[#9B9B9F] flex items-center gap-1 font-medium">
+            <Lock className="w-3 h-3 text-[#9B9B9F]" />
+            Chế độ chỉ xem
+          </span>
+        ) : (
+          <span className="text-[10px] text-[#9B9B9F]">Dùng ◀ ▶ hoặc kéo thả thẻ để đổi thứ tự</span>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2.5 items-center">
         {statuses.map((status, idx) => (
           <div
             key={status.id || status.name}
-            draggable
-            onDragStart={(e) => handleDragStart(e, idx)}
-            onDragOver={(e) => handleDragOver(e, idx)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, idx)}
+            draggable={!readOnly}
+            onDragStart={(e) => !readOnly && handleDragStart(e, idx)}
+            onDragOver={(e) => !readOnly && handleDragOver(e, idx)}
+            onDragLeave={!readOnly ? handleDragLeave : undefined}
+            onDrop={(e) => !readOnly && handleDrop(e, idx)}
             className={`group flex items-center gap-1.5 px-2.5 py-1.5 bg-[#F7F7F8] border rounded-lg text-xs font-medium text-[#1A1A1A] transition-all select-none ${
               dragOverIdx === idx
                 ? 'border-black bg-gray-100 scale-105 shadow-sm'
                 : 'border-[#E5E5E7] hover:border-[#C5C5C8]'
-            } ${draggedIdx === idx ? 'opacity-40' : 'opacity-100'}`}
+            } ${draggedIdx === idx ? 'opacity-40' : 'opacity-100'} ${readOnly ? 'cursor-default' : ''}`}
           >
             {/* Drag handle & Order Number */}
-            <div className="flex items-center gap-1 text-[#9B9B9F] cursor-grab active:cursor-grabbing">
-              <GripVertical className="w-3 h-3 text-[#A0A0A5] opacity-60 group-hover:opacity-100" />
+            <div className={`flex items-center gap-1 text-[#9B9B9F] ${readOnly ? '' : 'cursor-grab active:cursor-grabbing'}`}>
+              {!readOnly && (
+                <GripVertical className="w-3 h-3 text-[#A0A0A5] opacity-60 group-hover:opacity-100" />
+              )}
               <span className="w-4 h-4 rounded-full bg-[#E5E5E7] text-[#1A1A1A] text-[9px] font-bold flex items-center justify-center shrink-0">
                 {idx + 1}
               </span>
             </div>
 
             {/* Move Left Button */}
-            {onMoveStatus && (
+            {!readOnly && onMoveStatus && (
               <button
                 type="button"
                 id={`btn-move-left-${idx}`}
@@ -132,7 +143,7 @@ export default function StatusEditor({
             </span>
 
             {/* Move Right Button */}
-            {onMoveStatus && (
+            {!readOnly && onMoveStatus && (
               <button
                 type="button"
                 id={`btn-move-right-${idx}`}
@@ -146,7 +157,7 @@ export default function StatusEditor({
             )}
 
             {/* Remove button */}
-            {onRemoveStatus && !status.isInitial && !(status.category === 'DONE' && statuses.filter(s => s.category === 'DONE').length <= 1) && (
+            {!readOnly && onRemoveStatus && !status.isInitial && !(status.category === 'DONE' && statuses.filter(s => s.category === 'DONE').length <= 1) && (
               <button
                 type="button"
                 onClick={() => onRemoveStatus(status.name)}
@@ -160,7 +171,8 @@ export default function StatusEditor({
         ))}
       </div>
 
-      {isAdding ? (
+      {!readOnly && (
+        isAdding ? (
         <div className="p-3 bg-[#F9FAFB] border border-[#E5E5E7] rounded-xl flex flex-wrap items-center gap-2.5">
           <input
             id="new-status-name"
@@ -211,6 +223,7 @@ export default function StatusEditor({
         >
           <Plus className="w-3.5 h-3.5" /> Thêm trạng thái mới
         </button>
+        )
       )}
     </div>
   );
